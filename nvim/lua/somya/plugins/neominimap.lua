@@ -5,6 +5,7 @@
     keys = {
       { "<leader>nm", "<cmd>Neominimap Toggle<CR>", desc = "Toggle minimap" },
       { "<leader>nf", "<cmd>Neominimap ToggleFocus<CR>", desc = "Toggle minimap focus" },
+      { "<leader>nr", "<cmd>Neominimap Refresh<cr>", desc = "Refresh global minimap" },
     },
     init = function()
       vim.opt.sidescrolloff = math.max(vim.o.sidescrolloff, 36)
