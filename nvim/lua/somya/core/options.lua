@@ -12,7 +12,7 @@ opt.expandtab = true -- expand tab to spaces
 opt.autoindent = true -- copy indent from current line when starting new one
 
 opt.wrap = false
-
+opt.sidescrolloff = 36
 -- spell check
 opt.spelllang = 'en_us'
 opt.spell = false
