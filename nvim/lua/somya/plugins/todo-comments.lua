@@ -7,12 +7,13 @@ return {
         FIXME = {
           color = "error",
           alt = { "FIX" },
+          icon = " ",
         },
-        TODO = { color = "info" },
-        REVIEW = { color = "warning", alt = { "WARNING" } },
-        PERF = { alt = { "IMPORTANT" } },
-        SPEC = { alt = { "SPECIFICATION" } },
-        NOTE = { color = "hint", alt = { "INFO" } },
+        TODO = { icon = " ", color = "info" },
+        REVIEW = { icon = " ", color = "warning", alt = { "WARNING" } },
+        PERF = { icon = " ", alt = { "IMPORTANT" } },
+        SPEC = { icon = "󰦨 ", alt = { "SPECIFICATION" } },
+        NOTE = { icon = " ", color = "hint", alt = { "INFO" } },
       },
     })
 
