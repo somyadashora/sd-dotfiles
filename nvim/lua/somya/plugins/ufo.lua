@@ -38,9 +38,9 @@
       vim.opt.fillchars = {
         eob = " ",
         fold = " ",
-        foldopen = "",
+        foldopen = "v",
         foldsep = " ",
-        foldclose = "",
+        foldclose = ">",
         foldinner = " ",
       }
     end,
