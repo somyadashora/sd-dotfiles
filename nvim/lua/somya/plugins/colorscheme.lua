@@ -37,6 +37,8 @@ return {
       vim.cmd([[colorscheme tokyonight]])
       vim.api.nvim_set_hl(0, "CursorLine", { bg = "#143652" })
       vim.api.nvim_set_hl(0, "CursorLineNr", { fg = "#ffd75f", bold = true })
+      vim.api.nvim_set_hl(0, "MarkSignHL", { fg = "#ff475f", bold = true })
+    vim.api.nvim_set_hl(0, "MarkSignNumHL", { fg = "#ff475f", bold = true })
     end,
   },
 }
