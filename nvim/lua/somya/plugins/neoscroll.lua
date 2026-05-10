@@ -5,8 +5,8 @@ return {
       local neoscroll = require("neoscroll")
       neoscroll.setup({ easing = "linear", mappings = {} })
       local keymap = {
-        ["<C-u>"] = function() neoscroll.ctrl_u({ duration = 250, easing = "sine" }) end,
-        ["<C-d>"] = function() neoscroll.ctrl_d({ duration = 250, easing = "sine" }) end,
+        ["<C-u>"] = function() neoscroll.ctrl_u({ duration = 350, easing = "linear" }) end,
+        ["<C-d>"] = function() neoscroll.ctrl_d({ duration = 350, easing = "linear" }) end,
         ["<C-b>"] = function() neoscroll.ctrl_b({ duration = 450, easing = "linear" }) end,
         ["<C-f>"] = function() neoscroll.ctrl_f({ duration = 450, easing = "linear" }) end,
         ["<C-y>"] = function() neoscroll.scroll(-0.1, { move_cursor = false, duration = 100 }) end,
