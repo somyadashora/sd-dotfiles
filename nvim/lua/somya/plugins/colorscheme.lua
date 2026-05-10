@@ -35,6 +35,8 @@ return {
       })
       -- load the colorscheme here
       vim.cmd([[colorscheme tokyonight]])
+      vim.api.nvim_set_hl(0, "CursorLine", { bg = "#143652" })
+      vim.api.nvim_set_hl(0, "CursorLineNr", { fg = "#ffd75f", bold = true })
     end,
   },
 }

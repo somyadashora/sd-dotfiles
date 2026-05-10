@@ -27,7 +27,7 @@ opt.smartcase = true -- if you include mixed case in your search, assumes you wa
 
 -- cursor line
 opt.cursorline = true
-opt.cursorlineopt ='number'
+opt.cursorlineopt ='both' -- highlight both the number and the line of the cursor
 
 -- appearance
 
