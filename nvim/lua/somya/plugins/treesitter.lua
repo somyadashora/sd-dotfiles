@@ -24,7 +24,6 @@ return {
         "make",
         "vhdl",
         "systemverilog",
-        "verilog",
       }
 
       local treesitter = require("nvim-treesitter")
