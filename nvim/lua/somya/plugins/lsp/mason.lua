@@ -10,6 +10,9 @@ return {
     -- import mason-lspconfig
     local mason_lspconfig = require("mason-lspconfig")
 
+
+    local is_termux = vim.fn.executable("termux-info") == 1
+    or (vim.env.PREFIX or ""):find("/com.termux/", 1, true) ~= nil
     -- enable mason and configure icons
     mason.setup({
       ui = {
@@ -23,7 +26,9 @@ return {
 
     mason_lspconfig.setup({
       -- list of servers for mason to install
-      ensure_installed = {
+    ensure_installed = is_termux and {
+        "verible",
+      } or {
         "verible",
         "lua_ls",
       },

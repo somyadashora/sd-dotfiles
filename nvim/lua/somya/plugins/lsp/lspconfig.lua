@@ -156,6 +156,7 @@ local function stop_lsp_by_name(name)
     -- configure lua server with special settings
     vim.lsp.config("lua_ls", {
       capabilities = capabilities,
+      cmd = { "lua-language-server" },
       settings = {
         Lua = {
           -- make the language server recognize "vim" global
@@ -168,5 +169,8 @@ local function stop_lsp_by_name(name)
         },
       },
     })
+    if vim.fn.executable("lua-language-server") == 1 then
+      vim.lsp.enable("lua_ls")
+    end
   end,
 }
