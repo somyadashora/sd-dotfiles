@@ -344,7 +344,10 @@ if [[ $- == *i* ]]; then
     __sd_prompt_path_segment
     path_segment=$__sd_prompt_path_value
 
-    PS1="${rc_segment}${c_user}\\u${c_reset}@${c_host}\\h${c_reset}:${c_path}${path_segment}${c_reset}${git_segment} \\$ "
+    local cs_host="${CODESPACE_NAME%-*}"
+    [[ -z "$cs_host" ]] && cs_host="$HOSTNAME"
+
+    PS1="${rc_segment}${c_user}\\u${c_reset}@${c_host}${cs_host}${c_reset}:${c_path}${path_segment}${c_reset}${git_segment} \\$ "
   }
 
   __sd_prompt_command() {
