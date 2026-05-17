@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.6
 """
 Clipboard daemon for nvim on remote Linux (no xclip/xsel).
 Owns X CLIPBOARD via tkinter so ETX bridges it to Windows clipboard.
