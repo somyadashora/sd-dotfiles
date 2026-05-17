@@ -5,9 +5,9 @@ return {
     require("styler").setup({
       themes = {
         -- Hardware description languages
-        systemverilog = { colorscheme = "catppuccin-mocha" },
-        verilog       = { colorscheme = "catppuccin-mocha" },
-        vhdl          = { colorscheme = "catppuccin-macchiato" },
+        systemverilog = { colorscheme = "monokai-pro-classic" },
+        verilog       = { colorscheme = "monokai-pro-classic" },
+        vhdl          = { colorscheme = "monokai-pro-classic" },
 
         -- Scripting / general purpose
         python        = { colorscheme = "catppuccin-frappe" },
