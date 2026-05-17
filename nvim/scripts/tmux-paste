@@ -1,0 +1,10 @@
+#!/bin/sh
+# Paste a tmux buffer without trailing newline so the shell does not auto-execute.
+# Usage: tmux-paste <buffer-name>
+#
+# Command substitution $() strips trailing newlines, so printf '%s' re-emits
+# the content without the trailing \n that would trigger Enter in the shell.
+content=$(tmux show-buffer -b "$1")
+printf '%s' "$content" | tmux load-buffer -b _paste_tmp -
+tmux paste-buffer -p -b _paste_tmp
+tmux delete-buffer -b _paste_tmp 2>/dev/null
