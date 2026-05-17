@@ -41,22 +41,7 @@ opt.signcolumn = "yes:2" -- show sign column so that text doesn't shift
 -- backspace
 opt.backspace = "indent,eol,start" -- allow backspace on indent, end of line or insert mode start position
 
--- clipboard: OSC 52 sends yank content via terminal escape sequence → ETX → Windows clipboard
--- (works over SSH in tmux without needing xclip/xsel or X11 forwarding; requires nvim 0.10+)
-local ok, osc52 = pcall(require, 'vim.ui.clipboard.osc52')
-if ok then
-  vim.g.clipboard = {
-    name = 'OSC 52',
-    copy = {
-      ['+'] = osc52.copy('+'),
-      ['*'] = osc52.copy('*'),
-    },
-    paste = {
-      ['+'] = osc52.paste('+'),
-      ['*'] = osc52.paste('*'),
-    },
-  }
-end
+-- X11 forwarding (ssh -X) → ETX acts as X server → xclip/xsel set X CLIPBOARD → ETX bridges to Windows
 opt.clipboard:append("unnamedplus") -- use system clipboard as default register
 
 -- split windows
