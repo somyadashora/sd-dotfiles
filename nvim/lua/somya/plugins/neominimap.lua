@@ -10,7 +10,7 @@
     init = function()
       vim.opt.sidescrolloff = math.max(vim.o.sidescrolloff, 36)
       vim.g.neominimap = {
-        auto_enable = true,
+        auto_enable = false,
         layout = "float",
         float = { minimap_width = 16 },
         diagnostic = { enabled = true, mode = "line" },
