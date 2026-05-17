@@ -1,9 +1,10 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/data/data/com.termux/files/usr/bin/sh
 
 # Termux-only installer for this dotfiles/Neovim setup.
 # Uses Termux packages and never uses sudo.
+# Compatible with sh and bash (run as: sh install-termux-tools.sh  OR  ./install-termux-tools.sh)
 
-set -euo pipefail
+set -eu
 
 FONT_DIR="${FONT_DIR:-$HOME/.termux}"
 NERD_FONT_VERSION_FILE="${FONT_DIR}/.meslo-nerd-font-version"
@@ -13,7 +14,7 @@ SKIP_FONTS=0
 
 usage() {
   cat <<'USAGE'
-Usage: ./install-termux-tools.sh [options]
+Usage: sh install-termux-tools.sh [options]
 
 Options:
   --force       Reinstall/update even if a marker says the font is current.
@@ -28,7 +29,7 @@ Notes:
 USAGE
 }
 
-while [[ $# -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
   case "$1" in
     --force) FORCE=1 ;;
     --skip-fonts) SKIP_FONTS=1 ;;
@@ -38,24 +39,26 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-log() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
-ok() { printf '\033[1;32m✓\033[0m %s\n' "$*"; }
+log()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
+ok()   { printf '\033[1;32m✓\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33mWARN:\033[0m %s\n' "$*" >&2; }
-die() { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
+die()  { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
 have() { command -v "$1" >/dev/null 2>&1; }
 
 require_termux() {
-  if ! have pkg || [[ "${PREFIX:-}" != *"/com.termux/"* ]]; then
-    die "This script is for Termux only. Use ./install-linux-tools.sh on normal Linux."
-  fi
+  have pkg || die "This script is for Termux only. Use ./install-linux-tools.sh on normal Linux."
+  case "${PREFIX:-}" in
+    *"/com.termux/"*) ;;
+    *) die "This script is for Termux only. Use ./install-linux-tools.sh on normal Linux." ;;
+  esac
 }
 
 github_curl() {
-  local args=(-fsSL)
-  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-    args+=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
+  if [ -n "${GITHUB_TOKEN:-}" ]; then
+    curl -fsSL -H "Authorization: Bearer ${GITHUB_TOKEN}" "$@"
+  else
+    curl -fsSL "$@"
   fi
-  curl "${args[@]}" "$@"
 }
 
 latest_tag() {
@@ -92,15 +95,15 @@ install_packages() {
 }
 
 install_meslo_font() {
-  [[ "$SKIP_FONTS" == 1 ]] && return 0
+  [ "$SKIP_FONTS" = 1 ] && return 0
 
   local tag version tmp archive font_file
   tag=$(latest_tag ryanoasis/nerd-fonts)
-  [[ -n "$tag" ]] || die "Could not resolve latest Nerd Fonts release."
+  [ -n "$tag" ] || die "Could not resolve latest Nerd Fonts release."
   version=${tag#v}
 
   mkdir -p "$FONT_DIR"
-  if [[ "$FORCE" != 1 && -f "$NERD_FONT_VERSION_FILE" && "$(cat "$NERD_FONT_VERSION_FILE")" == "$tag" ]]; then
+  if [ "$FORCE" != 1 ] && [ -f "$NERD_FONT_VERSION_FILE" ] && [ "$(cat "$NERD_FONT_VERSION_FILE")" = "$tag" ]; then
     ok "MesloLGS Nerd Font is current (${version})."
     return 0
   fi
@@ -112,7 +115,7 @@ install_meslo_font() {
   mkdir -p "$tmp/Meslo"
   tar -xJf "$archive" -C "$tmp/Meslo"
   font_file=$(find "$tmp/Meslo" -type f -name 'MesloLGSNerdFontMono-Regular.ttf' | head -n 1)
-  [[ -n "$font_file" ]] || die "Could not find MesloLGSNerdFontMono-Regular.ttf in Nerd Font archive."
+  [ -n "$font_file" ] || die "Could not find MesloLGSNerdFontMono-Regular.ttf in Nerd Font archive."
   cp "$font_file" "$FONT_DIR/font.ttf"
   printf '%s\n' "$tag" > "$NERD_FONT_VERSION_FILE"
   rm -rf "$tmp"
