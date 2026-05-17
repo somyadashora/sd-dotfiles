@@ -147,9 +147,35 @@ EOF_STATUS
   warn "verible is skipped on Termux: no native Termux package or official Android release asset is handled here."
 }
 
+install_tpm() {
+  local tpm_dir="$HOME/.tmux/plugins/tpm"
+
+  if [ -d "$tpm_dir/.git" ]; then
+    log "Updating TPM"
+    git -C "$tpm_dir" pull --ff-only
+  else
+    log "Installing TPM (Tmux Plugin Manager)"
+    mkdir -p "$HOME/.tmux/plugins"
+    git clone https://github.com/tmux-plugins/tpm "$tpm_dir"
+  fi
+
+  # Install all plugins listed in ~/.tmux.conf non-interactively
+  if [ -f "$HOME/.tmux.conf" ]; then
+    log "Installing tmux plugins via TPM"
+    # TPM's install_plugins script works without a running tmux server
+    TMUX_PLUGIN_MANAGER_PATH="$HOME/.tmux/plugins" \
+      "$tpm_dir/bin/install_plugins" || \
+      warn "TPM plugin install failed — open tmux and press Prefix+I to install manually."
+    ok "tmux plugins installed."
+  else
+    warn "~/.tmux.conf not found — skipping plugin install. Symlink your tmux config first, then run: $tpm_dir/bin/install_plugins"
+  fi
+}
+
 main() {
   require_termux
   install_packages
+  install_tpm
   install_meslo_font
   show_status
   ok "Termux tool installation complete."
