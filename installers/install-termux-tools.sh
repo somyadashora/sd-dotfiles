@@ -163,8 +163,7 @@ install_tpm() {
   if [ -f "$HOME/.tmux.conf" ]; then
     log "Installing tmux plugins via TPM"
     # TPM's install_plugins script works without a running tmux server
-    TMUX_PLUGIN_MANAGER_PATH="$HOME/.tmux/plugins" \
-      "$tpm_dir/bin/install_plugins" || \
+    "$tpm_dir/bin/install_plugins" || \
       warn "TPM plugin install failed — open tmux and press Prefix+I to install manually."
     ok "tmux plugins installed."
   else
