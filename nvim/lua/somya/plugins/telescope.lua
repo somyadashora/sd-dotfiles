@@ -33,7 +33,9 @@ return {
     local keymap = vim.keymap -- for conciseness
 
     keymap.set("n", "<leader>ff", "<cmd>Telescope find_files<cr>", { desc = "Fuzzy find files in cwd" })
-    keymap.set("n", "<leader>fFi", "<cmd>Telescope find_files no_ignore=true hidden=true<cr>", { desc = "Fuzzy find files in cwd, don't respect gitignore" })
+    keymap.set("n", "<leader>fFi", function()
+      require("telescope.builtin").find_files({ hidden = true, no_ignore = true })
+    end, { desc = "Fuzzy find files in cwd, including hidden and gitignored" })
 
     keymap.set("n", "<leader>fr", "<cmd>Telescope oldfiles<cr>", { desc = "Fuzzy find recent files" })
 
