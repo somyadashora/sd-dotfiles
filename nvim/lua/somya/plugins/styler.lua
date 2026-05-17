@@ -18,6 +18,9 @@ return {
         -- Build / config
         make          = { colorscheme = "tokyonight-moon" },
 
+        -- Markdown
+        markdown      = { colorscheme = "catppuccin-mocha" },
+
         -- Git
         gitcommit     = { colorscheme = "catppuccin-latte" },
         gitconfig     = { colorscheme = "catppuccin-latte" },
