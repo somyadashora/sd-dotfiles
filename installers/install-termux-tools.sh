@@ -159,16 +159,7 @@ install_tpm() {
     git clone https://github.com/tmux-plugins/tpm "$tpm_dir"
   fi
 
-  # Install all plugins listed in ~/.tmux.conf non-interactively
-  if [ -f "$HOME/.tmux.conf" ]; then
-    log "Installing tmux plugins via TPM"
-    # TPM's install_plugins script works without a running tmux server
-    "$tpm_dir/bin/install_plugins" || \
-      warn "TPM plugin install failed — open tmux and press Prefix+I to install manually."
-    ok "tmux plugins installed."
-  else
-    warn "~/.tmux.conf not found — skipping plugin install. Symlink your tmux config first, then run: $tpm_dir/bin/install_plugins"
-  fi
+  ok "TPM installed. Open tmux and press Ctrl+Space+I to install all plugins (catppuccin etc)."
 }
 
 main() {
