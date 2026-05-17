@@ -4,6 +4,12 @@ local keymap = vim.keymap -- for conciseness
 
 keymap.set("i", "jk", "<ESC>", { desc = "Exit insert mode with jk" })
 
+-- Disable arrow keys in normal, insert, and visual modes
+local arrow_keys = { "<Up>", "<Down>", "<Left>", "<Right>" }
+for _, key in ipairs(arrow_keys) do
+  keymap.set({ "n", "i", "v" }, key, "<Nop>", { desc = "Disabled arrow key" })
+end
+
 keymap.set("n", "<leader>nh", ":nohl<CR>", { desc = "Clear search highlights"})
 
 -- Linter control
