@@ -4,6 +4,16 @@ local keymap = vim.keymap -- for conciseness
 
 keymap.set("i", "jk", "<ESC>", { desc = "Exit insert mode with jk" })
 
+-- Close buffer and switch to previous, or just close if last buffer
+keymap.set("n", "<C-q>", function()
+  local bufs = vim.fn.getbufinfo({ buflisted = 1 })
+  if #bufs > 1 then
+    vim.cmd("bp | bd #")
+  else
+    vim.cmd("bd")
+  end
+end, { desc = "Close buffer, stay on active buffer" })
+
 -- Disable arrow keys in normal, insert, and visual modes
 local arrow_keys = { "<Up>", "<Down>", "<Left>", "<Right>" }
 for _, key in ipairs(arrow_keys) do
