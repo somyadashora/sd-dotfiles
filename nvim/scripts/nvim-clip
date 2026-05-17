@@ -55,8 +55,16 @@ def copy():
         import tkinter as tk
         root = tk.Tk()
         root.withdraw()
+        text = data.decode('utf-8', errors='replace')
+
+        # Own CLIPBOARD selection (Ctrl+Shift+V in terminals, Windows clipboard via ETX)
         root.clipboard_clear()
-        root.clipboard_append(data.decode('utf-8', errors='replace'))
+        root.clipboard_append(text)
+
+        # Own PRIMARY selection (middle mouse + Shift+Insert in xterm-based terminals)
+        root.selection_own()
+        root.selection_handle(lambda offset, maxchars: text[int(offset):int(offset) + int(maxchars)])
+
         root.update()
         root.after(3600000, root.quit)  # auto-exit after 1 hour
         root.mainloop()
