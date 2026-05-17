@@ -41,13 +41,23 @@ opt.signcolumn = "yes:2" -- show sign column so that text doesn't shift
 -- backspace
 opt.backspace = "indent,eol,start" -- allow backspace on indent, end of line or insert mode start position
 
--- tkinter daemon owns X CLIPBOARD so ETX bridges it to Windows (no xclip/xsel needed)
-local clip = vim.fn.stdpath('config') .. '/scripts/nvim-clip'
-vim.g.clipboard = {
-  name  = 'nvim-clip',
-  copy  = { ['+'] = { clip, 'copy' }, ['*'] = { clip, 'copy' } },
-  paste = { ['+'] = { clip, 'paste' }, ['*'] = { clip, 'paste' } },
-}
+-- Clipboard provider selection:
+--   1. xclip / xsel / wl-copy present  → skip: nvim auto-detects them natively
+--   2. none of the above, but python3.6 + nvim-clip script exist
+--                                       → use custom tkinter daemon (ETX/SLES setup)
+--   3. neither                          → skip: nvim falls back to tmux or nothing
+local function has(cmd) return vim.fn.executable(cmd) == 1 end
+local has_native = has('xclip') or has('xsel') or has('wl-copy')
+if not has_native then
+  local clip = vim.fn.stdpath('config') .. '/scripts/nvim-clip'
+  if vim.fn.filereadable(clip) == 1 and has('python3.6') then
+    vim.g.clipboard = {
+      name  = 'nvim-clip',
+      copy  = { ['+'] = { clip, 'copy' }, ['*'] = { clip, 'copy' } },
+      paste = { ['+'] = { clip, 'paste' }, ['*'] = { clip, 'paste' } },
+    }
+  end
+end
 opt.clipboard:append("unnamedplus") -- use system clipboard as default register
 
 -- split windows
