@@ -3,6 +3,12 @@ return {
   dependencies = { "nvim-lua/plenary.nvim" },
   config = function()
     require("todo-comments").setup({
+      highlight = {
+        pattern = [[.*<(KEYWORDS)\s*:?]], -- match with or without colon
+      },
+      search = {
+        pattern = [[\b(KEYWORDS):?]], -- match with or without colon
+      },
       keywords = {
         FIXME = {
           color = "error",
