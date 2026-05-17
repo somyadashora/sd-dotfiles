@@ -38,11 +38,17 @@
       vim.opt.fillchars = vim.tbl_extend("force", vim.opt.fillchars:get(), {
         eob      = " ",
         fold     = " ",
-        foldopen = "\u{f036f}",  -- nf-oct-chevron_down
+        foldopen = "▾",  -- nf-oct-chevron_down
         foldsep  = "\u{2502}",   -- │ vertical guide
-        foldclose= "\u{f036b}",  -- nf-oct-chevron_right
+        foldclose= "▸",  -- nf-oct-chevron_right
         foldinner= " ",
       })
+
+      local function set_fold_hl()
+        vim.api.nvim_set_hl(0, "FoldColumn", { fg = "#89b4fa", bg = "NONE", bold = true })
+      end
+      set_fold_hl()
+      vim.api.nvim_create_autocmd("ColorScheme", { callback = set_fold_hl })
     end,
     opts = {
       provider_selector = function() return { "lsp", "indent" } end,
