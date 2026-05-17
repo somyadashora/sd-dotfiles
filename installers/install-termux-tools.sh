@@ -91,7 +91,8 @@ install_packages() {
     gzip \
     xz-utils \
     unzip \
-    fontconfig
+    fontconfig \
+    termux-api
 }
 
 install_meslo_font() {
@@ -145,6 +146,7 @@ EOF_STATUS
 
   warn "slang-server is skipped on Termux: no official Android/Termux release asset is handled here."
   warn "verible is skipped on Termux: no native Termux package or official Android release asset is handled here."
+  warn "termux-api installed — also install the Termux:API companion app (F-Droid/Play Store) for Android clipboard to work in nvim."
 }
 
 install_tpm() {
