@@ -38,9 +38,9 @@
       vim.opt.fillchars = vim.tbl_extend("force", vim.opt.fillchars:get(), {
         eob      = " ",
         fold     = " ",
-        foldopen = "▾",  -- nf-oct-chevron_down
+        foldopen = "▼",  -- down-pointing triangle
         foldsep  = "\u{2502}",   -- │ vertical guide
-        foldclose= "▸",  -- nf-oct-chevron_right
+        foldclose= "▶",  -- right-pointing triangle
         foldinner= " ",
       })
 
