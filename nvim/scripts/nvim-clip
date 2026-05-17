@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+"""
+Clipboard daemon for nvim on remote Linux (no xclip/xsel).
+Owns X CLIPBOARD via tkinter so ETX bridges it to Windows clipboard.
+
+copy:  reads stdin, stores to tmux buffer + daemonizes owning X CLIPBOARD
+paste: writes last copied data to stdout
+"""
+import sys, os, signal, subprocess
+
+PIDFILE = f'/tmp/.nvim-clip-{os.getuid()}.pid'
+DATAFILE = f'/tmp/.nvim-clip-{os.getuid()}.dat'
+
+
+def kill_previous():
+    if os.path.exists(PIDFILE):
+        try:
+            with open(PIDFILE) as f:
+                pid = int(f.read().strip())
+            os.kill(pid, signal.SIGTERM)
+        except Exception:
+            pass
+
+
+def copy():
+    data = sys.stdin.buffer.read()
+
+    # Persist so paste() works even after the daemon exits
+    with open(DATAFILE, 'wb') as f:
+        f.write(data)
+
+    # Also keep tmux buffer in sync
+    try:
+        subprocess.run(['tmux', 'load-buffer', '-'], input=data, check=False)
+    except Exception:
+        pass
+
+    kill_previous()
+
+    # Double-fork: detach from nvim's process group entirely
+    if os.fork() > 0:
+        sys.exit(0)
+    os.setsid()
+    if os.fork() > 0:
+        sys.exit(0)
+
+    with open(PIDFILE, 'w') as f:
+        f.write(str(os.getpid()))
+
+    devnull = open(os.devnull, 'r+')
+    for fd in (0, 1, 2):
+        os.dup2(devnull.fileno(), fd)
+
+    try:
+        import tkinter as tk
+        root = tk.Tk()
+        root.withdraw()
+        root.clipboard_clear()
+        root.clipboard_append(data.decode('utf-8', errors='replace'))
+        root.update()
+        root.after(3600000, root.quit)  # auto-exit after 1 hour
+        root.mainloop()
+    except Exception:
+        pass
+    finally:
+        try:
+            os.unlink(PIDFILE)
+        except Exception:
+            pass
+
+
+def paste():
+    if os.path.exists(DATAFILE):
+        with open(DATAFILE, 'rb') as f:
+            sys.stdout.buffer.write(f.read())
+
+
+if __name__ == '__main__':
+    action = sys.argv[1] if len(sys.argv) > 1 else 'copy'
+    if action == 'copy':
+        copy()
+    else:
+        paste()

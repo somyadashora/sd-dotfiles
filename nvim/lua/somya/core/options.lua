@@ -41,7 +41,13 @@ opt.signcolumn = "yes:2" -- show sign column so that text doesn't shift
 -- backspace
 opt.backspace = "indent,eol,start" -- allow backspace on indent, end of line or insert mode start position
 
--- X11 forwarding (ssh -X) → ETX acts as X server → xclip/xsel set X CLIPBOARD → ETX bridges to Windows
+-- tkinter daemon owns X CLIPBOARD so ETX bridges it to Windows (no xclip/xsel needed)
+local clip = vim.fn.stdpath('config') .. '/scripts/nvim-clip'
+vim.g.clipboard = {
+  name  = 'nvim-clip',
+  copy  = { ['+'] = { clip, 'copy' }, ['*'] = { clip, 'copy' } },
+  paste = { ['+'] = { clip, 'paste' }, ['*'] = { clip, 'paste' } },
+}
 opt.clipboard:append("unnamedplus") -- use system clipboard as default register
 
 -- split windows
