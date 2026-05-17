@@ -35,14 +35,14 @@
       vim.o.foldlevel = 99
       vim.o.foldlevelstart = 99
       vim.o.foldenable = true
-      vim.opt.fillchars = {
-        eob = " ",
-        fold = " ",
-        foldopen = "v",
-        foldsep = " ",
-        foldclose = ">",
-        foldinner = " ",
-      }
+      vim.opt.fillchars = vim.tbl_extend("force", vim.opt.fillchars:get(), {
+        eob      = " ",
+        fold     = " ",
+        foldopen = "\u{f036f}",  -- nf-oct-chevron_down
+        foldsep  = "\u{2502}",   -- │ vertical guide
+        foldclose= "\u{f036b}",  -- nf-oct-chevron_right
+        foldinner= " ",
+      })
     end,
     opts = {
       provider_selector = function() return { "lsp", "indent" } end,
