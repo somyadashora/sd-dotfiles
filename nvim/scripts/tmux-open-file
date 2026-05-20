@@ -1,45 +1,50 @@
 #!/usr/bin/env bash
 # tmux-open-file: open file under cursor in nvim (like gf in neovim)
-# All context passed as env vars from the binding so run-shell has no pane context issues.
+
+LOG=/tmp/tmux-open-file.log
+exec >> "$LOG" 2>&1
+echo "--- $(date) ---"
+echo "TMUX_CX=$TMUX_CX TMUX_CY=$TMUX_CY TMUX_SCROLL=$TMUX_SCROLL TMUX_DIR=$TMUX_DIR"
 
 pane_dir="${TMUX_DIR:-$PWD}"
 cx="${TMUX_CX:-0}"
 cy="${TMUX_CY:-0}"
 scroll="${TMUX_SCROLL:-0}"
 
-# Adjust for copy-mode scroll offset: cursor_y is relative to the copy-mode view top,
-# which is scroll_position lines above the live view top in capture-pane coordinates.
 line_idx=$((cy - scroll))
+echo "line_idx=$line_idx"
 
 if (( line_idx >= 0 )); then
     line=$(tmux capture-pane -p | sed -n "$((line_idx + 1))p")
 else
     line=$(tmux capture-pane -p -S "$line_idx" -E "$line_idx")
 fi
+echo "line=$line"
 
-# Extract token at cursor — anything that isn't a shell/terminal delimiter
 delim=' \t"'"'"'()<>{}|;&'
 before=$(printf '%s' "$line" | cut -c1-$((cx + 1)) | grep -oE "[^${delim}]+$")
 after=$(printf '%s'  "$line" | cut -c$((cx + 2))- | grep -oE "^[^${delim}]+")
 token="${before}${after}"
+echo "token=$token"
 
-[ -z "$token" ] && exit 0
+[ -z "$token" ] && { echo "empty token, exit"; exit 0; }
 
-# Strip file:line[:col] suffix (grep / compiler output)
 linenum=""
 if [[ "$token" =~ ^([^:]+):([0-9]+) ]]; then
     token="${BASH_REMATCH[1]}"
     linenum="+${BASH_REMATCH[2]}"
 fi
 
-# Expand ~
 token="${token/#\~/$HOME}"
 
 if   [[ -e "$token" ]];           then target="$token"
 elif [[ -e "$pane_dir/$token" ]]; then target="$pane_dir/$token"
-else exit 0
+else
+    echo "not found: token=$token pane_dir=$pane_dir"
+    exit 0
 fi
 
+echo "opening: nvim $linenum $target"
 cmd=(tmux new-window nvim)
 [[ -n "$linenum" ]] && cmd+=("$linenum")
 cmd+=("$target")
