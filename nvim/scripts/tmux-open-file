@@ -6,7 +6,7 @@ exec >> "$LOG" 2>&1
 echo "--- $(date) ---"
 echo "TMUX_CX=$TMUX_CX TMUX_CY=$TMUX_CY TMUX_SCROLL=$TMUX_SCROLL TMUX_DIR=$TMUX_DIR"
 
-pane_dir="${TMUX_DIR:-$PWD}"
+pane_dir="${TMUX_DIR:-${PWD}}"
 cx="${TMUX_CX:-0}"
 cy="${TMUX_CY:-0}"
 scroll="${TMUX_SCROLL:-0}"
