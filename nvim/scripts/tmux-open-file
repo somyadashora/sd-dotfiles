@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 # tmux-open-file: open file under cursor in nvim (like gf in neovim)
 
-LOG=/tmp/tmux-open-file.log
-exec >> "$LOG" 2>&1
-echo "--- $(date) ---"
-echo "TMUX_CX=$TMUX_CX TMUX_CY=$TMUX_CY TMUX_SCROLL=$TMUX_SCROLL TMUX_DIR=$TMUX_DIR"
 
 pane_dir="${TMUX_DIR:-${PWD}}"
 cx="${TMUX_CX:-0}"
@@ -12,21 +8,18 @@ cy="${TMUX_CY:-0}"
 scroll="${TMUX_SCROLL:-0}"
 
 line_idx=$((cy - scroll))
-echo "line_idx=$line_idx"
 
 if (( line_idx >= 0 )); then
     line=$(tmux capture-pane -p | sed -n "$((line_idx + 1))p")
 else
     line=$(tmux capture-pane -p -S "$line_idx" -E "$line_idx")
 fi
-echo "line=$line"
 
 before=$(printf '%s' "$line" | cut -c1-$((cx + 1)) | grep -oE '[^[:space:]"'"'"'()<>{}|;&]+$')
 after=$(printf '%s'  "$line" | cut -c$((cx + 2))- | grep -oE '^[^[:space:]"'"'"'()<>{}|;&]+')
 token="${before}${after}"
-echo "token=$token"
 
-[ -z "$token" ] && { echo "empty token, exit"; exit 0; }
+[ -z "$token" ] && exit 0
 
 linenum=""
 if [[ "$token" =~ ^([^:]+):([0-9]+) ]]; then
@@ -38,12 +31,8 @@ token="${token/#\~/$HOME}"
 
 if   [[ -e "$token" ]];           then target="$token"
 elif [[ -e "$pane_dir/$token" ]]; then target="$pane_dir/$token"
-else
-    echo "not found: token=$token pane_dir=$pane_dir"
-    exit 0
+else exit 0
 fi
-
-echo "opening: nvim $linenum $target"
 cmd=(tmux new-window nvim)
 [[ -n "$linenum" ]] && cmd+=("$linenum")
 cmd+=("$target")
