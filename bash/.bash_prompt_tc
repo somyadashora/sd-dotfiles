@@ -31,11 +31,9 @@ __tc_R='\[\e[0m\]'
 
 # Nerd Font glyphs (require a Nerd Font in your terminal)
 #   U+E0B6  rounded left  cap
-#   U+E0B0  filled right  arrow  (inner separator)
 #   U+E0B4  rounded right cap
 #   U+E0A0  git branch icon
 __tc_CAP_L=''
-__tc_SEP=''
 __tc_CAP_R=''
 __tc_GIT=''
 
@@ -74,24 +72,24 @@ __tc_build_ps1() {
 
   # ── build line 1 ──────────────────────────────────────────────────────────
   #
-  #    user@host ▶ ~/path ▶  branch [flags]
-  #    ^^^^^^^^^   ^^^^^^^   ^^^^^^^^^^^^^^^^
-  #    mauve       peach      teal / yellow
+  #  Each segment is its own rounded pill:   content    content    content
+  #  Left cap fg = segment bg, right cap fg = segment bg, both on terminal bg.
 
-  # Rounded left cap + Seg 1: user@host  [mauve]
-  local p="${__tc_R}${__tc_fg_mauve}${__tc_CAP_L}${__tc_bg_mauve}${__tc_fg_base}  \\u@${host} "
+  # Pill helper: CAP_L + content + CAP_R, all sharing one segment fg/bg pair.
+  # Call as: pill "${fg_color}" "${bg_color}" " content "
+  local p=""
 
-  # ▶  Seg 2: directory  [peach]
-  p+="${__tc_bg_peach}${__tc_fg_mauve}${__tc_SEP}${__tc_fg_base}  ${path} "
+  # Pill 1: user@host  [mauve]
+  p+="${__tc_R}${__tc_fg_mauve}${__tc_CAP_L}${__tc_bg_mauve}${__tc_fg_base}  \\u@${host} ${__tc_R}${__tc_fg_mauve}${__tc_CAP_R}${__tc_R}"
 
-  # ▶  Seg 3: git + rounded right cap  (skipped when not in a repo)
+  # Pill 2: directory  [peach]
+  p+=" ${__tc_fg_peach}${__tc_CAP_L}${__tc_bg_peach}${__tc_fg_base}  ${path} ${__tc_R}${__tc_fg_peach}${__tc_CAP_R}${__tc_R}"
+
+  # Pill 3: git  [teal=clean · yellow=dirty]  — omitted outside a repo
   if (( has_git )); then
     local git_label="${__tc_GIT} ${branch}"
     [[ -n "$flags" ]] && git_label+="  ${flags}"
-    p+="${git_bg}${__tc_fg_peach}${__tc_SEP}${__tc_fg_base}  ${git_label} "
-    p+="${__tc_R}${git_fg}${__tc_CAP_R}${__tc_R}"
-  else
-    p+="${__tc_R}${__tc_fg_peach}${__tc_CAP_R}${__tc_R}"
+    p+=" ${git_fg}${__tc_CAP_L}${git_bg}${__tc_fg_base}  ${git_label} ${__tc_R}${git_fg}${__tc_CAP_R}${__tc_R}"
   fi
 
   # ── line 2: prompt character ───────────────────────────────────────────────
