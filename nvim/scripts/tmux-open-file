@@ -1,20 +1,27 @@
 #!/usr/bin/env bash
-# tmux-open-file: open file under pane cursor in nvim (like gf in neovim)
+# tmux-open-file: open file under cursor in nvim (like gf in neovim)
+# Two call paths:
+#   TMUX_TOKEN set  → called from copy-mode (word pre-extracted via #{copy_cursor_word})
+#   TMUX_TOKEN unset → called from normal mode (extract word from terminal cursor position)
 
-# Accept cx/cy as args when called from copy-mode (coords captured before mode exits)
-cx=${1:-$(tmux display-message -p '#{cursor_x}')}
-cy=${2:-$(tmux display-message -p '#{cursor_y}')}
-line=$(tmux capture-pane -p | sed -n "$((cy + 1))p")
+pane_dir=$(tmux display-message -p '#{pane_current_path}')
 
-# Extract token at cursor — anything that isn't a shell/terminal delimiter
-delim=' \t"'"'"'()<>{}|;&'
-before=$(printf '%s' "$line" | cut -c1-$((cx + 1)) | grep -oE "[^${delim}]+$")
-after=$(printf '%s'  "$line" | cut -c$((cx + 2))- | grep -oE "^[^${delim}]+")
-token="${before}${after}"
+if [[ -n "$TMUX_TOKEN" ]]; then
+    token="$TMUX_TOKEN"
+else
+    cx=$(tmux display-message -p '#{cursor_x}')
+    cy=$(tmux display-message -p '#{cursor_y}')
+    line=$(tmux capture-pane -p | sed -n "$((cy + 1))p")
+
+    delim=' \t"'"'"'()<>{}|;&'
+    before=$(printf '%s' "$line" | cut -c1-$((cx + 1)) | grep -oE "[^${delim}]+$")
+    after=$(printf '%s'  "$line" | cut -c$((cx + 2))- | grep -oE "^[^${delim}]+")
+    token="${before}${after}"
+fi
 
 [ -z "$token" ] && exit 0
 
-# Parse file:line[:col] (grep / compiler output)
+# Strip file:line[:col] suffix (grep / compiler output) and remember the line number
 linenum=""
 if [[ "$token" =~ ^([^:]+):([0-9]+) ]]; then
     token="${BASH_REMATCH[1]}"
@@ -24,10 +31,8 @@ fi
 # Expand ~
 token="${token/#\~/$HOME}"
 
-pane_dir=$(tmux display-message -p '#{pane_current_path}')
-
-if   [[ -e "$token" ]];            then target="$token"
-elif [[ -e "$pane_dir/$token" ]];  then target="$pane_dir/$token"
+if   [[ -e "$token" ]];           then target="$token"
+elif [[ -e "$pane_dir/$token" ]]; then target="$pane_dir/$token"
 else exit 0
 fi
 
