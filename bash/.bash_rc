@@ -19,6 +19,7 @@ PROMPT_COMMAND="history -a;$PROMPT_COMMAND"
 
 source "$DOTFILES_DIR/bash/.bash_aliases"
 source "$DOTFILES_DIR/bash/.bash_prompt"
+source "$DOTFILES_DIR/bash/.bash_prompt_tc"
 
 
 
