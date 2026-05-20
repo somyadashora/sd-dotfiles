@@ -7,7 +7,7 @@ if [[ $- == *i* ]]; then
 #  Switch back to default:  prompt-default
 #
 #  Visual structure (matches TypeCraft style):
-#    ▶ user@host ▶ ~/path ▶  branch flags
+#    ▶ user ▶ ~/path ▶  branch flags
 #    ^— sharp opening arrow (U+E0B0)
 #                  ^— sharp inner arrows (U+E0B0)
 #                                        ^— rounded right cap (U+E0B4)
@@ -18,16 +18,16 @@ if [[ $- == *i* ]]; then
 # NOTE: every comment MUST have a space before # — bash parses VAR='val'#word
 #       as setting VAR to 'val'# and then running `word` as a command.
 
-__tc_bg_mauve='\[\e[48;2;198;160;246m\]'   # mauve  #c6a0f6 — user@host
-__tc_bg_peach='\[\e[48;2;245;169;127m\]'   # peach  #f5a97f — directory
+__tc_bg_mauve='\[\e[48;2;198;160;246m\]'   # mauve  #c6a0f6 — user
+__tc_bg_brown='\[\e[48;2;180;130;90m\]'    # brown  #b4825a — directory
 __tc_bg_teal='\[\e[48;2;139;213;202m\]'    # teal   #8bd5ca — git clean
-__tc_bg_yellow='\[\e[48;2;238;212;159m\]'  # yellow #eed49f — git dirty
+__tc_bg_amber='\[\e[48;2;195;155;110m\]'   # amber  #c39b6e — git dirty
 
 __tc_fg_base='\[\e[38;2;36;39;58m\]'       # base   #24273a — text on segments
 __tc_fg_mauve='\[\e[38;2;198;160;246m\]'   # mauve  — arrow/cap fg
-__tc_fg_peach='\[\e[38;2;245;169;127m\]'   # peach  — arrow/cap fg
+__tc_fg_brown='\[\e[38;2;180;130;90m\]'    # brown  — arrow/cap fg
 __tc_fg_teal='\[\e[38;2;139;213;202m\]'    # teal   — arrow/cap fg
-__tc_fg_yellow='\[\e[38;2;238;212;159m\]'  # yellow — arrow/cap fg
+__tc_fg_amber='\[\e[38;2;195;155;110m\]'   # amber  — arrow/cap fg
 __tc_fg_green='\[\e[38;2;166;218;149m\]'   # green  — success ❯
 __tc_fg_red='\[\e[38;2;237;135;150m\]'     # red    — error ❯
 
@@ -63,39 +63,35 @@ __tc_build_ps1() {
     flags="$__sd_git_status_flags"
     has_git=1
     if [[ -n "$flags" && "$flags" != $'\xe2\x80\xa6' && "$flags" != "..." ]]; then
-      git_bg="$__tc_bg_yellow"
-      git_fg="$__tc_fg_yellow"
+      git_bg="$__tc_bg_amber"
+      git_fg="$__tc_fg_amber"
     else
       git_bg="$__tc_bg_teal"
       git_fg="$__tc_fg_teal"
     fi
   fi
 
-  # ── hostname ──────────────────────────────────────────────────────────────
-  local host="${CODESPACE_NAME%-*}"
-  [[ -z "$host" ]] && host="${HOSTNAME%%.*}"
-
   # ── build line 1 ──────────────────────────────────────────────────────────
   #
-  #   ▶ user@host ▶ ~/path ▶  branch flags
-  #   ^            ^           ^             ^
-  #   opening arr  inner arr   inner arr     rounded right cap
+  #   ▶ user ▶ ~/path ▶  branch flags
+  #   ^        ^          ^            ^
+  #   opening  inner arr  inner arr    rounded right cap
 
-  # Opening arrow (no bg → mauve) + Seg 1: user@host [mauve, bold]
-  local p="${__tc_R}${__tc_fg_mauve}${__tc_ARR}${__tc_bg_mauve}${__tc_fg_base}${__tc_B}  \\u@${host} "
+  # Opening arrow (no bg → mauve) + Seg 1: username only [mauve, bold]
+  local p="${__tc_R}${__tc_fg_mauve}${__tc_ARR}${__tc_bg_mauve}${__tc_fg_base}${__tc_B}  \\u "
 
-  # Inner arrow (mauve → peach) + Seg 2: directory [peach, bold]
-  p+="${__tc_bg_peach}${__tc_fg_mauve}${__tc_ARR}${__tc_fg_base}${__tc_B}  ${path} "
+  # Inner arrow (mauve → brown) + Seg 2: directory [brown, bold]
+  p+="${__tc_bg_brown}${__tc_fg_mauve}${__tc_ARR}${__tc_fg_base}${__tc_B}  ${path} "
 
-  # Inner arrow + Seg 3: git [teal/yellow, bold] + rounded right cap
+  # Inner arrow + Seg 3: git [teal/amber, bold] + rounded right cap
   if (( has_git )); then
     local git_label="${__tc_GIT} ${branch}"
     [[ -n "$flags" ]] && git_label+="  ${flags}"
-    p+="${git_bg}${__tc_fg_peach}${__tc_ARR}${__tc_fg_base}${__tc_B}  ${git_label} "
+    p+="${git_bg}${__tc_fg_brown}${__tc_ARR}${__tc_fg_base}${__tc_B}  ${git_label} "
     p+="${__tc_R}${git_fg}${__tc_CAP_R}${__tc_R}"
   else
     # No git — rounded cap closes after directory
-    p+="${__tc_R}${__tc_fg_peach}${__tc_CAP_R}${__tc_R}"
+    p+="${__tc_R}${__tc_fg_brown}${__tc_CAP_R}${__tc_R}"
   fi
 
   # ── line 2: prompt character (bold) ───────────────────────────────────────
