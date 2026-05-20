@@ -1,0 +1,252 @@
+-- ══════════════════════════════════════════════════════
+--  USER NOTES  ← add your own lines below
+-- ══════════════════════════════════════════════════════
+local user_notes = {
+  -- "• example: <leader>xx does something I keep forgetting",
+}
+
+-- ──────────────────────────────────────────────────────
+
+local sections = {
+  -- ── Plugin sections ────────────────────────────────
+  {
+    title = "MARKS  (marks.nvim)",
+    entries = {
+      { "mx  /  m,",    "set mark x / next available letter mark" },
+      { "'x  /  `x",    "jump to line start / exact col of mark x" },
+      { "m]  /  m[",    "next / prev mark in buffer" },
+      { "dm<Space>",    "delete all marks in buffer" },
+      { "<leader>fM",   "telescope marks picker" },
+    },
+  },
+  {
+    title = "JUMPLIST",
+    entries = {
+      { "<C-o>  /  <C-i>",  "jump back / forward through jumplist" },
+      { "<leader>fJ",        "telescope jumplist" },
+    },
+  },
+  {
+    title = "CHANGELIST",
+    entries = {
+      { "g;  /  g,",  "jump to older / newer change position" },
+      { ":changes",    "view the full changelist" },
+    },
+  },
+  {
+    title = "LOCLIST / QUICKFIX  (Trouble)",
+    entries = {
+      { "<leader>xl",  "location list" },
+      { "<leader>xq",  "quickfix list" },
+      { "<leader>xw",  "workspace diagnostics" },
+      { "<leader>xd",  "buffer diagnostics" },
+      { "<leader>xT",  "all todos (workspace)" },
+    },
+  },
+  {
+    title = "FOLDS  (nvim-ufo)",
+    entries = {
+      { "za  /  zA",  "toggle fold / toggle all nested folds" },
+      { "zc  /  zo",  "close / open fold under cursor" },
+      { "zR  /  zM",  "open all / close all folds" },
+    },
+  },
+  {
+    title = "GIT  (gitsigns + lazygit)",
+    entries = {
+      { "]h  /  [h",          "next / prev hunk" },
+      { "<leader>hs  /  hr",  "stage / reset hunk" },
+      { "<leader>hp",         "preview hunk inline" },
+      { "<leader>hb",         "blame line (full)" },
+      { "<leader>lg",         "open lazygit" },
+    },
+  },
+  {
+    title = "SURROUND  (nvim-surround)",
+    entries = {
+      { "ys{motion}{c}",  "add surround  →  ysiw(  ysiw\"" },
+      { "ds{c}",           "delete surround  →  ds(" },
+      { "cs{c}{r}",        "change surround  →  cs([" },
+      { "S{c}",            "(visual) surround selection with c" },
+    },
+  },
+  {
+    title = "ALIGN  (align.nvim — visual select first)",
+    entries = {
+      { "<leader>Ac",   "align to 1-char (with preview)" },
+      { "<leader>A2c",  "align to 2-chars" },
+      { "<leader>As",   "align to string" },
+      { "<leader>Ar",   "align to regex" },
+      { "<leader>Ap",   "(normal) align paragraph to string" },
+    },
+  },
+  {
+    title = "TODO COMMENTS",
+    entries = {
+      { "]t  /  [t",   "next / prev todo" },
+      { "<leader>fT",  "telescope todos" },
+      { "<leader>xT",  "trouble todos (workspace)" },
+      { "keywords:",   "TODO  FIXME  REVIEW  PERF  SPEC  NOTE" },
+    },
+  },
+  {
+    title = "LSP / DIAGNOSTICS",
+    entries = {
+      { "gd  /  gD",    "definition / declaration" },
+      { "gR",            "references (telescope)" },
+      { "K",             "hover docs" },
+      { "<leader>ca",    "code actions" },
+      { "<leader>rn",    "rename symbol" },
+      { "[d  /  ]d",     "prev / next diagnostic" },
+      { "<leader>d",     "line diagnostic float" },
+    },
+  },
+
+  -- ── Practical Vim tips ─────────────────────────────
+  {
+    title = "DOT COMMAND & REPETITION",
+    entries = {
+      { ".",          "repeat last change" },
+      { "@:",         "repeat last Ex command" },
+      { "&",          "repeat last :substitute on current line" },
+      { "*  then cgn  then .", "find word → change → repeat for each match" },
+    },
+  },
+  {
+    title = "TEXT OBJECTS  (work with any operator)",
+    entries = {
+      { "iw  /  aw",   "inner / around word" },
+      { "is  /  as",   "inner / around sentence" },
+      { "ip  /  ap",   "inner / around paragraph" },
+      { 'i"  /  a"',   "inner / around double quotes  (also ' `)" },
+      { "i(  /  a(",   "inner / around parens  (also [  {  <)" },
+      { "it  /  at",   "inner / around HTML/XML tag" },
+    },
+  },
+  {
+    title = "REGISTERS",
+    entries = {
+      { '"0p',           "paste last yank (not clobbered by delete)" },
+      { '"_d',           "delete to black hole — leaves registers clean" },
+      { '"+y  /  "+p',  "yank to / paste from system clipboard" },
+      { '"ay  /  "ap',  "yank / paste with named register a" },
+      { "q:  /  q/",    "cmd-line history window / search history window" },
+    },
+  },
+  {
+    title = "MACROS",
+    entries = {
+      { "qq  …  q",    "record macro into register q" },
+      { "@q  /  @@",   "replay q / replay last-used macro" },
+      { "10@q",         "run macro 10 times" },
+      { ":g/pat/@q",    "run macro on every line matching pat" },
+    },
+  },
+  {
+    title = "SEARCH & GLOBAL",
+    entries = {
+      { "*  /  #",           "search word under cursor fwd / back" },
+      { "gn",                 "select next search match as a motion" },
+      { ":%s/foo/bar/gc",     "substitute with confirm" },
+      { ":g/pat/d",           "delete all lines matching pat" },
+      { ":v/pat/d",           "delete all lines NOT matching pat" },
+      { ":g/pat/norm @q",     "run macro q on every matching line" },
+    },
+  },
+  {
+    title = "INSERT MODE",
+    entries = {
+      { "<C-w>  /  <C-u>",  "delete back one word / to line start" },
+      { "<C-r>{reg}",        "paste from register (e.g. <C-r>0 for yank)" },
+      { "<C-o>{cmd}",        "run one normal cmd then return to insert" },
+      { "<C-a>",             "insert text of last insert" },
+    },
+  },
+  {
+    title = "MOTIONS & TRICKS",
+    entries = {
+      { "%",          "jump to matching bracket / brace / tag" },
+      { "ge  /  gE",  "back to end of prev word (lower / upper)" },
+      { "H / M / L",  "cursor to screen top / middle / bottom" },
+      { "gf",          "go to file path under cursor" },
+      { "gv",          "reselect last visual selection" },
+      { "xp",          "transpose two characters" },
+      { "ddp",         "swap current line with the one below" },
+    },
+  },
+}
+
+-- ──────────────────────────────────────────────────────
+
+local KEY_COL = 26  -- key column width; increase if keys get truncated
+
+local function make_sep(title)
+  local prefix = "  ── " .. title .. " "
+  return prefix .. string.rep("─", math.max(4, 84 - #prefix))
+end
+
+local function build_lines()
+  local lines = {}
+  local hl_title = {}
+
+  if #user_notes > 0 then
+    table.insert(lines, make_sep("USER NOTES"))
+    table.insert(hl_title, #lines)
+    for _, note in ipairs(user_notes) do
+      table.insert(lines, "  " .. note)
+    end
+    table.insert(lines, "")
+  end
+
+  for _, section in ipairs(sections) do
+    table.insert(lines, make_sep(section.title))
+    table.insert(hl_title, #lines)
+    for _, entry in ipairs(section.entries) do
+      local key, desc = entry[1], entry[2]
+      local pad = string.rep(" ", math.max(2, KEY_COL - #key))
+      table.insert(lines, "  " .. key .. pad .. desc)
+    end
+    table.insert(lines, "")
+  end
+
+  table.insert(lines, "  Add notes: edit user_notes at the top of lua/somya/cheatsheet.lua")
+
+  return lines, hl_title
+end
+
+local function open()
+  local lines, hl_title = build_lines()
+
+  local buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+  vim.bo[buf].modifiable = false
+  vim.bo[buf].bufhidden = "wipe"
+
+  local width  = math.min(92, math.floor(vim.o.columns * 0.92))
+  local height = math.min(#lines + 2, math.floor(vim.o.lines * 0.90))
+  local row    = math.floor((vim.o.lines   - height) / 2)
+  local col    = math.floor((vim.o.columns - width)  / 2)
+
+  vim.api.nvim_open_win(buf, true, {
+    relative  = "editor",
+    width     = width,
+    height    = height,
+    row       = row,
+    col       = col,
+    style     = "minimal",
+    border    = "rounded",
+    title     = "  Cheatsheet  ",
+    title_pos = "center",
+  })
+
+  local ns = vim.api.nvim_create_namespace("somya_cheatsheet")
+  for _, lnum in ipairs(hl_title) do
+    vim.api.nvim_buf_add_highlight(buf, ns, "Title", lnum - 1, 0, -1)
+  end
+
+  for _, key in ipairs({ "q", "<Esc>" }) do
+    vim.keymap.set("n", key, "<cmd>close<CR>", { buffer = buf, silent = true, nowait = true })
+  end
+end
+
+vim.keymap.set("n", "<leader>fH", open, { desc = "Open cheatsheet" })
