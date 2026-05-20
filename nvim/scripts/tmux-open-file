@@ -36,5 +36,4 @@ elif [[ -e "$pane_dir/$token" ]]; then target="$pane_dir/$token"
 else exit 0
 fi
 
-# shellcheck disable=SC2086
-tmux new-window nvim $linenum "$target"
+tmux send-keys "nvim${linenum:+ $linenum} $(printf '%q' "$target")" Enter
