@@ -21,9 +21,8 @@ else
 fi
 echo "line=$line"
 
-delim=' \t"'"'"'()<>{}|;&'
-before=$(printf '%s' "$line" | cut -c1-$((cx + 1)) | grep -oE "[^${delim}]+$")
-after=$(printf '%s'  "$line" | cut -c$((cx + 2))- | grep -oE "^[^${delim}]+")
+before=$(printf '%s' "$line" | cut -c1-$((cx + 1)) | grep -oE '[^[:space:]"'"'"'()<>{}|;&]+$')
+after=$(printf '%s'  "$line" | cut -c$((cx + 2))- | grep -oE '^[^[:space:]"'"'"'()<>{}|;&]+')
 token="${before}${after}"
 echo "token=$token"
 
