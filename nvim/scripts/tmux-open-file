@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# tmux-open-file: open file under pane cursor in nvim (like gf in neovim)
+
+cx=$(tmux display-message -p '#{cursor_x}')
+cy=$(tmux display-message -p '#{cursor_y}')
+line=$(tmux capture-pane -p | sed -n "$((cy + 1))p")
+
+# Extract token at cursor — anything that isn't a shell/terminal delimiter
+delim=' \t"'"'"'()<>{}|;&'
+before=$(printf '%s' "$line" | cut -c1-$((cx + 1)) | grep -oE "[^${delim}]+$")
+after=$(printf '%s'  "$line" | cut -c$((cx + 2))- | grep -oE "^[^${delim}]+")
+token="${before}${after}"
+
+[ -z "$token" ] && exit 0
+
+# Parse file:line[:col] (grep / compiler output)
+linenum=""
+if [[ "$token" =~ ^([^:]+):([0-9]+) ]]; then
+    token="${BASH_REMATCH[1]}"
+    linenum="+${BASH_REMATCH[2]}"
+fi
+
+# Expand ~
+token="${token/#\~/$HOME}"
+
+pane_dir=$(tmux display-message -p '#{pane_current_path}')
+
+if   [[ -e "$token" ]];            then target="$token"
+elif [[ -e "$pane_dir/$token" ]];  then target="$pane_dir/$token"
+else exit 0
+fi
+
+# shellcheck disable=SC2086
+tmux new-window nvim $linenum "$target"
