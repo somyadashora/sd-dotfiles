@@ -34,13 +34,13 @@ __tc_fg_red='\[\e[38;2;237;135;150m\]'     # red    — error ❯
 __tc_R='\[\e[0m\]'        # reset all
 __tc_B='\[\e[1m\]'        # bold
 
-# Nerd Font glyphs
+# Nerd Font glyphs — stored via $'\uNNNN' so they survive file encoding
 #   U+E0B0  filled right arrow — opening + inner segment separator
 #   U+E0B4  rounded right cap  — closing (right end of last segment)
 #   U+E0A0  git branch icon
-__tc_ARR=''
-__tc_CAP_R=''
-__tc_GIT=''
+__tc_ARR=$''
+__tc_CAP_R=$''
+__tc_GIT=$''
 
 __tc_build_ps1() {
   local last_status=${1:-0}
