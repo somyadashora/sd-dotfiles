@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # tmux-open-file: open file under cursor in nvim (like gf in neovim)
-# Two call paths:
-#   TMUX_TOKEN set  → called from copy-mode (word pre-extracted via #{copy_cursor_word})
-#   TMUX_TOKEN unset → called from normal mode (extract word from terminal cursor position)
+
+LOG=/tmp/tmux-open-file.log
+exec >> "$LOG" 2>&1
+echo "--- $(date) ---"
 
 pane_dir=$(tmux display-message -p '#{pane_current_path}')
+echo "pane_dir=$pane_dir  TMUX_TOKEN=$TMUX_TOKEN"
 
 if [[ -n "$TMUX_TOKEN" ]]; then
     token="$TMUX_TOKEN"
@@ -12,6 +14,7 @@ else
     cx=$(tmux display-message -p '#{cursor_x}')
     cy=$(tmux display-message -p '#{cursor_y}')
     line=$(tmux capture-pane -p | sed -n "$((cy + 1))p")
+    echo "cx=$cx cy=$cy line=$line"
 
     delim=' \t"'"'"'()<>{}|;&'
     before=$(printf '%s' "$line" | cut -c1-$((cx + 1)) | grep -oE "[^${delim}]+$")
@@ -19,23 +22,25 @@ else
     token="${before}${after}"
 fi
 
-[ -z "$token" ] && exit 0
+echo "token=$token"
+[ -z "$token" ] && { echo "empty token, exit"; exit 0; }
 
-# Strip file:line[:col] suffix (grep / compiler output) and remember the line number
 linenum=""
 if [[ "$token" =~ ^([^:]+):([0-9]+) ]]; then
     token="${BASH_REMATCH[1]}"
     linenum="+${BASH_REMATCH[2]}"
 fi
 
-# Expand ~
 token="${token/#\~/$HOME}"
 
 if   [[ -e "$token" ]];           then target="$token"
 elif [[ -e "$pane_dir/$token" ]]; then target="$pane_dir/$token"
-else exit 0
+else
+    echo "not found: token=$token pane_dir=$pane_dir"
+    exit 0
 fi
 
+echo "opening: nvim $linenum $target"
 cmd=(tmux new-window nvim)
 [[ -n "$linenum" ]] && cmd+=("$linenum")
 cmd+=("$target")
