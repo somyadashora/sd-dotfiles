@@ -5,42 +5,47 @@ if [[ $- == *i* ]]; then
 #
 #  Switch to this prompt:   prompt-tc
 #  Switch back to default:  prompt-default
+#
+#  Visual structure (matches TypeCraft style):
+#    ▶ user@host ▶ ~/path ▶  branch flags
+#    ^— sharp opening arrow (U+E0B0)
+#                  ^— sharp inner arrows (U+E0B0)
+#                                        ^— rounded right cap (U+E0B4)
 # ──────────────────────────────────────────────────────────────────────────────
 
-# Catppuccin Macchiato — slightly muted, dark-pastel palette
-#   bg_* are used as segment backgrounds
-#   fg_* are used as text or separator-arrow foregrounds
+# Catppuccin Macchiato — muted dark-pastel palette
 #
 # NOTE: every comment MUST have a space before # — bash parses VAR='val'#word
 #       as setting VAR to 'val'# and then running `word` as a command.
 
-__tc_bg_mauve='\[\e[48;2;198;160;246m\]'   # mauve   #c6a0f6  — user@host
-__tc_bg_peach='\[\e[48;2;245;169;127m\]'   # peach   #f5a97f  — directory
-__tc_bg_teal='\[\e[48;2;139;213;202m\]'    # teal    #8bd5ca  — git clean
-__tc_bg_yellow='\[\e[48;2;238;212;159m\]'  # yellow  #eed49f  — git dirty
+__tc_bg_mauve='\[\e[48;2;198;160;246m\]'   # mauve  #c6a0f6 — user@host
+__tc_bg_peach='\[\e[48;2;245;169;127m\]'   # peach  #f5a97f — directory
+__tc_bg_teal='\[\e[48;2;139;213;202m\]'    # teal   #8bd5ca — git clean
+__tc_bg_yellow='\[\e[48;2;238;212;159m\]'  # yellow #eed49f — git dirty
 
-__tc_fg_base='\[\e[38;2;36;39;58m\]'       # base    #24273a  — text on segments
-__tc_fg_mauve='\[\e[38;2;198;160;246m\]'   # mauve   — separator arrow fg
-__tc_fg_peach='\[\e[38;2;245;169;127m\]'   # peach   — separator arrow fg
-__tc_fg_teal='\[\e[38;2;139;213;202m\]'    # teal    — separator arrow fg
-__tc_fg_yellow='\[\e[38;2;238;212;159m\]'  # yellow  — separator arrow fg
-__tc_fg_green='\[\e[38;2;166;218;149m\]'   # green   — success ❯
-__tc_fg_red='\[\e[38;2;237;135;150m\]'     # red     — error ❯
+__tc_fg_base='\[\e[38;2;36;39;58m\]'       # base   #24273a — text on segments
+__tc_fg_mauve='\[\e[38;2;198;160;246m\]'   # mauve  — arrow/cap fg
+__tc_fg_peach='\[\e[38;2;245;169;127m\]'   # peach  — arrow/cap fg
+__tc_fg_teal='\[\e[38;2;139;213;202m\]'    # teal   — arrow/cap fg
+__tc_fg_yellow='\[\e[38;2;238;212;159m\]'  # yellow — arrow/cap fg
+__tc_fg_green='\[\e[38;2;166;218;149m\]'   # green  — success ❯
+__tc_fg_red='\[\e[38;2;237;135;150m\]'     # red    — error ❯
 
-__tc_R='\[\e[0m\]'
+__tc_R='\[\e[0m\]'        # reset all
+__tc_B='\[\e[1m\]'        # bold
 
-# Nerd Font glyphs (require a Nerd Font in your terminal)
-#   U+E0B6  rounded left  cap
-#   U+E0B4  rounded right cap
+# Nerd Font glyphs
+#   U+E0B0  filled right arrow — opening + inner segment separator
+#   U+E0B4  rounded right cap  — closing (right end of last segment)
 #   U+E0A0  git branch icon
-__tc_CAP_L=''
+__tc_ARR=''
 __tc_CAP_R=''
 __tc_GIT=''
 
 __tc_build_ps1() {
   local last_status=${1:-0}
 
-  # ── path (reuse compact-path helper from .bash_prompt when available) ──────
+  # ── path ──────────────────────────────────────────────────────────────────
   local path
   if declare -f __sd_prompt_path_segment >/dev/null 2>&1; then
     __sd_prompt_path_segment
@@ -66,38 +71,39 @@ __tc_build_ps1() {
     fi
   fi
 
-  # ── hostname ─────────────────────────────────────────────────────────────
+  # ── hostname ──────────────────────────────────────────────────────────────
   local host="${CODESPACE_NAME%-*}"
   [[ -z "$host" ]] && host="${HOSTNAME%%.*}"
 
   # ── build line 1 ──────────────────────────────────────────────────────────
   #
-  #  Each segment is its own rounded pill:   content    content    content
-  #  Left cap fg = segment bg, right cap fg = segment bg, both on terminal bg.
+  #   ▶ user@host ▶ ~/path ▶  branch flags
+  #   ^            ^           ^             ^
+  #   opening arr  inner arr   inner arr     rounded right cap
 
-  # Pill helper: CAP_L + content + CAP_R, all sharing one segment fg/bg pair.
-  # Call as: pill "${fg_color}" "${bg_color}" " content "
-  local p=""
+  # Opening arrow (no bg → mauve) + Seg 1: user@host [mauve, bold]
+  local p="${__tc_R}${__tc_fg_mauve}${__tc_ARR}${__tc_bg_mauve}${__tc_fg_base}${__tc_B}  \\u@${host} "
 
-  # Pill 1: user@host  [mauve]
-  p+="${__tc_R}${__tc_fg_mauve}${__tc_CAP_L}${__tc_bg_mauve}${__tc_fg_base}  \\u@${host} ${__tc_R}${__tc_fg_mauve}${__tc_CAP_R}${__tc_R}"
+  # Inner arrow (mauve → peach) + Seg 2: directory [peach, bold]
+  p+="${__tc_bg_peach}${__tc_fg_mauve}${__tc_ARR}${__tc_fg_base}${__tc_B}  ${path} "
 
-  # Pill 2: directory  [peach]
-  p+=" ${__tc_fg_peach}${__tc_CAP_L}${__tc_bg_peach}${__tc_fg_base}  ${path} ${__tc_R}${__tc_fg_peach}${__tc_CAP_R}${__tc_R}"
-
-  # Pill 3: git  [teal=clean · yellow=dirty]  — omitted outside a repo
+  # Inner arrow + Seg 3: git [teal/yellow, bold] + rounded right cap
   if (( has_git )); then
     local git_label="${__tc_GIT} ${branch}"
     [[ -n "$flags" ]] && git_label+="  ${flags}"
-    p+=" ${git_fg}${__tc_CAP_L}${git_bg}${__tc_fg_base}  ${git_label} ${__tc_R}${git_fg}${__tc_CAP_R}${__tc_R}"
+    p+="${git_bg}${__tc_fg_peach}${__tc_ARR}${__tc_fg_base}${__tc_B}  ${git_label} "
+    p+="${__tc_R}${git_fg}${__tc_CAP_R}${__tc_R}"
+  else
+    # No git — rounded cap closes after directory
+    p+="${__tc_R}${__tc_fg_peach}${__tc_CAP_R}${__tc_R}"
   fi
 
-  # ── line 2: prompt character ───────────────────────────────────────────────
+  # ── line 2: prompt character (bold) ───────────────────────────────────────
   local char
   if (( last_status == 0 )); then
-    char="${__tc_fg_green}❯${__tc_R} "
+    char="${__tc_fg_green}${__tc_B}❯${__tc_R} "
   else
-    char="${__tc_fg_red}❯${__tc_R} "
+    char="${__tc_fg_red}${__tc_B}❯${__tc_R} "
   fi
 
   PS1="${p}\n${char}"
