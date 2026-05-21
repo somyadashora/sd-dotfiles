@@ -1,0 +1,2 @@
+#!/bin/sh
+TZ="$1" date +'%a %d-%b %H:%M'
