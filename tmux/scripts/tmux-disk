@@ -1,0 +1,2 @@
+#!/bin/sh
+df -h "${1:-/}" | awk 'NR==2{print $5}'
