@@ -15,8 +15,8 @@ else
     line=$(tmux capture-pane -p -S "$line_idx" -E "$line_idx")
 fi
 
-before=$(printf '%s' "$line" | cut -c1-$((cx + 1)) | grep -oE '[^[:space:]"'"'"'()<>{}|;&]+$')
-after=$(printf '%s'  "$line" | cut -c$((cx + 2))- | grep -oE '^[^[:space:]"'"'"'()<>{}|;&]+')
+before=$(printf '%s' "$line" | cut -c1-$((cx + 1)) | grep -oE '[^[:space:]"'"'"'`()<>{}|;&]+$')
+after=$(printf '%s'  "$line" | cut -c$((cx + 2))- | grep -oE '^[^[:space:]"'"'"'`()<>{}|;&]+')
 token="${before}${after}"
 
 [ -z "$token" ] && exit 0
