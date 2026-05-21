@@ -8,8 +8,10 @@ paste: writes last copied data to stdout
 """
 import sys, os, signal, subprocess
 
-PIDFILE = f'/tmp/.nvim-clip-{os.getuid()}.pid'
-DATAFILE = f'/tmp/.nvim-clip-{os.getuid()}.dat'
+_runtime_dir = os.environ.get('TMPDIR') or os.path.join(os.path.expanduser('~'), '.local', 'tmp')
+os.makedirs(_runtime_dir, exist_ok=True)
+PIDFILE = os.path.join(_runtime_dir, f'.nvim-clip-{os.getuid()}.pid')
+DATAFILE = os.path.join(_runtime_dir, f'.nvim-clip-{os.getuid()}.dat')
 
 
 def kill_previous():

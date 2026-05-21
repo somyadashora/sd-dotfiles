@@ -3,7 +3,9 @@
 # Usage: tmux-weather <city>
 CITY="${1:-Bangalore}"
 SLUG=$(echo "$CITY" | tr ' /+' '___')
-CACHE="/tmp/tmux-weather-${SLUG}"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/tmux"
+mkdir -p "$CACHE_DIR"
+CACHE="$CACHE_DIR/weather-${SLUG}"
 
 # Refresh cache if missing or older than 30 minutes
 if [ -z "$(find "$CACHE" -mmin -30 2>/dev/null)" ]; then
