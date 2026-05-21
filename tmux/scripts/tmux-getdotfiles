@@ -4,6 +4,7 @@ shopt -s expand_aliases
 [[ -f ~/.bash_aliases ]] && source ~/.bash_aliases
 echo "Getting Dot Files . . ."
 getdotfiles
-sleep 1
 echo "Done"
+sleep 1
+
 

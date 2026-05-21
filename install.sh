@@ -40,6 +40,8 @@ create_symlink "$DOTFILES_DIR/nvim" "$HOME/.config/nvim"
 
 # Tmux configuration
 create_symlink "$DOTFILES_DIR/tmux/.tmux.conf" "$HOME/.tmux.conf"
+mkdir -p "$HOME/.config/tmux"
+create_symlink "$DOTFILES_DIR/tmux/scripts" "$HOME/.config/tmux/scripts"
 
 echo "Dotfiles installation complete!"
 echo "You may need to restart your shell or reload your configuration."
