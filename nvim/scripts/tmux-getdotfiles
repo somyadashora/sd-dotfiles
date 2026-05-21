@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+shopt -s expand_aliases
+[[ -f ~/.bashrc ]] && source ~/.bashrc
+[[ -f ~/.bash_aliases ]] && source ~/.bash_aliases
+getdotfiles
+echo
+read -rp "[done] press enter to close "
