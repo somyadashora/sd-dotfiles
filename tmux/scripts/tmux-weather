@@ -1,0 +1,14 @@
+#!/bin/sh
+# Fetch weather from wttr.in with 30-minute cache.
+# Usage: tmux-weather <city>
+CITY="${1:-Bangalore}"
+SLUG=$(echo "$CITY" | tr ' /+' '___')
+CACHE="/tmp/tmux-weather-${SLUG}"
+
+# Refresh cache if missing or older than 30 minutes
+if [ -z "$(find "$CACHE" -mmin -30 2>/dev/null)" ]; then
+    RESULT=$(curl -sf --max-time 5 "wttr.in/${CITY}?format=2" 2>/dev/null)
+    [ -n "$RESULT" ] && printf '%s' "$RESULT" > "$CACHE"
+fi
+
+cat "$CACHE" 2>/dev/null || echo "?"
