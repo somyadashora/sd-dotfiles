@@ -7,8 +7,8 @@ CACHE="/tmp/tmux-weather-${SLUG}"
 
 # Refresh cache if missing or older than 30 minutes
 if [ -z "$(find "$CACHE" -mmin -30 2>/dev/null)" ]; then
-    RESULT=$(curl -sf --max-time 5 "wttr.in/${CITY}?format=2" 2>/dev/null)
+    RESULT=$(curl -sf --max-time 5 "wttr.in/${CITY}?format=2" 2>/dev/null | tr -d '\r\n')
     [ -n "$RESULT" ] && printf '%s' "$RESULT" > "$CACHE"
 fi
 
-cat "$CACHE" 2>/dev/null || echo "?"
+cat "$CACHE" 2>/dev/null | tr -d '\r\n' || echo "?"
