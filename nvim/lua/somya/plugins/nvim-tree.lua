@@ -48,11 +48,128 @@ return {
     -- set keymaps
     local keymap = vim.keymap -- for conciseness
 
-    keymap.set("n", "<leader>ee", "<cmd>NvimTreeToggle<CR>", { desc = "Toggle file explorer" }) -- toggle file explorer
-    keymap.set("n", "<leader>ef", "<cmd>NvimTreeFindFileToggle<CR>", { desc = "Toggle file explorer on current file" }) -- toggle file explorer on current file
-    keymap.set("n", "<leader>ec", "<cmd>NvimTreeCollapse<CR>", { desc = "Collapse file explorer" }) -- collapse file explorer
-    keymap.set("n", "<leader>er", "<cmd>NvimTreeRefresh<CR>", { desc = "Refresh file explorer" }) -- refresh file explorer
+    keymap.set("n", "<leader>ee", "<cmd>NvimTreeToggle<CR>", { desc = "Toggle file explorer" })
+    keymap.set("n", "<leader>ef", "<cmd>NvimTreeFindFileToggle<CR>", { desc = "Toggle file explorer on current file" })
+    keymap.set("n", "<leader>ec", "<cmd>NvimTreeCollapse<CR>", { desc = "Collapse file explorer" })
+    keymap.set("n", "<leader>er", "<cmd>NvimTreeRefresh<CR>", { desc = "Refresh file explorer" })
     keymap.set("n", "<leader>e=", "<cmd>NvimTreeResize +5<CR>", { desc = "Widen explorer" })
     keymap.set("n", "<leader>e-", "<cmd>NvimTreeResize -5<CR>", { desc = "Narrow explorer" })
+
+    local function open_help()
+      local K = 20  -- key column width
+      local sections = {
+        {
+          title = "OPEN / NAVIGATE",
+          entries = {
+            { "<CR>  /  o",     "open file or toggle dir" },
+            { "<C-v>",          "open in vertical split" },
+            { "<C-x>",          "open in horizontal split" },
+            { "<C-t>",          "open in new tab" },
+            { "<Tab>",          "preview (stay in tree)" },
+            { "P",              "jump to parent dir" },
+            { "<BS>",           "close parent dir" },
+          },
+        },
+        {
+          title = "FILE OPERATIONS",
+          entries = {
+            { "a",              "create file / dir  (end with / for dir)" },
+            { "d",              "delete" },
+            { "r",              "rename" },
+            { "x",              "cut" },
+            { "c",              "copy" },
+            { "p",              "paste" },
+            { "y  /  Y",       "copy filename / relative path" },
+            { "gy",             "copy absolute path" },
+          },
+        },
+        {
+          title = "VIEW / FILTER",
+          entries = {
+            { "I",              "toggle gitignored files" },
+            { "H",              "toggle dotfiles" },
+            { "f  /  F",       "live filter / clear filter" },
+            { "E  /  W",       "expand all / collapse all" },
+            { "R",              "refresh tree" },
+            { "-",              "go up to parent directory" },
+          },
+        },
+        {
+          title = "GIT",
+          entries = {
+            { "]c  /  [c",     "next / prev git change" },
+          },
+        },
+        {
+          title = "MISC",
+          entries = {
+            { "<C-k>",          "show file info" },
+            { "q",              "close tree window" },
+            { "g?",             "full built-in help" },
+          },
+        },
+        {
+          title = "LEADER SHORTCUTS  (from anywhere)",
+          entries = {
+            { "<leader>ee",     "toggle tree" },
+            { "<leader>ef",     "reveal current file in tree" },
+            { "<leader>ec",     "collapse tree" },
+            { "<leader>er",     "refresh tree" },
+            { "<leader>e=  /  e-", "widen / narrow tree" },
+            { "<leader>eh",     "this help" },
+          },
+        },
+      }
+
+      local function make_sep(title)
+        local prefix = "  ── " .. title .. " "
+        return prefix .. string.rep("─", math.max(4, 72 - #prefix))
+      end
+
+      local lines, hl_title = {}, {}
+      for _, section in ipairs(sections) do
+        table.insert(lines, make_sep(section.title))
+        table.insert(hl_title, #lines)
+        for _, entry in ipairs(section.entries) do
+          local key, desc = entry[1], entry[2]
+          local pad = string.rep(" ", math.max(2, K - #key))
+          table.insert(lines, "  " .. key .. pad .. desc)
+        end
+        table.insert(lines, "")
+      end
+
+      local buf = vim.api.nvim_create_buf(false, true)
+      vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+      vim.bo[buf].modifiable = false
+      vim.bo[buf].bufhidden = "wipe"
+
+      local width  = math.min(76, math.floor(vim.o.columns * 0.88))
+      local height = math.min(#lines + 2, math.floor(vim.o.lines * 0.88))
+      local row    = math.floor((vim.o.lines   - height) / 2)
+      local col    = math.floor((vim.o.columns - width)  / 2)
+
+      vim.api.nvim_open_win(buf, true, {
+        relative  = "editor",
+        width     = width,
+        height    = height,
+        row       = row,
+        col       = col,
+        style     = "minimal",
+        border    = "rounded",
+        title     = "  nvim-tree shortcuts  ",
+        title_pos = "center",
+      })
+
+      local ns = vim.api.nvim_create_namespace("somya_nvimtree_help")
+      for _, lnum in ipairs(hl_title) do
+        vim.api.nvim_buf_add_highlight(buf, ns, "Title", lnum - 1, 0, -1)
+      end
+
+      for _, key in ipairs({ "q", "<Esc>", "<leader>eh" }) do
+        vim.keymap.set("n", key, "<cmd>close<CR>", { buffer = buf, silent = true, nowait = true })
+      end
+    end
+
+    keymap.set("n", "<leader>eh", open_help, { desc = "nvim-tree shortcuts help" })
   end
 }
