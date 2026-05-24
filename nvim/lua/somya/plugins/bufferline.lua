@@ -11,15 +11,18 @@ return {
   config = function()
     require("bufferline").setup{
       options = {
-        buffer_close_icon = "x",
-        close_icon = "x",
         always_show_bufferline = true,
+        show_buffer_icons = true,
+        color_icons = true,
+        buffer_close_icon = "󰅖",
+        close_icon = "󰅖",
+        modified_icon = "●",
         offsets = {
           {
             filetype = "NvimTree",
             text = "Fle Explorer",
             text_align = "left",
-            seperator = true
+            separator = true,
           }
         }
       }
