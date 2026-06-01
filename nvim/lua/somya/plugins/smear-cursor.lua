@@ -1,11 +1,12 @@
 -- smear-cursor.nvim – animated cursor movement
--- Four profiles cycled with <leader>cs, or jumped to with <leader>c1/c2/c3/c4
+-- Five profiles cycled with <leader>cs, or jumped to with <leader>c1–c5
 --
 -- Profiles:
 --   1  default   – stock smear (stiffness 0.6, trailing 0.45)
 --   2  fast      – snappier smear (stiffness 0.8, trailing 0.65, damping 0.95)
 --   3  smooth    – single-block glide, no comet trail (max_length 1)
 --   4  comet     – long tail + fast head (stiffness 0.9, max_length 40)
+--   5  ember     – particles + orange cursor, elastic feel
 
 return {
   "sphamba/smear-cursor.nvim",
@@ -18,7 +19,6 @@ return {
       {
         id    = "default",
         label = "Default smear",
-        -- Standard out-of-the-box feel
         stiffness                    = 0.6,
         trailing_stiffness           = 0.45,
         damping                      = 0.85,
@@ -31,7 +31,6 @@ return {
       {
         id    = "fast",
         label = "Fast smear",
-        -- Higher stiffness/damping → snappier, shorter comet tail
         stiffness                    = 0.8,
         trailing_stiffness           = 0.65,
         damping                      = 0.95,
@@ -67,6 +66,20 @@ return {
         smear_between_buffers        = true,
         smear_between_neighbor_lines = true,
       },
+      {
+        id                           = "ember",
+        label                        = "Ember (particles, orange)",
+        stiffness                    = 0.8,
+        trailing_stiffness           = 0.6,
+        stiffness_insert_mode        = 0.7,
+        damping                      = 0.85,
+        time_interval                = 7,
+        cursor_color                 = "#ff4000",
+        particles_enabled            = true,
+        particle_count               = 1,
+        smear_between_buffers        = true,
+        smear_between_neighbor_lines = true,
+      },
     }
 
     -- ─── Apply a profile by index ─────────────────────────────────────────
@@ -74,16 +87,13 @@ return {
 
     local function apply(idx)
       local p = profiles[idx]
-      smear.setup({
-        stiffness                    = p.stiffness,
-        trailing_stiffness           = p.trailing_stiffness,
-        damping                      = p.damping,
-        trailing_exponent            = p.trailing_exponent,
-        max_length                   = p.max_length,
-        distance_stop_animating      = p.distance_stop_animating,
-        smear_between_buffers        = p.smear_between_buffers,
-        smear_between_neighbor_lines = p.smear_between_neighbor_lines,
-      })
+      local cfg = {}
+      for k, v in pairs(p) do
+        if k ~= "id" and k ~= "label" then
+          cfg[k] = v
+        end
+      end
+      smear.setup(cfg)
       current_idx = idx
       vim.notify("Cursor › " .. p.label, vim.log.levels.INFO, { title = "smear-cursor" })
     end
@@ -106,5 +116,7 @@ return {
       { desc = "Cursor: smooth (no smear)" })
     vim.keymap.set("n", "<leader>c4", function() apply(4) end,
       { desc = "Cursor: comet (long tail, fast)" })
+    vim.keymap.set("n", "<leader>c5", function() apply(5) end,
+      { desc = "Cursor: ember (particles, orange)" })
   end,
 }
