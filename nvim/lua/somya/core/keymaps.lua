@@ -26,6 +26,12 @@ keymap.set("n", "<leader>nh", ":nohl<CR>", { desc = "Clear search highlights"})
 keymap.set("n", "<leader>ld", ":lua vim.diagnostic.enable(false)<CR>", { desc = "disable lint messages" })
 keymap.set("n", "<leader>le", ":lua vim.diagnostic.enable(true)<CR>", { desc = "enable lint messages" })
 
+-- Delete mark (dm{char}, mirrors m{char} to set)
+keymap.set("n", "dm", function()
+  local char = vim.fn.getcharstr()
+  vim.cmd("delm " .. char)
+end, { desc = "Delete mark" })
+
 -- Spellcheck control
 keymap.set("n", "<leader>sp", ":setlocal spell!<CR>", { desc = "Toggle spellcheck" })
 keymap.set("n", "<leader>sn", "]s", { desc = "Next misspelled word" })
