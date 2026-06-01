@@ -103,11 +103,10 @@ return {
       end
       smear.setup(cfg)
       current_idx = idx
-      vim.notify("Cursor › " .. p.label, vim.log.levels.INFO, { title = "smear-cursor" })
     end
 
-    -- Start with default profile
-    apply(1)
+    -- Start with comet profile
+    apply(4)
 
     -- ─── Keybindings ──────────────────────────────────────────────────────
     -- Cycle through all profiles
