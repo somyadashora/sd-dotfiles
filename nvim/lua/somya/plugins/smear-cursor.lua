@@ -1,10 +1,11 @@
 -- smear-cursor.nvim – animated cursor movement
--- Three profiles cycled with <leader>cs, or jumped to with <leader>c1/c2/c3
+-- Four profiles cycled with <leader>cs, or jumped to with <leader>c1/c2/c3/c4
 --
 -- Profiles:
---   1  default  – stock smear (stiffness 0.6, trailing 0.45)
---   2  fast     – snappier smear (stiffness 0.8, trailing 0.65, damping 0.95)
---   3  smooth   – single-block glide, no comet trail (max_length 1)
+--   1  default   – stock smear (stiffness 0.6, trailing 0.45)
+--   2  fast      – snappier smear (stiffness 0.8, trailing 0.65, damping 0.95)
+--   3  smooth    – single-block glide, no comet trail (max_length 1)
+--   4  comet     – long tail + fast head (stiffness 0.9, max_length 40)
 
 return {
   "sphamba/smear-cursor.nvim",
@@ -53,6 +54,19 @@ return {
         smear_between_buffers        = true,
         smear_between_neighbor_lines = false,
       },
+      {
+        id    = "comet",
+        label = "Comet (long tail, fast)",
+        -- High head stiffness for snap; low trailing stiffness lets the tail stretch far
+        stiffness                    = 0.9,
+        trailing_stiffness           = 0.2,
+        damping                      = 0.85,
+        trailing_exponent            = 5,
+        max_length                   = 40,
+        distance_stop_animating      = 0.1,
+        smear_between_buffers        = true,
+        smear_between_neighbor_lines = true,
+      },
     }
 
     -- ─── Apply a profile by index ─────────────────────────────────────────
@@ -90,5 +104,7 @@ return {
       { desc = "Cursor: fast smear" })
     vim.keymap.set("n", "<leader>c3", function() apply(3) end,
       { desc = "Cursor: smooth (no smear)" })
+    vim.keymap.set("n", "<leader>c4", function() apply(4) end,
+      { desc = "Cursor: comet (long tail, fast)" })
   end,
 }
