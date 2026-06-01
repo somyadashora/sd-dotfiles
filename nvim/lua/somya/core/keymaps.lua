@@ -26,6 +26,13 @@ keymap.set("n", "<leader>nh", ":nohl<CR>", { desc = "Clear search highlights"})
 keymap.set("n", "<leader>ld", ":lua vim.diagnostic.enable(false)<CR>", { desc = "disable lint messages" })
 keymap.set("n", "<leader>le", ":lua vim.diagnostic.enable(true)<CR>", { desc = "enable lint messages" })
 
+-- Spellcheck control
+keymap.set("n", "<leader>sp", ":setlocal spell!<CR>", { desc = "Toggle spellcheck" })
+keymap.set("n", "<leader>sn", "]s", { desc = "Next misspelled word" })
+keymap.set("n", "<leader>sb", "[s", { desc = "Prev misspelled word" })
+keymap.set("n", "<leader>sa", "zg", { desc = "Add word to spellfile" })
+keymap.set("n", "<leader>s?", "z=", { desc = "Suggest spelling corrections" })
+
 -- increment/decrement numbers
 keymap.set("n", "<leader>+", "<C-a>", { desc = "Increment number" }) -- increment
 keymap.set("n", "<leader>-", "<C-x>", { desc = "Decrement number" }) -- decrement
