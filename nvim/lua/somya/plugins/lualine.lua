@@ -56,6 +56,11 @@ return {
       s = "SELECT", S = "S-LINE", ["\19"] = "S-BLOCK", t = "TERMINAL",
     }
 
+    local function screenkey_status()
+      if vim.g.screenkey_active then return "󰌌 KEYS" end
+      return ""
+    end
+
     -- configure lualine with modified theme
     lualine.setup({
       options = {
@@ -73,6 +78,21 @@ return {
                 return { bg = "#f38ba8", fg = "#1e1e2e", gui = "bold" }
               end
             end,
+          },
+        },
+        lualine_x = {
+          {
+            screenkey_status,
+            color = { fg = colors.yellow, gui = "bold" },
+          },
+          {
+            "encoding",
+          },
+          {
+            "fileformat",
+          },
+          {
+            "filetype",
           },
         },
       },

@@ -29,6 +29,12 @@ opt.smartcase = true -- if you include mixed case in your search, assumes you wa
 opt.cursorline = true
 opt.cursorlineopt ='both' -- highlight both the number and the line of the cursor
 
+-- cursor blink: wait 500ms after moving, then 250ms off / 600ms on
+opt.guicursor = "n-v-c:block-blinkwait500-blinkoff250-blinkon600-Cursor/lCursor,"
+  .. "i-ci-ve:ver25-blinkwait500-blinkoff250-blinkon600-Cursor/lCursor,"
+  .. "r-cr:hor20-blinkwait500-blinkoff250-blinkon600-Cursor/lCursor,"
+  .. "o:hor50"
+
 -- appearance
 
 
