@@ -120,16 +120,61 @@ return {
     -- Start with comet profile
     apply(4)
 
-    -- Patch smear-cursor's unhide so the resting cursor also shows our colour.
-    -- animation.lua calls color.unhide_real_cursor() via the shared module table,
-    -- so replacing it here affects every call site.
-    local smear_color = require("smear_cursor.color")
-    smear_color.unhide_real_cursor = function()
+    -- Patch smear-cursor so resting cursor shows our colour and blink works.
+    -- animation.lua calls these via the shared module table, so replacing them
+    -- here affects every call site.
+    local smear_color  = require("smear_cursor.color")
+    local is_animating = false
+    local blink_on     = false
+    local blink_visible = true
+    local BLINK_WAIT = 700
+    local BLINK_ON   = 800
+    local BLINK_OFF  = 500
+
+    local function show_cursor()
       vim.api.nvim_set_hl(0, "SmearCursorHideable", {
-        fg   = "none",
-        bg   = cursor_colors[current_color_idx].color,
+        fg    = "none",
+        bg    = cursor_colors[current_color_idx].color,
         blend = 0,
       })
+    end
+
+    local function hide_cursor()
+      vim.api.nvim_set_hl(0, "SmearCursorHideable", { fg = "white", blend = 100 })
+    end
+
+    -- Generation counter: each new cycle gets a unique token. Stale deferred
+    -- calls from previous cycles see a mismatched token and exit, preventing
+    -- accumulation when cursor moves rapidly (e.g. holding l).
+    local blink_gen = 0
+
+    local function blink_cycle(gen)
+      if not blink_on or is_animating or gen ~= blink_gen then return end
+      blink_visible = not blink_visible
+      if blink_visible then
+        show_cursor()
+        vim.defer_fn(function() blink_cycle(gen) end, BLINK_ON)
+      else
+        hide_cursor()
+        vim.defer_fn(function() blink_cycle(gen) end, BLINK_OFF)
+      end
+    end
+
+    local orig_hide = smear_color.hide_real_cursor
+    smear_color.hide_real_cursor = function()
+      is_animating = true
+      orig_hide()
+    end
+
+    smear_color.unhide_real_cursor = function()
+      is_animating = false
+      blink_visible = true
+      show_cursor()
+      if blink_on then
+        blink_gen = blink_gen + 1
+        local gen = blink_gen
+        vim.defer_fn(function() blink_cycle(gen) end, BLINK_ON)
+      end
     end
 
     -- ─── Keybindings ──────────────────────────────────────────────────────
@@ -156,5 +201,19 @@ return {
       apply(current_idx)
       vim.notify(cursor_colors[current_color_idx].name, vim.log.levels.INFO, { title = "cursor colour" })
     end, { desc = "Cursor: cycle colour" })
+
+    -- Toggle cursor blink (manual timer — guicursor blink is overridden by smear)
+    vim.keymap.set("n", "<leader>cb", function()
+      blink_on = not blink_on
+      blink_gen = blink_gen + 1  -- invalidate any running cycle
+      if blink_on then
+        blink_visible = true
+        local gen = blink_gen
+        vim.defer_fn(function() blink_cycle(gen) end, BLINK_WAIT)
+      else
+        show_cursor()
+      end
+      vim.notify(blink_on and "on" or "off", vim.log.levels.INFO, { title = "cursor blink" })
+    end, { desc = "Cursor: toggle blink" })
   end,
 }
