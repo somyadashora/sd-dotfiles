@@ -35,14 +35,23 @@ return {
       })
       -- load the colorscheme here
       vim.cmd([[colorscheme tokyonight]])
-      vim.api.nvim_set_hl(0, "CursorLine",   { bg = "#143652" })
-      vim.api.nvim_set_hl(0, "CursorLineNr", { fg = "#ff79c6", bold = true })
-      vim.api.nvim_set_hl(0, "MarkSignHL",   { fg = "#ff475f", bold = true })
-      vim.api.nvim_set_hl(0, "MarkSignNumHL", { fg = "#ff475f", bold = true })
-      -- search: yellow for all matches, peach for the active/current one
-      vim.api.nvim_set_hl(0, "Search",    { bg = "#e8d4a8", fg = "#1e1e2e" })
-      vim.api.nvim_set_hl(0, "IncSearch", { bg = "#f0a07a", fg = "#1e1e2e", bold = true })
-      vim.api.nvim_set_hl(0, "CurSearch", { bg = "#f0a07a", fg = "#1e1e2e", bold = true })
+
+      -- Re-applied on every ColorScheme change so styler's per-filetype
+      -- colorschemes (monokai-pro-spectrum, catppuccin-mocha, etc.) don't
+      -- clobber these overrides.
+      local function apply_hl_overrides()
+        vim.api.nvim_set_hl(0, "CursorLine",   { bg = "#143652" })
+        vim.api.nvim_set_hl(0, "LineNr",       { fg = "#5a8fa8" })
+        vim.api.nvim_set_hl(0, "CursorLineNr", { fg = "#ff79c6", bold = true })
+        vim.api.nvim_set_hl(0, "MarkSignHL",   { fg = "#ff475f", bold = true })
+        vim.api.nvim_set_hl(0, "MarkSignNumHL", { fg = "#ff475f", bold = true })
+        vim.api.nvim_set_hl(0, "Search",    { bg = "#e8d4a8", fg = "#1e1e2e" })
+        vim.api.nvim_set_hl(0, "IncSearch", { bg = "#f0a07a", fg = "#1e1e2e", bold = true })
+        vim.api.nvim_set_hl(0, "CurSearch", { bg = "#f0a07a", fg = "#1e1e2e", bold = true })
+      end
+
+      apply_hl_overrides()
+      vim.api.nvim_create_autocmd("ColorScheme", { callback = apply_hl_overrides })
     end,
   },
 }
