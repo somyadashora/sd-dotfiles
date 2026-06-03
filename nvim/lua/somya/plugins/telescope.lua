@@ -50,5 +50,68 @@ return {
     keymap.set("n", "<leader>fM", "<cmd>Telescope marks<cr>", { desc = "Find marks in marklist" })
     keymap.set("n", "<leader>fT", "<cmd>TodoTelescope<cr>", { desc = "Find Todo's" })
     keymap.set("n", "<leader>fib", "<cmd>Telescope current_buffer_fuzzy_find<cr>", { desc = "Find string fuzzily in current buffer" })
+
+    keymap.set("n", "<leader>fC", function()
+      local pickers = require("telescope.pickers")
+      local finders = require("telescope.finders")
+      local conf = require("telescope.config").values
+      local entry_display = require("telescope.pickers.entry_display")
+
+      local raw, cur_idx = unpack(vim.fn.getchangelist(vim.fn.bufnr("%")))
+      if #raw == 0 then
+        vim.notify("Changelist is empty", vim.log.levels.INFO)
+        return
+      end
+
+      -- reverse so most-recent change is first; mark current position
+      local entries = {}
+      for i = #raw, 1, -1 do
+        local e = raw[i]
+        local line = vim.fn.getline(e.lnum) or ""
+        table.insert(entries, {
+          lnum = e.lnum,
+          col  = e.col,
+          text = vim.trim(line),
+          idx  = i,
+          current = (i == cur_idx),
+        })
+      end
+
+      local displayer = entry_display.create({
+        separator = " ",
+        items = { { width = 2 }, { width = 6 }, { remaining = true } },
+      })
+
+      pickers.new({}, {
+        prompt_title = "Changelist",
+        finder = finders.new_table({
+          results = entries,
+          entry_maker = function(e)
+            return {
+              value   = e,
+              display = function(entry)
+                return displayer({
+                  { entry.value.current and ">" or " ", "TelescopeResultsIdentifier" },
+                  { tostring(entry.value.lnum), "TelescopeResultsLineNr" },
+                  entry.value.text,
+                })
+              end,
+              ordinal = e.lnum .. " " .. e.text,
+              lnum    = e.lnum,
+              col     = e.col,
+            }
+          end,
+        }),
+        sorter = conf.generic_sorter({}),
+        attach_mappings = function(_, map)
+          map("i", "<CR>", function(prompt_bufnr)
+            local sel = require("telescope.actions.state").get_selected_entry()
+            require("telescope.actions").close(prompt_bufnr)
+            vim.api.nvim_win_set_cursor(0, { sel.lnum, sel.col })
+          end)
+          return true
+        end,
+      }):find()
+    end, { desc = "Find in changelist" })
   end,
 }
