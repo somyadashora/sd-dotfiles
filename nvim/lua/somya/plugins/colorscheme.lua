@@ -53,14 +53,15 @@ return {
       vim.api.nvim_create_autocmd("ColorScheme", { callback = function() apply_hl_overrides(0) end })
 
       -- styler.nvim loads per-filetype colorschemes into a window-local namespace
-      -- without firing ColorScheme. Grab that namespace after styler sets it and
-      -- inject our overrides directly into it.
+      -- without firing ColorScheme. Apply overrides into every styler namespace
+      -- after it has been created (nvim_get_namespaces works on all nvim versions).
       vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter" }, {
         callback = function()
           vim.schedule(function()
-            local ns = vim.api.nvim_win_get_hl_ns(0)
-            if ns and ns > 0 then
-              apply_hl_overrides(ns)
+            for name, ns in pairs(vim.api.nvim_get_namespaces()) do
+              if name:match("^styler_") then
+                apply_hl_overrides(ns)
+              end
             end
           end)
         end,
