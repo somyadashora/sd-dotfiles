@@ -290,11 +290,21 @@ return {
       vim.cmd("startinsert") -- jump straight into the terminal so keys work
     end, { desc = "vim-visual-multi: open tutorial" })
 
-    -- Convenience: show a brief hint when VM starts
+    -- Update lualine mode indicator when VM is active
     vim.api.nvim_create_autocmd("User", {
       pattern  = "visual_multi_start",
       callback = function()
+        vim.g.vm_active = true
+        require("lualine").refresh()
         vim.notify("VM  <C-n> next · q skip · Q remove · Tab mode · <leader>mh help", vim.log.levels.INFO, { title = "vim-visual-multi" })
+      end,
+    })
+
+    vim.api.nvim_create_autocmd("User", {
+      pattern  = "visual_multi_exit",
+      callback = function()
+        vim.g.vm_active = false
+        require("lualine").refresh()
       end,
     })
   end,

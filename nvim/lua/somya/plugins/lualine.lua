@@ -49,10 +49,32 @@ return {
       },
     }
 
+    local mode_labels = {
+      n = "NORMAL", no = "N-OP", v = "VISUAL", V = "V-LINE",
+      ["\22"] = "V-BLOCK", i = "INSERT", ic = "INSERT",
+      R = "REPLACE", Rv = "V-REPLACE", c = "COMMAND",
+      s = "SELECT", S = "S-LINE", ["\19"] = "S-BLOCK", t = "TERMINAL",
+    }
+
     -- configure lualine with modified theme
     lualine.setup({
       options = {
         theme = my_lualine_theme,
+      },
+      sections = {
+        lualine_a = {
+          {
+            function()
+              if vim.g.vm_active then return "MULTI" end
+              return mode_labels[vim.fn.mode()] or vim.fn.mode():upper()
+            end,
+            color = function()
+              if vim.g.vm_active then
+                return { bg = "#f38ba8", fg = "#1e1e2e", gui = "bold" }
+              end
+            end,
+          },
+        },
       },
     })
   end,
