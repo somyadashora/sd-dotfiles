@@ -98,7 +98,7 @@ return {
       { name = "White",   color = "#f8f8f2" },
       { name = "Purple",  color = "#bd93f9" },
     }
-    local current_color_idx = 1
+    local current_color_idx = 3 -- default: red
 
     -- ─── Apply a profile by index ─────────────────────────────────────────
     local current_idx = 1
