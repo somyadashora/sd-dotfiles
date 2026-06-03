@@ -138,8 +138,8 @@ return {
     -- Use backslash as VM-specific leader (keeps Space leader free)
     vim.g.VM_leader = "\\"
 
-    -- Highlight theme
-    vim.g.VM_theme = "ocean"
+    -- Custom highlights (set below in config); disable built-in theme
+    vim.g.VM_theme = ""
 
     -- Show cursors count in the statusline
     vim.g.VM_set_statusline = 3
@@ -157,6 +157,16 @@ return {
     }
   end,
   config = function()
+    -- ── VM highlight groups (catppuccin mocha palette, dark-bg friendly) ──
+    local function set_vm_hl()
+      vim.api.nvim_set_hl(0, "VM_Cursor", { bg = "#f9e2af", fg = "#1e1e2e", bold = true }) -- yellow  cursor
+      vim.api.nvim_set_hl(0, "VM_Extend", { bg = "#89b4fa", fg = "#1e1e2e" })              -- blue    selection
+      vim.api.nvim_set_hl(0, "VM_Insert", { bg = "#a6e3a1", fg = "#1e1e2e" })              -- green   insert
+      vim.api.nvim_set_hl(0, "VM_Mono",   { bg = "#cba6f7", fg = "#1e1e2e", bold = true }) -- mauve   single-region
+    end
+    set_vm_hl()
+    vim.api.nvim_create_autocmd("ColorScheme", { callback = set_vm_hl })
+
     -- ── leader shortcut: <leader>mh → help popup ─────────────────────────
     local function open_help()
       local K = 22 -- key column width
