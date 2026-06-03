@@ -36,22 +36,35 @@ return {
       -- load the colorscheme here
       vim.cmd([[colorscheme tokyonight]])
 
-      -- Re-applied on every ColorScheme change so styler's per-filetype
-      -- colorschemes (monokai-pro-spectrum, catppuccin-mocha, etc.) don't
-      -- clobber these overrides.
-      local function apply_hl_overrides()
-        vim.api.nvim_set_hl(0, "CursorLine",   { bg = "#143652" })
-        vim.api.nvim_set_hl(0, "LineNr",       { fg = "#5a8fa8" })
-        vim.api.nvim_set_hl(0, "CursorLineNr", { fg = "#ff79c6", bold = true })
-        vim.api.nvim_set_hl(0, "MarkSignHL",   { fg = "#ff475f", bold = true })
-        vim.api.nvim_set_hl(0, "MarkSignNumHL", { fg = "#ff475f", bold = true })
-        vim.api.nvim_set_hl(0, "Search",    { bg = "#e8d4a8", fg = "#1e1e2e" })
-        vim.api.nvim_set_hl(0, "IncSearch", { bg = "#f0a07a", fg = "#1e1e2e", bold = true })
-        vim.api.nvim_set_hl(0, "CurSearch", { bg = "#f0a07a", fg = "#1e1e2e", bold = true })
+      local function apply_hl_overrides(ns)
+        ns = ns or 0
+        vim.api.nvim_set_hl(ns, "CursorLine",    { bg = "#143652" })
+        vim.api.nvim_set_hl(ns, "LineNr",        { fg = "#5a8fa8" })
+        vim.api.nvim_set_hl(ns, "CursorLineNr",  { fg = "#ff79c6", bold = true })
+        vim.api.nvim_set_hl(ns, "MarkSignHL",    { fg = "#ff475f", bold = true })
+        vim.api.nvim_set_hl(ns, "MarkSignNumHL", { fg = "#ff475f", bold = true })
+        vim.api.nvim_set_hl(ns, "Search",    { bg = "#e8d4a8", fg = "#1e1e2e" })
+        vim.api.nvim_set_hl(ns, "IncSearch", { bg = "#f0a07a", fg = "#1e1e2e", bold = true })
+        vim.api.nvim_set_hl(ns, "CurSearch", { bg = "#f0a07a", fg = "#1e1e2e", bold = true })
       end
 
-      apply_hl_overrides()
-      vim.api.nvim_create_autocmd("ColorScheme", { callback = apply_hl_overrides })
+      -- global colorscheme changes (tokyonight, etc.)
+      apply_hl_overrides(0)
+      vim.api.nvim_create_autocmd("ColorScheme", { callback = function() apply_hl_overrides(0) end })
+
+      -- styler.nvim loads per-filetype colorschemes into a window-local namespace
+      -- without firing ColorScheme. Grab that namespace after styler sets it and
+      -- inject our overrides directly into it.
+      vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter" }, {
+        callback = function()
+          vim.schedule(function()
+            local ns = vim.api.nvim_win_get_hl_ns(0)
+            if ns and ns > 0 then
+              apply_hl_overrides(ns)
+            end
+          end)
+        end,
+      })
     end,
   },
 }
