@@ -10,7 +10,7 @@ return {
       local bg_visual = "#275378"
       local fg = "#CBE0F0"
       local fg_dark = "#B4D0E9"
-      local fg_gutter = "#627E97"
+      local fg_gutter = "#5a8fa8"
       local border = "#547998"
 
       require("tokyonight").setup({
@@ -36,7 +36,7 @@ return {
       -- load the colorscheme here
       vim.cmd([[colorscheme tokyonight]])
       vim.api.nvim_set_hl(0, "CursorLine",   { bg = "#143652" })
-      vim.api.nvim_set_hl(0, "CursorLineNr", { fg = "#ffd75f", bold = true })
+      vim.api.nvim_set_hl(0, "CursorLineNr", { fg = "#ff79c6", bold = true })
       vim.api.nvim_set_hl(0, "MarkSignHL",   { fg = "#ff475f", bold = true })
       vim.api.nvim_set_hl(0, "MarkSignNumHL", { fg = "#ff475f", bold = true })
       -- search: yellow for all matches, peach for the active/current one
