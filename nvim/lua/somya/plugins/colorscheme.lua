@@ -6,7 +6,7 @@ return {
       local bg = "#011628"
       local bg_dark = "#011423"
       local bg_highlight = "#143652"
-      local bg_search = "#0A64AC"
+      local bg_search = "#e8d4a8" -- pastel parchment (was #0A64AC dark blue)
       local bg_visual = "#275378"
       local fg = "#CBE0F0"
       local fg_dark = "#B4D0E9"
@@ -35,10 +35,14 @@ return {
       })
       -- load the colorscheme here
       vim.cmd([[colorscheme tokyonight]])
-      vim.api.nvim_set_hl(0, "CursorLine", { bg = "#143652" })
+      vim.api.nvim_set_hl(0, "CursorLine",   { bg = "#143652" })
       vim.api.nvim_set_hl(0, "CursorLineNr", { fg = "#ffd75f", bold = true })
-      vim.api.nvim_set_hl(0, "MarkSignHL", { fg = "#ff475f", bold = true })
-    vim.api.nvim_set_hl(0, "MarkSignNumHL", { fg = "#ff475f", bold = true })
+      vim.api.nvim_set_hl(0, "MarkSignHL",   { fg = "#ff475f", bold = true })
+      vim.api.nvim_set_hl(0, "MarkSignNumHL", { fg = "#ff475f", bold = true })
+      -- search: yellow for all matches, peach for the active/current one
+      vim.api.nvim_set_hl(0, "Search",    { bg = "#e8d4a8", fg = "#1e1e2e" })
+      vim.api.nvim_set_hl(0, "IncSearch", { bg = "#f0a07a", fg = "#1e1e2e", bold = true })
+      vim.api.nvim_set_hl(0, "CurSearch", { bg = "#f0a07a", fg = "#1e1e2e", bold = true })
     end,
   },
 }

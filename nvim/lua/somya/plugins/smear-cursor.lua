@@ -90,6 +90,16 @@ return {
       },
     }
 
+    -- ─── Cursor colour palette (bright, visible over all highlights) ──────
+    local cursor_colors = {
+      { name = "Cyan",    color = "#00d4ff" },
+      { name = "Magenta", color = "#ff79c6" },
+      { name = "Red",     color = "#ff5555" },
+      { name = "White",   color = "#f8f8f2" },
+      { name = "Purple",  color = "#bd93f9" },
+    }
+    local current_color_idx = 1
+
     -- ─── Apply a profile by index ─────────────────────────────────────────
     local current_idx = 1
 
@@ -101,12 +111,26 @@ return {
           cfg[k] = v
         end
       end
+      local color = cursor_colors[current_color_idx].color
+      cfg.cursor_color = color
       smear.setup(cfg)
       current_idx = idx
     end
 
     -- Start with comet profile
     apply(4)
+
+    -- Patch smear-cursor's unhide so the resting cursor also shows our colour.
+    -- animation.lua calls color.unhide_real_cursor() via the shared module table,
+    -- so replacing it here affects every call site.
+    local smear_color = require("smear_cursor.color")
+    smear_color.unhide_real_cursor = function()
+      vim.api.nvim_set_hl(0, "SmearCursorHideable", {
+        fg   = "none",
+        bg   = cursor_colors[current_color_idx].color,
+        blend = 0,
+      })
+    end
 
     -- ─── Keybindings ──────────────────────────────────────────────────────
     -- Cycle through all profiles
@@ -125,5 +149,12 @@ return {
       { desc = "Cursor: comet (long tail, fast)" })
     vim.keymap.set("n", "<leader>c5", function() apply(5) end,
       { desc = "Cursor: ember (particles, orange)" })
+
+    -- Cycle cursor colour through palette
+    vim.keymap.set("n", "<leader>cC", function()
+      current_color_idx = (current_color_idx % #cursor_colors) + 1
+      apply(current_idx)
+      vim.notify(cursor_colors[current_color_idx].name, vim.log.levels.INFO, { title = "cursor colour" })
+    end, { desc = "Cursor: cycle colour" })
   end,
 }
