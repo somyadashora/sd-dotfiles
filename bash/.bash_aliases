@@ -1,7 +1,9 @@
 # common aliases for efficient workflow
 
-# Fall back to regular alias if abbrev-alias is not installed
-command -v abbrev-alias >/dev/null 2>&1 || abbrev-alias() { alias "$@"; }
+# Set SD_NO_ABBREV_ALIAS=1 to disable abbreviation expansion and use plain alias
+if [[ "${SD_NO_ABBREV_ALIAS:-0}" == "1" ]] || ! command -v abbrev-alias >/dev/null 2>&1; then
+  abbrev-alias() { alias "$@"; }
+fi
 
 abbrev-alias ll="ls -lrtha --color=auto"
 
