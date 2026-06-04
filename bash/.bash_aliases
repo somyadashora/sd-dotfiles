@@ -13,6 +13,15 @@ alias getdotfiles="git -C $DOTFILES_DIR pull --rebase"
 alias prompt-tc='PROMPT_COMMAND="__tc_prompt_command"; echo "switched to TypeCraft prompt"'
 alias prompt-default='PROMPT_COMMAND="__sd_prompt_command"; echo "switched to default prompt"'
 
+alias bathelp='bat --plain --language=help'
+help() {
+    "$@" --help 2>&1 | bathelp
+}
+
+batdiff() {
+    git diff --name-only --relative --diff-filter=d -z | xargs -0 bat --diff
+}
+
 prompt-check() {
   printf '\nNerd Font glyph test\n'
   printf '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
