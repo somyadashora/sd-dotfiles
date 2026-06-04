@@ -265,7 +265,7 @@ install_ripgrep() {
   download "$url" "$archive"
   tar -xzf "$archive" -C "$tmp"
   root=$(find "$tmp" -mindepth 1 -maxdepth 1 -type d | head -n 1)
-  binary=$(find "$root" -type f -name rg -perm -111 | head -n 1)
+  binary=$(find "$root" -type f -name rg -perm /111 | head -n 1)
   [[ -n "$binary" ]] || die "ripgrep archive layout was not recognized."
   if ! test_binary "$binary"; then
     skip_incompatible_binary ripgrep "$tmp"
@@ -296,7 +296,7 @@ install_fd() {
   download "$url" "$archive"
   tar -xzf "$archive" -C "$tmp"
   root=$(find "$tmp" -mindepth 1 -maxdepth 1 -type d | head -n 1)
-  binary=$(find "$root" -type f -name fd -perm -111 | head -n 1)
+  binary=$(find "$root" -type f -name fd -perm /111 | head -n 1)
   [[ -n "$binary" ]] || die "fd archive layout was not recognized."
   if ! test_binary "$binary"; then
     skip_incompatible_binary fd "$tmp"
@@ -348,6 +348,37 @@ install_slang_server() {
   link_binary "$target/slang-server" slang-server
   rm -rf "$tmp"
   ok "Installed slang-server ${version}."
+}
+
+install_delta() {
+  local arch=$1 tag version triple asset url tmp archive root target binary
+  tag=$(latest_tag dandavison/delta)
+  [[ -n "$tag" ]] || die "Could not resolve latest delta release."
+  needs_update delta delta "$tag" || return 0
+  version=$(strip_v "$tag")
+  case "$arch" in
+    x86_64) triple=x86_64-unknown-linux-musl ;;
+    arm64)  triple=aarch64-unknown-linux-gnu ;;
+    *) warn "No delta Linux asset for ${arch}; skipping."; return 0 ;;
+  esac
+  asset="delta-${version}-${triple}.tar.gz"
+  url="https://github.com/dandavison/delta/releases/download/${tag}/${asset}"
+  tmp=$(tmpdir); archive="$tmp/$asset"
+  download "$url" "$archive"
+  tar -xzf "$archive" -C "$tmp"
+  root=$(find "$tmp" -mindepth 1 -maxdepth 1 -type d | head -n 1)
+  binary=$(find "$root" -type f -name delta -perm /111 | head -n 1)
+  [[ -n "$binary" ]] || die "delta archive layout was not recognized."
+  if ! test_binary "$binary"; then
+    skip_incompatible_binary delta "$tmp"
+    return 0
+  fi
+  target="$OPT_DIR/delta-$version"
+  rm -rf "$target"
+  mv "$root" "$target"
+  link_binary "$target/delta" delta
+  rm -rf "$tmp"
+  ok "Installed delta ${version}."
 }
 
 install_verible() {
@@ -435,6 +466,7 @@ main() {
   install_fd "$arch"
   install_tree_sitter
   install_slang_server "$arch"
+  install_delta "$arch"
   install_verible "$arch"
   install_meslo_font
   check_existing_only_tools
@@ -454,6 +486,7 @@ Useful checks:
   fd --version
   tree-sitter --version
   slang-server --version
+  delta --version
   verible-verilog-ls --version
   tmux -V
   git --version
