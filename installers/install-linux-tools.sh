@@ -81,6 +81,13 @@ latest_tag() {
     | head -n 1
 }
 
+latest_commit() {
+  local repo=$1 branch=${2:-master}
+  github_curl "${GITHUB_API}/repos/${repo}/commits/${branch}" \
+    | sed -n 's/.*"sha"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
+    | head -n 1
+}
+
 strip_v() { printf '%s' "${1#v}"; }
 extract_version() { grep -Eo '[0-9]+([.][0-9]+)+([+-][A-Za-z0-9._-]+)?' | head -n 1 | sed 's/[+]$//'; }
 
@@ -412,6 +419,24 @@ install_bat() {
   ok "Installed bat ${version}."
 }
 
+install_abbrev_alias() {
+  local sha marker dest url
+  sha=$(latest_commit momo-lab/bash-abbrev-alias master)
+  [[ -n "$sha" ]] || { warn "Could not resolve bash-abbrev-alias commit; skipping."; return 0; }
+  marker="$VERSION_DIR/abbrev-alias"
+  dest="$OPT_DIR/abbrev-alias/abbrev-alias.plugin.bash"
+  if [[ "$FORCE" != 1 && -f "$marker" && "$(cat "$marker")" == "$sha" ]]; then
+    ok "bash-abbrev-alias is current (${sha:0:7})."
+    return 0
+  fi
+  url="https://raw.githubusercontent.com/momo-lab/bash-abbrev-alias/${sha}/abbrev-alias.plugin.bash"
+  log "Installing bash-abbrev-alias (${sha:0:7})"
+  mkdir -p "$OPT_DIR/abbrev-alias"
+  github_curl -o "$dest" "$url"
+  printf '%s\n' "$sha" > "$marker"
+  ok "Installed bash-abbrev-alias (${sha:0:7})."
+}
+
 install_verible() {
   local arch=$1 tag asset url tmp archive root target tool
   tag=$(latest_tag chipsalliance/verible)
@@ -499,6 +524,7 @@ main() {
   install_slang_server "$arch"
   install_delta "$arch"
   install_bat "$arch"
+  install_abbrev_alias
   install_verible "$arch"
   install_meslo_font
   check_existing_only_tools
@@ -521,6 +547,7 @@ Useful checks:
   delta --version
   bat --version
   verible-verilog-ls --version
+  # bash-abbrev-alias: source \$HOME/.somyadashora/sd-tools/abbrev-alias/abbrev-alias.plugin.bash
   tmux -V
   git --version
 EOF_STATUS
