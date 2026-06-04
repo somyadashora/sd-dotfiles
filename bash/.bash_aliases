@@ -1,5 +1,8 @@
 # common aliases for efficient workflow
 
+# Fall back to regular alias if abbrev-alias is not installed
+command -v abbrev-alias >/dev/null 2>&1 || abbrev-alias() { alias "$@"; }
+
 abbrev-alias ll="ls -lrtha --color=auto"
 
 abbrev-alias tmux-cs="sed -n '/TMUX CHEATSHEET/,/# split panes/p' \$DOTFILES_DIR/tmux/.tmux.conf | sed '\$d'"
