@@ -17,9 +17,9 @@ fi
 export FZF_DEFAULT_OPTS="--preview 'bat --color=always --style=numbers --line-range=:500 {} 2>/dev/null || ls -la {}'"
 export FZF_CTRL_T_OPTS="--preview 'bat --color=always --style=numbers --line-range=:500 {}'"
 
-# bash-abbrev-alias
+# bash-abbrev-alias (interactive only — bind calls warn in non-interactive shells)
 _abbrev_alias_script="${HOME}/.somyadashora/sd-tools/abbrev-alias/abbrev-alias.plugin.bash"
-[[ -f "$_abbrev_alias_script" ]] && source "$_abbrev_alias_script"
+[[ $- == *i* && -f "$_abbrev_alias_script" ]] && source "$_abbrev_alias_script"
 unset _abbrev_alias_script
 
 # Pager
