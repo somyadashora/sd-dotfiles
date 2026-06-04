@@ -16,7 +16,6 @@ fi
 
 # Pager
 export PAGER=delta
-export MANPAGER="sh -c 'col -bx | delta'"
 
 shopt -s histappend
 PROMPT_COMMAND="history -a;$PROMPT_COMMAND"
