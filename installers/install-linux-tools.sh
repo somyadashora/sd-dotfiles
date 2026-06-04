@@ -381,6 +381,37 @@ install_delta() {
   ok "Installed delta ${version}."
 }
 
+install_bat() {
+  local arch=$1 tag version triple asset url tmp archive root target binary
+  tag=$(latest_tag sharkdp/bat)
+  [[ -n "$tag" ]] || die "Could not resolve latest bat release."
+  needs_update bat bat "$tag" || return 0
+  version=$(strip_v "$tag")
+  case "$arch" in
+    x86_64) triple=x86_64-unknown-linux-musl ;;
+    arm64)  triple=aarch64-unknown-linux-gnu ;;
+    *) warn "No bat Linux asset for ${arch}; skipping."; return 0 ;;
+  esac
+  asset="bat-${tag}-${triple}.tar.gz"
+  url="https://github.com/sharkdp/bat/releases/download/${tag}/${asset}"
+  tmp=$(tmpdir); archive="$tmp/$asset"
+  download "$url" "$archive"
+  tar -xzf "$archive" -C "$tmp"
+  root=$(find "$tmp" -mindepth 1 -maxdepth 1 -type d | head -n 1)
+  binary=$(find "$root" -type f -name bat -perm /111 | head -n 1)
+  [[ -n "$binary" ]] || die "bat archive layout was not recognized."
+  if ! test_binary "$binary"; then
+    skip_incompatible_binary bat "$tmp"
+    return 0
+  fi
+  target="$OPT_DIR/bat-$version"
+  rm -rf "$target"
+  mv "$root" "$target"
+  link_binary "$target/bat" bat
+  rm -rf "$tmp"
+  ok "Installed bat ${version}."
+}
+
 install_verible() {
   local arch=$1 tag asset url tmp archive root target tool
   tag=$(latest_tag chipsalliance/verible)
@@ -467,6 +498,7 @@ main() {
   install_tree_sitter
   install_slang_server "$arch"
   install_delta "$arch"
+  install_bat "$arch"
   install_verible "$arch"
   install_meslo_font
   check_existing_only_tools
@@ -487,6 +519,7 @@ Useful checks:
   tree-sitter --version
   slang-server --version
   delta --version
+  bat --version
   verible-verilog-ls --version
   tmux -V
   git --version
