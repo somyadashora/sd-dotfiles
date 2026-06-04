@@ -14,6 +14,9 @@ if [[ ! "$PATH" == ${HOME}/.fzf/bin* ]]; then
   eval "$(fzf --bash)"
 fi
 
+export FZF_DEFAULT_OPTS="--preview 'bat --color=always --style=numbers --line-range=:500 {} 2>/dev/null || ls -la {}'"
+export FZF_CTRL_T_OPTS="--preview 'bat --color=always --style=numbers --line-range=:500 {}'"
+
 # Pager
 export PAGER=delta
 
