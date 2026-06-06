@@ -133,6 +133,47 @@ return {
 		end
 		watch_review_file()
 
+		-- Jump to next/prev comment in the current file, wrapping around
+		local function jump_comment(direction)
+			if not visible then
+				vim.notify("Review annotations are hidden", vim.log.levels.WARN)
+				return
+			end
+			local tbl = get_comments_table()
+			if not tbl or #tbl == 0 then
+				vim.notify("No review comments", vim.log.levels.INFO)
+				return
+			end
+			local cur_file = vim.fn.expand("%:.")
+			local cur_line = vim.fn.line(".")
+			local file_comments = vim.tbl_filter(function(c) return c.file == cur_file end, tbl)
+			if #file_comments == 0 then
+				vim.notify("No review comments in this file", vim.log.levels.INFO)
+				return
+			end
+			table.sort(file_comments, function(a, b) return a.line_start < b.line_start end)
+			if direction == "next" then
+				for _, c in ipairs(file_comments) do
+					if c.line_start > cur_line then
+						vim.fn.cursor(c.line_start, 1)
+						return
+					end
+				end
+				vim.fn.cursor(file_comments[1].line_start, 1) -- wrap
+			else
+				for i = #file_comments, 1, -1 do
+					if file_comments[i].line_start < cur_line then
+						vim.fn.cursor(file_comments[i].line_start, 1)
+						return
+					end
+				end
+				vim.fn.cursor(file_comments[#file_comments].line_start, 1) -- wrap
+			end
+		end
+
+		vim.keymap.set("n", "]r", function() jump_comment("next") end, { desc = "Review: next comment" })
+		vim.keymap.set("n", "[r", function() jump_comment("prev") end, { desc = "Review: prev comment" })
+
 		-- Toggle visibility across all loaded buffers
 		vim.keymap.set("n", "<leader>rt", function()
 			visible = not visible
