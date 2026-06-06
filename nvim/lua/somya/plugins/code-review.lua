@@ -75,17 +75,17 @@ return {
 		end
 
 		-- Open a floating scratch buffer for composing a review comment.
-		-- :wq commits; :q! / q / <Esc> cancels.
+		-- :wq commits; q (normal mode) / :q! cancels.
 		local function open_review_float(line_start, line_end, target_bufnr, target_file)
 			local buf = vim.api.nvim_create_buf(false, true)
-			vim.bo[buf].buftype  = "acwrite"
+			vim.bo[buf].buftype   = "acwrite"
 			vim.bo[buf].bufhidden = "wipe"
-			vim.bo[buf].swapfile = false
-			vim.bo[buf].filetype = "markdown"
+			vim.bo[buf].swapfile  = false
+			vim.bo[buf].filetype  = "markdown"
 
 			local width  = math.floor(vim.o.columns * 0.55)
 			local height = math.floor(vim.o.lines   * 0.35)
-			vim.api.nvim_open_win(buf, true, {
+			local win = vim.api.nvim_open_win(buf, true, {
 				relative  = "editor",
 				width     = width,
 				height    = height,
@@ -93,16 +93,17 @@ return {
 				col       = math.floor((vim.o.columns - width)  / 2),
 				style     = "minimal",
 				border    = "rounded",
-				title     = " Review Comment  :wq save · :q! cancel ",
+				title     = " Review Comment  :wq save · q cancel ",
 				title_pos = "center",
 			})
+			-- style=minimal disables these; re-enable explicitly
+			vim.wo[win].number = true
+			vim.wo[win].wrap   = false
 
 			vim.cmd("startinsert")
 
-			-- Cancel bindings (normal mode only — don't interfere with insert)
-			for _, key in ipairs({ "q", "<Esc>" }) do
-				vim.keymap.set("n", key, "<cmd>q!<cr>", { buffer = buf, nowait = true })
-			end
+			-- Only q cancels — <Esc> must remain free to exit insert mode before :wq
+			vim.keymap.set("n", "q", "<cmd>q!<cr>", { buffer = buf, nowait = true })
 
 			vim.api.nvim_create_autocmd("BufWriteCmd", {
 				buffer = buf,
@@ -126,7 +127,7 @@ return {
 							review._sync_file()
 						end
 					end
-					vim.bo[buf].modified = false
+					vim.cmd("setlocal nomodified")
 				end,
 			})
 		end
