@@ -16,10 +16,11 @@ return {
 			callback = set_hl,
 		})
 
-		-- add = false: we register our own <leader>ra with a floating buffer
+		-- <leader>ra: plugin's own vim.ui.input (single-line, quick)
+		-- <leader>rA: our floating buffer (multi-line, full editor)
 		require("review").setup({
 			keys = {
-				add = false,
+				add = "<leader>ra",
 				delete = "<leader>rd",
 				list = "<leader>rl",
 				clear = "<leader>rx",
@@ -41,10 +42,11 @@ return {
 					local id, row, col, d = mark[1], mark[2], mark[3], mark[4]
 					if d.virt_text then
 						local text = vim.trim(d.virt_text[1] and d.virt_text[1][1] or "")
+						local line_len = #(vim.api.nvim_buf_get_lines(bufnr, row, row + 1, false)[1] or "")
 						vim.api.nvim_buf_set_extmark(bufnr, ns, row, col, {
 							id = id,
 							virt_text = { { " 󰍉  " .. text .. " ", "CodeReviewComment" } },
-							virt_text_pos = "right_align",
+							virt_text_win_col = math.max(line_len + 2, 120),
 							priority = 20,
 						})
 					end
@@ -133,14 +135,14 @@ return {
 			})
 		end
 
-		vim.keymap.set("n", "<leader>ra", function()
+		vim.keymap.set("n", "<leader>rA", function()
 			open_review_float(
 				vim.fn.line("."), vim.fn.line("."),
 				vim.api.nvim_get_current_buf(), vim.fn.expand("%:.")
 			)
 		end, { desc = "Review: add comment" })
 
-		vim.keymap.set("x", "<leader>ra", function()
+		vim.keymap.set("x", "<leader>rA", function()
 			local s = vim.fn.getpos("v")[2]
 			local e = vim.fn.getpos(".")[2]
 			if s > e then s, e = e, s end
@@ -148,7 +150,7 @@ return {
 			local file  = vim.fn.expand("%:.")
 			vim.schedule(function() open_review_float(s, e, bufnr, file) end)
 			return "<Esc>"
-		end, { expr = true, desc = "Review: add comment on selection" })
+		end, { expr = true, desc = "Review: add comment on selection (float)" })
 
 		-- Parse .code-review.md and populate the plugin's internal comments table so
 		-- annotations survive a Neovim restart without needing to re-add them.
