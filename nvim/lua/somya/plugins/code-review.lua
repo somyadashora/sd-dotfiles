@@ -115,6 +115,24 @@ return {
 		-- Load persisted annotations at startup; BufEnter → patched _render will display them
 		load_from_file()
 
+		-- The plugin's built-in watcher only clears on deletion (filereadable == 0).
+		-- This watcher also handles the case where the agent empties the file without deleting it.
+		local review_path = vim.fn.fnamemodify(".code-review.md", ":p")
+		local w = vim.uv.new_fs_event()
+		local function watch_review_file()
+			w:stop()
+			w:start(vim.fn.fnamemodify(review_path, ":h"), {}, function(err, filename)
+				if err or filename ~= ".code-review.md" then return end
+				vim.schedule(function()
+					if vim.fn.getfsize(review_path) <= 0 and review.count() > 0 then
+						review.clear()
+					end
+					watch_review_file()
+				end)
+			end)
+		end
+		watch_review_file()
+
 		-- Toggle visibility across all loaded buffers
 		vim.keymap.set("n", "<leader>rt", function()
 			visible = not visible
