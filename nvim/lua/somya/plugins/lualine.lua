@@ -83,6 +83,7 @@ return {
         lualine_x = {
           {
             function()
+              if not vim.g.code_review_visible then return "" end
               local ok, review = pcall(require, "review")
               if not ok then return "" end
               local count = review.count()

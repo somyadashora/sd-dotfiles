@@ -30,6 +30,7 @@ return {
 		local ns = vim.api.nvim_create_namespace("code_review")
 		local review = require("review")
 		local visible = true
+		vim.g.code_review_visible = true
 
 		local function restyle(bufnr)
 			vim.schedule(function()
@@ -177,6 +178,7 @@ return {
 		-- Toggle visibility across all loaded buffers
 		vim.keymap.set("n", "<leader>rt", function()
 			visible = not visible
+			vim.g.code_review_visible = visible
 			for _, buf in ipairs(vim.api.nvim_list_bufs()) do
 				if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf) then
 					if visible then
