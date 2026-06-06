@@ -33,6 +33,7 @@ return {
 
 		local function restyle(bufnr)
 			vim.schedule(function()
+				if not vim.api.nvim_buf_is_valid(bufnr) then return end
 				local marks = vim.api.nvim_buf_get_extmarks(bufnr, ns, 0, -1, { details = true })
 				for _, mark in ipairs(marks) do
 					local id, row, col, d = mark[1], mark[2], mark[3], mark[4]
