@@ -16,9 +16,10 @@ return {
 			callback = set_hl,
 		})
 
+		-- add = false: we register our own <leader>ra with a floating buffer
 		require("review").setup({
 			keys = {
-				add = "<leader>ra",
+				add = false,
 				delete = "<leader>rd",
 				list = "<leader>rl",
 				clear = "<leader>rx",
@@ -73,6 +74,80 @@ return {
 			end
 		end
 
+		-- Open a floating scratch buffer for composing a review comment.
+		-- :wq commits; :q! / q / <Esc> cancels.
+		local function open_review_float(line_start, line_end, target_bufnr, target_file)
+			local buf = vim.api.nvim_create_buf(false, true)
+			vim.bo[buf].buftype  = "acwrite"
+			vim.bo[buf].bufhidden = "wipe"
+			vim.bo[buf].swapfile = false
+			vim.bo[buf].filetype = "markdown"
+
+			local width  = math.floor(vim.o.columns * 0.55)
+			local height = math.floor(vim.o.lines   * 0.35)
+			vim.api.nvim_open_win(buf, true, {
+				relative  = "editor",
+				width     = width,
+				height    = height,
+				row       = math.floor((vim.o.lines   - height) / 2),
+				col       = math.floor((vim.o.columns - width)  / 2),
+				style     = "minimal",
+				border    = "rounded",
+				title     = " Review Comment  :wq save · :q! cancel ",
+				title_pos = "center",
+			})
+
+			vim.cmd("startinsert")
+
+			-- Cancel bindings (normal mode only — don't interfere with insert)
+			for _, key in ipairs({ "q", "<Esc>" }) do
+				vim.keymap.set("n", key, "<cmd>q!<cr>", { buffer = buf, nowait = true })
+			end
+
+			vim.api.nvim_create_autocmd("BufWriteCmd", {
+				buffer = buf,
+				callback = function()
+					local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+					while #lines > 0 and vim.trim(lines[#lines]) == "" do
+						table.remove(lines)
+					end
+					local text = table.concat(lines, " ")
+					if text ~= "" then
+						local tbl = get_comments_table()
+						if tbl then
+							table.insert(tbl, {
+								file       = target_file,
+								line_start = line_start,
+								line_end   = line_end,
+								text       = text,
+								bufnr      = target_bufnr,
+							})
+							review._render(target_bufnr)
+							review._sync_file()
+						end
+					end
+					vim.bo[buf].modified = false
+				end,
+			})
+		end
+
+		vim.keymap.set("n", "<leader>ra", function()
+			open_review_float(
+				vim.fn.line("."), vim.fn.line("."),
+				vim.api.nvim_get_current_buf(), vim.fn.expand("%:.")
+			)
+		end, { desc = "Review: add comment" })
+
+		vim.keymap.set("x", "<leader>ra", function()
+			local s = vim.fn.getpos("v")[2]
+			local e = vim.fn.getpos(".")[2]
+			if s > e then s, e = e, s end
+			local bufnr = vim.api.nvim_get_current_buf()
+			local file  = vim.fn.expand("%:.")
+			vim.schedule(function() open_review_float(s, e, bufnr, file) end)
+			return "<Esc>"
+		end, { expr = true, desc = "Review: add comment on selection" })
+
 		-- Parse .code-review.md and populate the plugin's internal comments table so
 		-- annotations survive a Neovim restart without needing to re-add them.
 		local function load_from_file()
@@ -89,7 +164,6 @@ return {
 				end
 				if file then
 					ls, le = tonumber(ls), tonumber(le)
-					-- Comment text follows the closing ``` fence
 					local in_code, text = false, nil
 					for j = idx + 1, math.min(idx + 20, #lines) do
 						local l = lines[j]
@@ -102,18 +176,17 @@ return {
 					end
 					if text then
 						table.insert(tbl, {
-							file = file,
+							file       = file,
 							line_start = ls,
-							line_end = le,
-							text = text,
-							bufnr = vim.fn.bufadd(file),
+							line_end   = le,
+							text       = text,
+							bufnr      = vim.fn.bufadd(file),
 						})
 					end
 				end
 			end
 		end
 
-		-- Load persisted annotations at startup; BufEnter → patched _render will display them
 		load_from_file()
 
 		-- The plugin's built-in watcher only clears on deletion (filereadable == 0).
@@ -160,7 +233,7 @@ return {
 						return
 					end
 				end
-				vim.fn.cursor(file_comments[1].line_start, 1) -- wrap
+				vim.fn.cursor(file_comments[1].line_start, 1)
 			else
 				for i = #file_comments, 1, -1 do
 					if file_comments[i].line_start < cur_line then
@@ -168,7 +241,7 @@ return {
 						return
 					end
 				end
-				vim.fn.cursor(file_comments[#file_comments].line_start, 1) -- wrap
+				vim.fn.cursor(file_comments[#file_comments].line_start, 1)
 			end
 		end
 
