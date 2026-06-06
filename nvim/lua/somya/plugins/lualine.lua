@@ -82,6 +82,16 @@ return {
         },
         lualine_x = {
           {
+            function()
+              local ok, review = pcall(require, "review")
+              if not ok then return "" end
+              local count = review.count()
+              if count == 0 then return "" end
+              return "󰍉 " .. count
+            end,
+            color = { fg = "#f9e2af", gui = "bold" },
+          },
+          {
             screenkey_status,
             color = { fg = colors.yellow, gui = "bold" },
           },
