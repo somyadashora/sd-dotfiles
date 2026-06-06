@@ -105,9 +105,17 @@ return {
 
 			vim.cmd("startinsert")
 
-			-- Shadow any global insert-mode <Esc> mappings (autopairs etc.) so focus
-			-- stays in this window after leaving insert mode, allowing "5p etc. to work.
+			-- Shadow global insert-mode <Esc> mappings (autopairs etc.)
 			vim.keymap.set("i", "<Esc>", "<Esc>", { buffer = buf, nowait = true })
+			-- Re-assert focus after every InsertLeave so "Np paste works on all rounds
+			vim.api.nvim_create_autocmd("InsertLeave", {
+				buffer = buf,
+				callback = function()
+					if vim.api.nvim_win_is_valid(win) then
+						vim.api.nvim_set_current_win(win)
+					end
+				end,
+			})
 			-- Only q cancels in normal mode
 			vim.keymap.set("n", "q", "<cmd>q!<cr>", { buffer = buf, nowait = true })
 
