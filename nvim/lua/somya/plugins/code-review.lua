@@ -105,7 +105,10 @@ return {
 
 			vim.cmd("startinsert")
 
-			-- Only q cancels — <Esc> must remain free to exit insert mode before :wq
+			-- Shadow any global insert-mode <Esc> mappings (autopairs etc.) so focus
+			-- stays in this window after leaving insert mode, allowing "5p etc. to work.
+			vim.keymap.set("i", "<Esc>", "<Esc>", { buffer = buf, nowait = true })
+			-- Only q cancels in normal mode
 			vim.keymap.set("n", "q", "<cmd>q!<cr>", { buffer = buf, nowait = true })
 
 			vim.api.nvim_create_autocmd("BufWriteCmd", {
