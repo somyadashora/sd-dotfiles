@@ -78,6 +78,7 @@ return {
 		-- :wq commits; q (normal mode) / :q! cancels.
 		local function open_review_float(line_start, line_end, target_bufnr, target_file)
 			local buf = vim.api.nvim_create_buf(false, true)
+			vim.api.nvim_buf_set_name(buf, "review://comment")
 			vim.bo[buf].buftype   = "acwrite"
 			vim.bo[buf].bufhidden = "wipe"
 			vim.bo[buf].swapfile  = false
