@@ -56,27 +56,50 @@ return {
       s = "SELECT", S = "S-LINE", ["\19"] = "S-BLOCK", t = "TERMINAL",
     }
 
-    -- Accumulate normal/visual-mode keystrokes; clear 2 s after last key or on insert entry
-    local nmode_keys = ""
+    -- nmode_prev: completed commands (dim)   nmode_curr: keys being built (bright)
+    -- On CursorMoved in pure n mode a command just finished → slide curr into prev.
+    -- Also capture operator-pending (no) so full sequences like "daw" show whole.
+    local nmode_prev = ""
+    local nmode_curr = ""
     local nmode_timer = nil
+
     local function reset_nmode()
-      nmode_keys = ""
+      nmode_prev = ""
+      nmode_curr = ""
       if nmode_timer then nmode_timer:stop(); nmode_timer:close(); nmode_timer = nil end
+    end
+
+    local function restart_timer()
+      if nmode_timer then nmode_timer:stop(); nmode_timer:close() end
+      nmode_timer = vim.uv.new_timer()
+      nmode_timer:start(20000, 0, vim.schedule_wrap(reset_nmode))
     end
 
     vim.on_key(function(key)
       local mode = vim.fn.mode()
-      if mode ~= "n" and mode ~= "v" and mode ~= "V" and mode ~= "\22" then return end
+      if mode ~= "n" and mode ~= "no" and mode ~= "v" and mode ~= "V" and mode ~= "\22" then return end
       local k = vim.fn.keytrans(key)
       if k == "" then return end
       -- drop raw bytes (<CE>, <C4>, <80>…) and terminal escape codes (<t_…>)
       if k:match("^<[0-9A-Fa-f][0-9A-Fa-f]>$") or k:match("^<t_") then return end
-      nmode_keys = nmode_keys .. k
-      if #nmode_keys > 24 then nmode_keys = nmode_keys:sub(-24) end
-      if nmode_timer then nmode_timer:stop(); nmode_timer:close() end
-      nmode_timer = vim.uv.new_timer()
-      nmode_timer:start(20000, 0, vim.schedule_wrap(reset_nmode))
+      nmode_curr = nmode_curr .. k
+      -- keep total display ≤ 24 chars, trimming from the oldest (prev) end
+      local over = #nmode_prev + #nmode_curr - 24
+      if over > 0 then
+        nmode_prev = #nmode_prev > over and nmode_prev:sub(over + 1) or ""
+      end
+      restart_timer()
     end)
+
+    -- Command completed: slide curr → prev so the next key starts fresh in bright
+    vim.api.nvim_create_autocmd("CursorMoved", {
+      callback = function()
+        if vim.fn.mode() == "n" and nmode_curr ~= "" then
+          nmode_prev = (nmode_prev .. nmode_curr):sub(-24)
+          nmode_curr = ""
+        end
+      end,
+    })
 
     local function screenkey_status()
       if vim.g.screenkey_active then return "󰌌 KEYS" end
@@ -105,9 +128,14 @@ return {
         lualine_c = {
           { "filename" },
           {
-            function() return nmode_keys end,
-            cond = function() return nmode_keys ~= "" end,
-            color = { fg = colors.yellow, gui = "bold" },
+            function() return nmode_prev end,
+            cond = function() return nmode_prev ~= "" end,
+            color = { fg = "#5c7a8c", gui = "bold" },   -- dim: history
+          },
+          {
+            function() return nmode_curr end,
+            cond = function() return nmode_curr ~= "" end,
+            color = { fg = colors.yellow, gui = "bold" }, -- bright: current command
           },
         },
         lualine_x = {
