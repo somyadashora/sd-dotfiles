@@ -57,28 +57,26 @@ return {
     }
 
     -- nmode_prev: completed commands (dim)   nmode_curr: keys being built (bright)
-    -- CursorMoved sets a pending flag; the slide defers to the next keypress so the
-    -- completed command always gets one render cycle in bright yellow first.
-    -- nmode_needs_arg: after a prefix key (`, ', ", @, r, f, F, t, T, m) the very
-    -- next character is an argument, not a new command — suppress the slide so the
-    -- pair stays together (e.g. `5 and "5p stay as one unit).
+    --
+    -- Slide detection: at the top of every vim.on_key callback we call
+    -- nvim_win_get_cursor(). Because vim.on_key fires BEFORE the current key is
+    -- processed, the cursor position already reflects the PREVIOUS key's execution.
+    -- If it changed since the last callback, the previous key was a completed motion
+    -- and we slide curr → prev.  This works even for rapid key sequences (CursorMoved
+    -- fires asynchronously and misses those; position comparison never does).
+    -- Prefix keys (`, ", f, …) don't move the cursor, so their argument char is
+    -- naturally kept in curr — no explicit AWAITS_CHAR table needed.
     local nmode_prev = ""
     local nmode_curr = ""
-    local nmode_slide_pending = false
-    local nmode_needs_arg = false
+    local nmode_last_row = nil
+    local nmode_last_col = nil
     local nmode_timer = nil
-
-    -- keys that consume one following character as an argument (mark/register/char)
-    local AWAITS_CHAR = {
-      ["`"]=true, ["'"]=true, ['"']=true, ["@"]=true,
-      ["r"]=true, ["f"]=true, ["F"]=true, ["t"]=true, ["T"]=true, ["m"]=true,
-    }
 
     local function reset_nmode()
       nmode_prev = ""
       nmode_curr = ""
-      nmode_slide_pending = false
-      nmode_needs_arg = false
+      nmode_last_row = nil
+      nmode_last_col = nil
       if nmode_timer then nmode_timer:stop(); nmode_timer:close(); nmode_timer = nil end
     end
 
@@ -95,35 +93,26 @@ return {
       if k == "" then return end
       -- drop raw bytes (<CE>, <C4>, <80>…) and terminal escape codes (<t_…>)
       if k:match("^<[0-9A-Fa-f][0-9A-Fa-f]>$") or k:match("^<t_") then return end
-      -- slide prev command to dim; skip while consuming a multi-key argument
-      if nmode_slide_pending and mode == "n" and not nmode_needs_arg then
-        nmode_prev = (nmode_prev .. nmode_curr):sub(-24)
-        nmode_curr = ""
-        nmode_slide_pending = false
+
+      -- compare current cursor pos with where it was when the previous key fired;
+      -- a change means the previous key was a completed command → slide to dim
+      local ok, pos = pcall(vim.api.nvim_win_get_cursor, 0)
+      if ok and nmode_last_row ~= nil and mode == "n" then
+        if pos[1] ~= nmode_last_row or pos[2] ~= nmode_last_col then
+          nmode_prev = (nmode_prev .. nmode_curr):sub(-24)
+          nmode_curr = ""
+        end
       end
+      if ok then nmode_last_row, nmode_last_col = pos[1], pos[2] end
+
       nmode_curr = nmode_curr .. k
       -- keep total display ≤ 24 chars, trimming from the oldest (prev) end
       local over = #nmode_prev + #nmode_curr - 24
       if over > 0 then
         nmode_prev = #nmode_prev > over and nmode_prev:sub(over + 1) or ""
       end
-      -- update needs_arg state
-      if nmode_needs_arg then
-        nmode_needs_arg = false          -- argument consumed
-      elseif mode == "n" and AWAITS_CHAR[k] then
-        nmode_needs_arg = true           -- next key is the argument
-        nmode_slide_pending = false      -- clear any stale pending so CursorMoved between
-                                         -- prefix and arg doesn't split the pair
-      end
       restart_timer()
     end)
-
-    -- Mark that a command completed; actual slide deferred to next keypress
-    vim.api.nvim_create_autocmd("CursorMoved", {
-      callback = function()
-        if vim.fn.mode() == "n" then nmode_slide_pending = true end
-      end,
-    })
 
     local function screenkey_status()
       if vim.g.screenkey_active then return "󰌌 KEYS" end
