@@ -76,15 +76,23 @@ return {
 			end
 		end
 
-		-- Open a floating scratch buffer for composing a review comment.
+		-- Open a floating scratch buffer for composing or editing a review comment.
 		-- :wq commits; q (normal mode) / :q! cancels.
-		local function open_review_float(line_start, line_end, target_bufnr, target_file)
+		-- Pass edit_idx (index into the live comments table) to edit an existing comment.
+		local function open_review_float(line_start, line_end, target_bufnr, target_file, edit_idx)
 			local buf = vim.api.nvim_create_buf(false, true)
 			vim.api.nvim_buf_set_name(buf, "review://comment")
 			vim.bo[buf].buftype   = "acwrite"
 			vim.bo[buf].bufhidden = "wipe"
 			vim.bo[buf].swapfile  = false
 			vim.bo[buf].filetype  = "markdown"
+
+			if edit_idx then
+				local tbl = get_comments_table()
+				if tbl and tbl[edit_idx] then
+					vim.api.nvim_buf_set_lines(buf, 0, -1, false, { tbl[edit_idx].text })
+				end
+			end
 
 			local width  = math.floor(vim.o.columns * 0.55)
 			local height = math.floor(vim.o.lines   * 0.35)
@@ -96,7 +104,9 @@ return {
 				col       = math.floor((vim.o.columns - width)  / 2),
 				style     = "minimal",
 				border    = "rounded",
-				title     = " Review Comment  :wq save · q cancel ",
+				title     = edit_idx
+					and " Edit Comment  :wq save · q cancel "
+					or  " Review Comment  :wq save · q cancel ",
 				title_pos = "center",
 			})
 			-- style=minimal disables these; re-enable explicitly
@@ -130,13 +140,17 @@ return {
 					if text ~= "" then
 						local tbl = get_comments_table()
 						if tbl then
-							table.insert(tbl, {
-								file       = target_file,
-								line_start = line_start,
-								line_end   = line_end,
-								text       = text,
-								bufnr      = target_bufnr,
-							})
+							if edit_idx then
+								tbl[edit_idx].text = text
+							else
+								table.insert(tbl, {
+									file       = target_file,
+									line_start = line_start,
+									line_end   = line_end,
+									text       = text,
+									bufnr      = target_bufnr,
+								})
+							end
 							review._render(target_bufnr)
 							review._sync_file()
 						end
@@ -162,6 +176,32 @@ return {
 			vim.schedule(function() open_review_float(s, e, bufnr, file) end)
 			return "<Esc>"
 		end, { expr = true, desc = "Review: add comment on selection (float)" })
+
+		vim.keymap.set("n", "<leader>re", function()
+			local tbl = get_comments_table()
+			if not tbl or #tbl == 0 then
+				vim.notify("No review comments to edit", vim.log.levels.INFO)
+				return
+			end
+			local cur_file = vim.fn.expand("%:.")
+			local cur_line = vim.fn.line(".")
+			local best_idx, best_dist = nil, math.huge
+			for i, c in ipairs(tbl) do
+				if c.file == cur_file then
+					local dist = math.abs(c.line_start - cur_line)
+					if dist < best_dist then
+						best_dist = dist
+						best_idx = i
+					end
+				end
+			end
+			if not best_idx then
+				vim.notify("No review comments in this file", vim.log.levels.INFO)
+				return
+			end
+			local c = tbl[best_idx]
+			open_review_float(c.line_start, c.line_end, c.bufnr or vim.api.nvim_get_current_buf(), c.file, best_idx)
+		end, { desc = "Review: edit comment nearest to cursor" })
 
 		-- Parse .code-review.md and populate the plugin's internal comments table so
 		-- annotations survive a Neovim restart without needing to re-add them.

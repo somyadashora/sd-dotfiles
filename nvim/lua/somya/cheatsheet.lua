@@ -62,6 +62,32 @@ local sections = {
     },
   },
   {
+    title = "NVIM-TREE  (full help: <leader>eh)",
+    entries = {
+      { "<leader>ee",        "toggle tree" },
+      { "<leader>ef",        "reveal current file in tree" },
+      { "<leader>ec  /  er", "collapse / refresh tree" },
+      { "<leader>e=  /  e-", "widen / narrow tree" },
+      { "<CR>  /  <C-v>",    "open / open in vertical split" },
+      { "a  /  d  /  r",     "create / delete / rename" },
+      { "y  /  gy",          "copy filename / absolute path" },
+      { "I  /  H",           "toggle gitignored / dotfiles" },
+    },
+  },
+  {
+    title = "CODE REVIEW  (code-review.nvim)",
+    entries = {
+      { "<leader>ra",        "add comment — quick single-line prompt" },
+      { "<leader>rA",        "add comment — floating buffer (multi-line)" },
+      { "<leader>re",        "edit comment nearest to cursor" },
+      { "<leader>rd",        "delete comment on current line" },
+      { "<leader>rl",        "list all comments" },
+      { "<leader>rx",        "clear all comments" },
+      { "<leader>rt",        "toggle annotation visibility" },
+      { "]r  /  [r",         "next / prev comment in file" },
+    },
+  },
+  {
     title = "SURROUND  (nvim-surround)",
     entries = {
       { "ys{motion}{c}",  "add surround  →  ysiw(  ysiw\"" },
