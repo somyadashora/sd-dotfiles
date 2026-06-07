@@ -56,6 +56,16 @@ return {
       s = "SELECT", S = "S-LINE", ["\19"] = "S-BLOCK", t = "TERMINAL",
     }
 
+    -- Cache last Ex command on CmdlineLeave so lualine can display it
+    vim.api.nvim_create_autocmd("CmdlineLeave", {
+      pattern = ":",
+      callback = function()
+        vim.schedule(function()
+          vim.g.last_ex_cmd = vim.fn.histget("cmd", -1)
+        end)
+      end,
+    })
+
     local function screenkey_status()
       if vim.g.screenkey_active then return "󰌌 KEYS" end
       return ""
@@ -78,6 +88,18 @@ return {
                 return { bg = "#f38ba8", fg = "#1e1e2e", gui = "bold" }
               end
             end,
+          },
+        },
+        lualine_c = {
+          { "filename" },
+          {
+            function()
+              local cmd = vim.g.last_ex_cmd or ""
+              if cmd == "" then return "" end
+              if #cmd > 32 then cmd = cmd:sub(1, 29) .. "…" end
+              return ": " .. cmd
+            end,
+            color = { fg = colors.fg, gui = "italic" },
           },
         },
         lualine_x = {
