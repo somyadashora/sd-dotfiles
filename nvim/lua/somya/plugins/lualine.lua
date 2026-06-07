@@ -58,25 +58,36 @@ return {
 
     -- nmode_prev: completed commands (dim)   nmode_curr: keys being built (bright)
     --
-    -- Slide detection: at the top of every vim.on_key callback we call
-    -- nvim_win_get_cursor(). Because vim.on_key fires BEFORE the current key is
-    -- processed, the cursor position already reflects the PREVIOUS key's execution.
-    -- If it changed since the last callback, the previous key was a completed motion
-    -- and we slide curr → prev.  This works even for rapid key sequences (CursorMoved
-    -- fires asynchronously and misses those; position comparison never does).
-    -- Prefix keys (`, ", f, …) don't move the cursor, so their argument char is
-    -- naturally kept in curr — no explicit AWAITS_CHAR table needed.
+    -- Boundary detection uses three signals, checked at the top of every vim.on_key
+    -- callback (which fires BEFORE the current key is processed, so cursor/mode already
+    -- reflect the PREVIOUS key's execution):
+    --   1. Cursor moved → previous key was a completed motion → slide curr to prev.
+    --   2. Mode returned to "n" from "no" (operator-pending) → operator+motion completed
+    --      even without cursor movement (e.g. d<Esc> cancel).
+    --   3. nmode_curr_done flag → previous key was self-terminating (<Esc>) or completed
+    --      a prefix+char pair (ma, ra) that doesn't move the cursor.
     local nmode_prev = ""
     local nmode_curr = ""
     local nmode_last_row = nil
     local nmode_last_col = nil
     local nmode_timer = nil
+    local nmode_curr_done = false   -- current nmode_curr is a complete command
+    local nmode_prev_mode = nil     -- mode() value recorded on previous key
+    local nmode_awaiting_char = false -- next char completes a prefix+char command
+
+    -- Keys that end a command by themselves (no cursor movement, no mode change).
+    local NMODE_SELF_TERM = { ["<Esc>"] = true }
+    -- Prefix keys whose NEXT char completes them without moving the cursor.
+    local NMODE_AWAITS_CHAR = { m = true, r = true }
 
     local function reset_nmode()
       nmode_prev = ""
       nmode_curr = ""
       nmode_last_row = nil
       nmode_last_col = nil
+      nmode_curr_done = false
+      nmode_prev_mode = nil
+      nmode_awaiting_char = false
       if nmode_timer then nmode_timer:stop(); nmode_timer:close(); nmode_timer = nil end
     end
 
@@ -87,25 +98,45 @@ return {
     end
 
     vim.on_key(function(key)
-      local mode = vim.fn.mode()
-      if mode ~= "n" and mode ~= "no" and mode ~= "v" and mode ~= "V" and mode ~= "\22" then return end
+      local mode = vim.fn.mode(1)
+      if mode ~= "n" and mode ~= "no" and mode ~= "v" and mode ~= "V" and mode ~= "\22" then
+        nmode_prev_mode = nil  -- invalidate stale mode when leaving tracked modes
+        return
+      end
       local k = vim.fn.keytrans(key)
       if k == "" then return end
       -- drop raw bytes (<CE>, <C4>, <80>…) and terminal escape codes (<t_…>)
       if k:match("^<[0-9A-Fa-f][0-9A-Fa-f]>$") or k:match("^<t_") then return end
 
-      -- compare current cursor pos with where it was when the previous key fired;
-      -- a change means the previous key was a completed command → slide to dim
+      -- All three signals below reflect the PREVIOUS key's result (on_key fires before
+      -- the current key is processed).
       local ok, pos = pcall(vim.api.nvim_win_get_cursor, 0)
-      if ok and nmode_last_row ~= nil and mode == "n" then
-        if pos[1] ~= nmode_last_row or pos[2] ~= nmode_last_col then
-          nmode_prev = (nmode_prev .. nmode_curr):sub(-24)
-          nmode_curr = ""
-        end
+      local cursor_moved = ok and nmode_last_row ~= nil and mode == "n"
+        and (pos[1] ~= nmode_last_row or pos[2] ~= nmode_last_col)
+      local mode_returned = nmode_prev_mode ~= nil and nmode_prev_mode ~= "n" and mode == "n"
+
+      if cursor_moved or mode_returned or nmode_curr_done then
+        nmode_prev = (nmode_prev .. nmode_curr):sub(-24)
+        nmode_curr = ""
+        nmode_curr_done = false
+        nmode_awaiting_char = false
       end
       if ok then nmode_last_row, nmode_last_col = pos[1], pos[2] end
+      nmode_prev_mode = mode
 
       nmode_curr = nmode_curr .. k
+
+      -- Update completion state for the new key.
+      if nmode_awaiting_char then
+        -- This char completes a prefix+char command (e.g. ma, ra).
+        nmode_curr_done = true
+        nmode_awaiting_char = false
+      elseif NMODE_SELF_TERM[k] then
+        nmode_curr_done = true
+      elseif NMODE_AWAITS_CHAR[k] then
+        nmode_awaiting_char = true
+      end
+
       -- keep total display ≤ 24 chars, trimming from the oldest (prev) end
       local over = #nmode_prev + #nmode_curr - 24
       if over > 0 then
