@@ -76,11 +76,6 @@ return {
       nmode_timer:start(2000, 0, vim.schedule_wrap(reset_nmode))
     end)
 
-    vim.api.nvim_create_autocmd("ModeChanged", {
-      pattern = "[nvV\22]*:i*",
-      callback = reset_nmode,
-    })
-
     local function screenkey_status()
       if vim.g.screenkey_active then return "󰌌 KEYS" end
       return ""
