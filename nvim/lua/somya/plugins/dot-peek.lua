@@ -1,3 +1,14 @@
+-- NOTE: Neovim does not expose the full dot-repeat command sequence through any
+-- public API. The internal redo buffer (redo_buff, a C-level struct) stores the
+-- complete command — operator + count + motion + text-object + register — but it
+-- is never surfaced to Lua. The APIs that ARE available:
+--   vim.fn.getreg(".")  → last *inserted* text only (e.g. the char `"` for ysiw")
+--   vim.v.operator      → last operator char (e.g. "y" for surround's fake-y)
+--   vim.v.count / vim.v.register → count and register, not the full sequence
+--   vim.fn.undotree()   → text delta, not the command that caused it
+-- Because of this, we capture pre-insert normal-mode keys ourselves via vim.on_key
+-- and snapshot them on ModeChanged. If Neovim ever adds a RepeatChanged event or
+-- exposes redo_buff to Lua, this whole plugin can be rewritten to use that instead.
 return {
 	dir = vim.fn.stdpath("config"),
 	name = "dot-peek",
