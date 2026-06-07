@@ -6,12 +6,42 @@ return {
 		local buf, win
 		local visible = false
 
+		-- op_snapshot: normal-mode keys that triggered the last insert (e.g. "ciw", "A", "5s")
+		-- persists until the next insert operation so the window always shows the full command
+		local op_snapshot = ""
+		local nkeys = ""
+		local nkeys_timer = nil
+
+		local function reset_nkeys()
+			nkeys = ""
+			if nkeys_timer then nkeys_timer:stop(); nkeys_timer:close(); nkeys_timer = nil end
+		end
+
+		-- Accumulate normal-mode keys
+		vim.on_key(function(key)
+			if vim.fn.mode() ~= "n" then return end
+			local k = vim.fn.keytrans(key)
+			if k == "" then return end
+			nkeys = nkeys .. k
+			if #nkeys > 20 then nkeys = nkeys:sub(-20) end
+			if nkeys_timer then nkeys_timer:stop(); nkeys_timer:close() end
+			nkeys_timer = vim.uv.new_timer()
+			nkeys_timer:start(3000, 0, vim.schedule_wrap(reset_nkeys))
+		end)
+
+		-- When entering insert/replace mode, snapshot the triggering keys
+		vim.api.nvim_create_autocmd("ModeChanged", {
+			pattern = { "*:i*", "*:R*" },
+			callback = function()
+				if nkeys ~= "" then op_snapshot = nkeys end
+				reset_nkeys()
+			end,
+		})
+
 		local HL = "DotPeek"
-		local HL_TITLE = "DotPeekTitle"
 
 		local function set_hl()
 			vim.api.nvim_set_hl(0, HL, { fg = "#cdd6f4", italic = true, bg = "#1e2535" })
-			vim.api.nvim_set_hl(0, HL_TITLE, { fg = "#f9e2af", bold = true, bg = "#1e2535" })
 		end
 		set_hl()
 		vim.api.nvim_create_autocmd("ColorScheme", {
@@ -19,12 +49,15 @@ return {
 			callback = set_hl,
 		})
 
-		local function dot_text()
-			local txt = vim.fn.getreg(".")
-			if txt == nil or txt == "" then return nil end
-			txt = txt:gsub("\n", "\\n")
-			if #txt > 44 then txt = txt:sub(1, 41) .. "…" end
-			return txt
+		local function build_content()
+			local ins = vim.fn.getreg(".")
+			if ins == nil or ins == "" then return nil end
+			ins = ins:gsub("\n", "\\n")
+			if #ins > 30 then ins = ins:sub(1, 27) .. "…" end
+			if op_snapshot ~= "" then
+				return op_snapshot .. "  │  " .. ins
+			end
+			return ins
 		end
 
 		local function win_config(width)
@@ -45,11 +78,11 @@ return {
 
 		local function render()
 			if not buf or not vim.api.nvim_buf_is_valid(buf) then return end
-			local txt = dot_text()
-			local content = txt and ("  " .. txt .. "  ") or "  (empty)  "
-			local width = math.max(12, vim.fn.strdisplaywidth(content))
+			local content = build_content()
+			local line = content and ("  " .. content .. "  ") or "  (empty)  "
+			local width = math.max(12, vim.fn.strdisplaywidth(line))
 			vim.bo[buf].modifiable = true
-			vim.api.nvim_buf_set_lines(buf, 0, -1, false, { content })
+			vim.api.nvim_buf_set_lines(buf, 0, -1, false, { line })
 			vim.bo[buf].modifiable = false
 			if win and vim.api.nvim_win_is_valid(win) then
 				vim.api.nvim_win_set_config(win, win_config(width))
@@ -59,13 +92,11 @@ return {
 		local function open()
 			buf = vim.api.nvim_create_buf(false, true)
 			vim.bo[buf].bufhidden = "wipe"
-
-			local txt = dot_text()
-			local content = txt and ("  " .. txt .. "  ") or "  (empty)  "
-			local width = math.max(12, vim.fn.strdisplaywidth(content))
-
+			local content = build_content()
+			local line = content and ("  " .. content .. "  ") or "  (empty)  "
+			local width = math.max(12, vim.fn.strdisplaywidth(line))
 			win = vim.api.nvim_open_win(buf, false, win_config(width))
-			vim.api.nvim_buf_set_lines(buf, 0, -1, false, { content })
+			vim.api.nvim_buf_set_lines(buf, 0, -1, false, { line })
 			vim.bo[buf].modifiable = false
 			vim.wo[win].winhl = "Normal:" .. HL
 		end
@@ -82,22 +113,19 @@ return {
 			if visible then
 				close()
 				visible = false
-				vim.notify("Dot-peek hidden", vim.log.levels.INFO)
 			else
 				open()
 				visible = true
-				vim.notify("Dot-peek visible", vim.log.levels.INFO)
 			end
 		end
 
-		-- Refresh after leaving insert (dot register updates on InsertLeave)
+		-- Dot register updates at InsertLeave; re-render then
 		vim.api.nvim_create_autocmd("InsertLeave", {
 			callback = function()
 				if visible then vim.schedule(render) end
 			end,
 		})
 
-		-- Reposition when terminal is resized
 		vim.api.nvim_create_autocmd("VimResized", {
 			callback = function()
 				if visible then vim.schedule(render) end
