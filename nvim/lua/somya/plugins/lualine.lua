@@ -101,12 +101,8 @@ return {
     local function restart_timer()
       if nmode_timer then nmode_timer:stop(); nmode_timer:close() end
       nmode_timer = vim.uv.new_timer()
-      nmode_timer:start(3000, 0, vim.schedule_wrap(reset_nmode))
+      nmode_timer:start(5000, 0, vim.schedule_wrap(reset_nmode))
     end
-
-    vim.keymap.set("n", "<leader>K", function()
-      vim.g.nmode_history = not vim.g.nmode_history
-    end, { desc = "Toggle key history (dim)" })
 
     vim.on_key(function(key)
       local mode = vim.fn.mode(1)

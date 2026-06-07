@@ -131,6 +131,7 @@ return {
 				open()
 				visible = true
 			end
+			vim.g.nmode_history = visible  -- keep lualine key-history in sync
 		end
 
 		-- Dot register updates at InsertLeave; re-render then
