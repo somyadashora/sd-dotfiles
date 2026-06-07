@@ -25,6 +25,8 @@ return {
 			if mode ~= "n" and mode ~= "no" then return end
 			local k = vim.fn.keytrans(key)
 			if k == "" then return end
+			-- drop raw bytes (<CE>, <C4>, <80>…) and terminal escape codes (<t_…>)
+			if k:match("^<[0-9A-Fa-f][0-9A-Fa-f]>$") or k:match("^<t_") then return end
 			nkeys = nkeys .. k
 			if #nkeys > 20 then nkeys = nkeys:sub(-20) end
 			if nkeys_timer then nkeys_timer:stop(); nkeys_timer:close() end

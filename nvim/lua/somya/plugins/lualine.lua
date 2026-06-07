@@ -69,11 +69,13 @@ return {
       if mode ~= "n" and mode ~= "v" and mode ~= "V" and mode ~= "\22" then return end
       local k = vim.fn.keytrans(key)
       if k == "" then return end
+      -- drop raw bytes (<CE>, <C4>, <80>…) and terminal escape codes (<t_…>)
+      if k:match("^<[0-9A-Fa-f][0-9A-Fa-f]>$") or k:match("^<t_") then return end
       nmode_keys = nmode_keys .. k
       if #nmode_keys > 24 then nmode_keys = nmode_keys:sub(-24) end
       if nmode_timer then nmode_timer:stop(); nmode_timer:close() end
       nmode_timer = vim.uv.new_timer()
-      nmode_timer:start(2000, 0, vim.schedule_wrap(reset_nmode))
+      nmode_timer:start(20000, 0, vim.schedule_wrap(reset_nmode))
     end)
 
     local function screenkey_status()
