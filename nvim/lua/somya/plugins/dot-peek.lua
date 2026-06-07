@@ -17,9 +17,12 @@ return {
 			if nkeys_timer then nkeys_timer:stop(); nkeys_timer:close(); nkeys_timer = nil end
 		end
 
-		-- Accumulate normal-mode keys
+		-- Accumulate keys in normal AND operator-pending mode so "ciw" is captured whole.
+		-- Navigation keys (j, k, w, …) also start in "n" but they trigger CursorMoved
+		-- which resets the accumulator before any operator key is appended.
 		vim.on_key(function(key)
-			if vim.fn.mode() ~= "n" then return end
+			local mode = vim.fn.mode()
+			if mode ~= "n" and mode ~= "no" then return end
 			local k = vim.fn.keytrans(key)
 			if k == "" then return end
 			nkeys = nkeys .. k
@@ -28,6 +31,15 @@ return {
 			nkeys_timer = vim.uv.new_timer()
 			nkeys_timer:start(3000, 0, vim.schedule_wrap(reset_nkeys))
 		end)
+
+		-- Navigation keys move the cursor while still in "n" mode — reset there so they
+		-- don't bleed into the next operator snapshot. Operator motions run in "no" mode
+		-- so this autocmd leaves them untouched.
+		vim.api.nvim_create_autocmd("CursorMoved", {
+			callback = function()
+				if vim.fn.mode() == "n" then reset_nkeys() end
+			end,
+		})
 
 		-- When entering insert/replace mode, snapshot the triggering keys
 		vim.api.nvim_create_autocmd("ModeChanged", {
