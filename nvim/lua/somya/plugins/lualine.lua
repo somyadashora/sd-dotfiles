@@ -85,7 +85,7 @@ return {
     -- in nmode_curr, force a slide first so `5`5` doesn't appear as one bright unit.
     local NMODE_JUMP_PREFIXES = { ["`"] = true, ["'"] = true }
 
-    vim.g.nmode_history = true  -- toggled by <leader>K
+    vim.g.nmode_history = false  -- off by default; <leader>. toggles on with dot-peek
 
     local function reset_nmode()
       nmode_prev = ""
