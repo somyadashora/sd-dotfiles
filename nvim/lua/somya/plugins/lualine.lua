@@ -134,6 +134,20 @@ return {
             "filetype",
           },
         },
+        lualine_z = {
+          { "location" },
+          {
+            function()
+              local txt = vim.fn.getreg(".")
+              if txt == nil or txt == "" then return "" end
+              txt = txt:gsub("\n", "\\n")
+              if #txt > 30 then txt = txt:sub(1, 27) .. "…" end
+              return "󰑖 " .. txt
+            end,
+            cond = function() return vim.fn.getreg(".") ~= "" end,
+            color = { fg = colors.fg, gui = "italic" },
+          },
+        },
       },
     })
   end,
