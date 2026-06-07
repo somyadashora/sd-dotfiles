@@ -57,15 +57,18 @@ return {
     }
 
     -- nmode_prev: completed commands (dim)   nmode_curr: keys being built (bright)
-    -- On CursorMoved in pure n mode a command just finished → slide curr into prev.
-    -- Also capture operator-pending (no) so full sequences like "daw" show whole.
+    -- CursorMoved sets a pending flag instead of sliding immediately, so there is
+    -- always at least one lualine render with the completed command in bright yellow
+    -- before it dims.  The slide happens at the top of the next vim.on_key call.
     local nmode_prev = ""
     local nmode_curr = ""
+    local nmode_slide_pending = false
     local nmode_timer = nil
 
     local function reset_nmode()
       nmode_prev = ""
       nmode_curr = ""
+      nmode_slide_pending = false
       if nmode_timer then nmode_timer:stop(); nmode_timer:close(); nmode_timer = nil end
     end
 
@@ -82,6 +85,12 @@ return {
       if k == "" then return end
       -- drop raw bytes (<CE>, <C4>, <80>…) and terminal escape codes (<t_…>)
       if k:match("^<[0-9A-Fa-f][0-9A-Fa-f]>$") or k:match("^<t_") then return end
+      -- slide prev command to dim before starting the next one
+      if nmode_slide_pending and mode == "n" then
+        nmode_prev = (nmode_prev .. nmode_curr):sub(-24)
+        nmode_curr = ""
+        nmode_slide_pending = false
+      end
       nmode_curr = nmode_curr .. k
       -- keep total display ≤ 24 chars, trimming from the oldest (prev) end
       local over = #nmode_prev + #nmode_curr - 24
@@ -91,13 +100,10 @@ return {
       restart_timer()
     end)
 
-    -- Command completed: slide curr → prev so the next key starts fresh in bright
+    -- Mark that the cursor moved (command completed); actual slide deferred to next keypress
     vim.api.nvim_create_autocmd("CursorMoved", {
       callback = function()
-        if vim.fn.mode() == "n" and nmode_curr ~= "" then
-          nmode_prev = (nmode_prev .. nmode_curr):sub(-24)
-          nmode_curr = ""
-        end
+        if vim.fn.mode() == "n" then nmode_slide_pending = true end
       end,
     })
 
