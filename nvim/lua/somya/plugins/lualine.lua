@@ -77,8 +77,15 @@ return {
 
     -- Keys that end a command by themselves (no cursor movement, no mode change).
     local NMODE_SELF_TERM = { ["<Esc>"] = true }
-    -- Prefix keys whose NEXT char completes them without moving the cursor.
-    local NMODE_AWAITS_CHAR = { m = true, r = true }
+    -- Prefix keys whose NEXT char completes them.
+    -- ` and ' move the cursor (mark jump), but marking done early prevents bundling
+    -- with the subsequent command when the jump lands at the same position.
+    local NMODE_AWAITS_CHAR = { m = true, r = true, ["`"] = true, ["'"] = true }
+    -- Mark-jump prefixes: when pressed in pure normal mode with only count digits
+    -- in nmode_curr, force a slide first so `5`5` doesn't appear as one bright unit.
+    local NMODE_JUMP_PREFIXES = { ["`"] = true, ["'"] = true }
+
+    vim.g.nmode_history = true  -- toggled by <leader>K
 
     local function reset_nmode()
       nmode_prev = ""
@@ -94,8 +101,12 @@ return {
     local function restart_timer()
       if nmode_timer then nmode_timer:stop(); nmode_timer:close() end
       nmode_timer = vim.uv.new_timer()
-      nmode_timer:start(20000, 0, vim.schedule_wrap(reset_nmode))
+      nmode_timer:start(3000, 0, vim.schedule_wrap(reset_nmode))
     end
+
+    vim.keymap.set("n", "<leader>K", function()
+      vim.g.nmode_history = not vim.g.nmode_history
+    end, { desc = "Toggle key history (dim)" })
 
     vim.on_key(function(key)
       local mode = vim.fn.mode(1)
@@ -108,14 +119,18 @@ return {
       -- drop raw bytes (<CE>, <C4>, <80>…) and terminal escape codes (<t_…>)
       if k:match("^<[0-9A-Fa-f][0-9A-Fa-f]>$") or k:match("^<t_") then return end
 
-      -- All three signals below reflect the PREVIOUS key's result (on_key fires before
+      -- All signals below reflect the PREVIOUS key's result (on_key fires before
       -- the current key is processed).
       local ok, pos = pcall(vim.api.nvim_win_get_cursor, 0)
       local cursor_moved = ok and nmode_last_row ~= nil and mode == "n"
         and (pos[1] ~= nmode_last_row or pos[2] ~= nmode_last_col)
       local mode_returned = nmode_prev_mode ~= nil and nmode_prev_mode ~= "n" and mode == "n"
+      -- If a mark-jump prefix (` ') arrives while nmode_curr is pure count digits in
+      -- normal mode, slide the orphaned digits first — prevents `5`5` bundling.
+      local jump_prefix_slide = NMODE_JUMP_PREFIXES[k] and mode == "n"
+        and nmode_curr:match("^%d+$") ~= nil
 
-      if cursor_moved or mode_returned or nmode_curr_done then
+      if cursor_moved or mode_returned or nmode_curr_done or jump_prefix_slide then
         nmode_prev = (nmode_prev .. nmode_curr):sub(-24)
         nmode_curr = ""
         nmode_curr_done = false
@@ -173,7 +188,7 @@ return {
           { "filename" },
           {
             function() return nmode_prev end,
-            cond = function() return nmode_prev ~= "" end,
+            cond = function() return nmode_prev ~= "" and vim.g.nmode_history end,
             color = { fg = "#5c7a8c", gui = "bold" },   -- dim: history
           },
           {
