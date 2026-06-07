@@ -56,14 +56,29 @@ return {
       s = "SELECT", S = "S-LINE", ["\19"] = "S-BLOCK", t = "TERMINAL",
     }
 
-    -- Cache last Ex command on CmdlineLeave so lualine can display it
-    vim.api.nvim_create_autocmd("CmdlineLeave", {
-      pattern = ":",
-      callback = function()
-        vim.schedule(function()
-          vim.g.last_ex_cmd = vim.fn.histget("cmd", -1)
-        end)
-      end,
+    -- Accumulate normal/visual-mode keystrokes; clear 2 s after last key or on insert entry
+    local nmode_keys = ""
+    local nmode_timer = nil
+    local function reset_nmode()
+      nmode_keys = ""
+      if nmode_timer then nmode_timer:stop(); nmode_timer:close(); nmode_timer = nil end
+    end
+
+    vim.on_key(function(key)
+      local mode = vim.fn.mode()
+      if mode ~= "n" and mode ~= "v" and mode ~= "V" and mode ~= "\22" then return end
+      local k = vim.fn.keytrans(key)
+      if k == "" then return end
+      nmode_keys = nmode_keys .. k
+      if #nmode_keys > 24 then nmode_keys = nmode_keys:sub(-24) end
+      if nmode_timer then nmode_timer:stop(); nmode_timer:close() end
+      nmode_timer = vim.uv.new_timer()
+      nmode_timer:start(2000, 0, vim.schedule_wrap(reset_nmode))
+    end)
+
+    vim.api.nvim_create_autocmd("ModeChanged", {
+      pattern = "[nvV\22]*:i*",
+      callback = reset_nmode,
     })
 
     local function screenkey_status()
@@ -93,13 +108,9 @@ return {
         lualine_c = {
           { "filename" },
           {
-            function()
-              local cmd = vim.g.last_ex_cmd or ""
-              if cmd == "" then return "" end
-              if #cmd > 32 then cmd = cmd:sub(1, 29) .. "…" end
-              return ": " .. cmd
-            end,
-            color = { fg = colors.fg, gui = "italic" },
+            function() return nmode_keys end,
+            cond = function() return nmode_keys ~= "" end,
+            color = { fg = colors.yellow, gui = "bold" },
           },
         },
         lualine_x = {
