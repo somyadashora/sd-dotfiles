@@ -139,6 +139,14 @@ local sections = {
     },
   },
   {
+    title = "INDENT SCOPE  (mini.indentscope)",
+    entries = {
+      { "[i  /  ]i",  "jump to top / bottom of current indent scope" },
+      { "ii",          "text object: inner indent scope  (e.g. dii, vii, >ii)" },
+      { "ai",          "text object: around indent scope (includes border lines)" },
+    },
+  },
+  {
     title = "TEXT OBJECTS  (work with any operator)",
     entries = {
       { "iw  /  aw",   "inner / around word" },
