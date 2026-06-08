@@ -11,23 +11,25 @@
 --
 -- SYMBOL:
 --   The scope is highlighted with a │ line through the indent-blankline guides.
---   Animates as you move across scopes; set draw.animation to false to disable.
 
 return {
   "echasnovski/mini.indentscope",
   version = "*",
   event = { "BufReadPre", "BufNewFile" },
-  opts = {
-    symbol = "│",
-    options = { try_as_border = true },
-    mappings = {
-      goto_top    = "[i",
-      goto_bottom = "]i",
-      object_scope         = "ii",
-      object_scope_with_border = "ai",
-    },
-    draw = {
-      animation = require("mini.indentscope").gen_animation.none,
-    },
-  },
+  config = function()
+    local indentscope = require("mini.indentscope")
+    indentscope.setup({
+      symbol = "│",
+      options = { try_as_border = true },
+      mappings = {
+        goto_top             = "[i",
+        goto_bottom          = "]i",
+        object_scope         = "ii",
+        object_scope_with_border = "ai",
+      },
+      draw = {
+        animation = indentscope.gen_animation.none(),
+      },
+    })
+  end,
 }
