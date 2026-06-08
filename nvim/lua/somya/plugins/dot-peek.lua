@@ -10,6 +10,7 @@
 -- and snapshot them on ModeChanged. If Neovim ever adds a RepeatChanged event or
 -- exposes redo_buff to Lua, this whole plugin can be rewritten to use that instead.
 return {
+	enabled = false,
 	dir = vim.fn.stdpath("config"),
 	name = "dot-peek",
 	lazy = false,
