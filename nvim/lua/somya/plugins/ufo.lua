@@ -46,7 +46,7 @@
 
     end,
     opts = {
-      provider_selector = function() return { "lsp", "indent" } end,
+      provider_selector = function() return { "indent" } end,
       fold_virt_text_handler = fold_text_with_count,
     },
     keys = {
