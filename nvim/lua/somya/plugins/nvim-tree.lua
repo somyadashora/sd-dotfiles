@@ -194,17 +194,19 @@ return {
       if idx < 0 then return end  -- only NvimTree entries remain, nowhere useful to go
 
       if skip > 0 then
-        -- noautocmd alone moves the jumplist position but still loads the NvimTree
-        -- buffer into the window (visible flash). lazyredraw defers all screen
-        -- rendering so only the final target buffer is ever painted.
-        local prev_lr = vim.o.lazyredraw
-        vim.o.lazyredraw = true
         for _ = 1, skip do
           vim.cmd("noautocmd normal! \x0F")
         end
-        vim.o.lazyredraw = prev_lr
+        -- noautocmd suppresses nvim-tree's own buflisted=false setter, which causes
+        -- the NvimTree buffer to appear as a permanent tab in the bufferline.
+        -- Re-apply it manually after the skip jumps.
+        for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+          if vim.api.nvim_buf_get_name(buf):match("NvimTree_") then
+            vim.bo[buf].buflisted = false
+          end
+        end
       end
-      vim.cmd("normal! \x0F")  -- final real jump with autocmds and full redraw
+      vim.cmd("normal! \x0F")
     end, { noremap = true, desc = "Jump back (skip NvimTree entries)" })
   end
 }
