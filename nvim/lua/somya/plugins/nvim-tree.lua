@@ -171,5 +171,21 @@ return {
     end
 
     keymap.set("n", "<leader>eh", open_help, { desc = "nvim-tree shortcuts help" })
+
+    -- Strip NvimTree entries from the jumplist whenever we leave the tree window.
+    -- Without this, Ctrl-O tries to load the NvimTree buffer into the active editor
+    -- window, which triggers nvim-tree's split-protection and opens a second tree pane.
+    vim.api.nvim_create_autocmd("BufLeave", {
+      group = vim.api.nvim_create_augroup("nvim_tree_jumplist_fix", { clear = true }),
+      pattern = "NvimTree_*",
+      callback = function()
+        local list, _ = unpack(vim.fn.getjumplist())
+        local buf = vim.api.nvim_get_current_buf()
+        local cleaned = vim.tbl_filter(function(e) return e.bufnr ~= buf end, list)
+        if #cleaned < #list then
+          vim.fn.setjumplist(cleaned, "r")
+        end
+      end,
+    })
   end
 }

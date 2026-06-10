@@ -42,16 +42,19 @@ return {
     keymap.set("n", "<leader>fs", "<cmd>Telescope live_grep<cr>", { desc = "Find string in cwd" })
     -- keymap.set("n", "<leader>fSi", "<cmd>Telescope live_grep no_ignore=true hidden=true<cr>", { desc = "Find string in cwd, don't respect gitignore" })
 
-    keymap.set("n", "<leader>fc", "<cmd>Telescope grep_string<cr>", { desc = "Find string under cursor in cwd" })
+    keymap.set("n", "<leader>*", "<cmd>Telescope grep_string<cr>", { desc = "Find string under cursor in cwd" })
 
     keymap.set("n", "<leader>fB", "<cmd>Telescope buffers<cr>", { desc = "Find buffers in bufferlist" })
-    keymap.set("n", "<leader>fR", "<cmd>Telescope registers<cr>", { desc = "Find registers in registerlist" })
-    keymap.set("n", "<leader>fJ", "<cmd>Telescope jumplist<cr>", { desc = "Find jumps in jumplist" })
-    keymap.set("n", "<leader>fM", "<cmd>Telescope marks<cr>", { desc = "Find marks in marklist" })
+    keymap.set("n", '<leader>"', "<cmd>Telescope registers<cr>", { desc = "Find registers in registerlist" })
+    keymap.set("n", "<leader>j", "<cmd>Telescope jumplist<cr>", { desc = "Find jumps in jumplist" })
+    keymap.set("n", "<leader>`", "<cmd>Telescope marks<cr>", { desc = "Find marks in marklist" })
     keymap.set("n", "<leader>fT", "<cmd>TodoTelescope<cr>", { desc = "Find Todo's" })
-    keymap.set("n", "<leader>fib", "<cmd>Telescope current_buffer_fuzzy_find<cr>", { desc = "Find string fuzzily in current buffer" })
+    keymap.set("n", "<leader>/", "<cmd>Telescope current_buffer_fuzzy_find<cr>", { desc = "Find string fuzzily in current buffer" })
+    keymap.set("n", "<leader>:", "<cmd>Telescope command_history<cr>", { desc = "Find in command history" })
+    keymap.set("n", "<leader>?", "<cmd>Telescope help_tags<cr>", { desc = "Find help tags" })
+    keymap.set("n", "<leader>q", "<cmd>Telescope quickfix<cr>", { desc = "Find in quickfix list" })
 
-    keymap.set("n", "<leader>fC", function()
+    keymap.set("n", "<leader>;", function()
       local pickers = require("telescope.pickers")
       local finders = require("telescope.finders")
       local conf = require("telescope.config").values
