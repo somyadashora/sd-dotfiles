@@ -33,11 +33,11 @@ keymap.set("n", "dm", function()
 end, { desc = "Delete mark" })
 
 -- Spellcheck control
-keymap.set("n", "<leader>sp", ":setlocal spell!<CR>", { desc = "Toggle spellcheck" })
-keymap.set("n", "<leader>sn", "]s", { desc = "Next misspelled word" })
-keymap.set("n", "<leader>sb", "[s", { desc = "Prev misspelled word" })
-keymap.set("n", "<leader>sa", "zg", { desc = "Add word to spellfile" })
-keymap.set("n", "<leader>s?", "z=", { desc = "Suggest spelling corrections" })
+keymap.set("n", "<leader>Sp", ":setlocal spell!<CR>", { desc = "Toggle spellcheck" })
+keymap.set("n", "<leader>Sn", "]s", { desc = "Next misspelled word" })
+keymap.set("n", "<leader>Sb", "[s", { desc = "Prev misspelled word" })
+keymap.set("n", "<leader>Sa", "zg", { desc = "Add word to spellfile" })
+keymap.set("n", "<leader>S?", "z=", { desc = "Suggest spelling corrections" })
 
 -- increment/decrement numbers
 keymap.set("n", "<leader>+", "<C-a>", { desc = "Increment number" }) -- increment

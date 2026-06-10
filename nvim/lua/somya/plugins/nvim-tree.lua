@@ -172,20 +172,31 @@ return {
 
     keymap.set("n", "<leader>eh", open_help, { desc = "nvim-tree shortcuts help" })
 
-    -- Strip NvimTree entries from the jumplist whenever we leave the tree window.
-    -- Without this, Ctrl-O tries to load the NvimTree buffer into the active editor
-    -- window, which triggers nvim-tree's split-protection and opens a second tree pane.
-    vim.api.nvim_create_autocmd("BufLeave", {
-      group = vim.api.nvim_create_augroup("nvim_tree_jumplist_fix", { clear = true }),
-      pattern = "NvimTree_*",
-      callback = function()
-        local list, _ = unpack(vim.fn.getjumplist())
-        local buf = vim.api.nvim_get_current_buf()
-        local cleaned = vim.tbl_filter(function(e) return e.bufnr ~= buf end, list)
-        if #cleaned < #list then
-          vim.fn.setjumplist(cleaned, "r")
+    -- Ctrl-O jumps that land on an NvimTree entry trigger nvim-tree's split-protection,
+    -- opening a second tree pane. Fix: skip those entries with :noautocmd (so nvim-tree's
+    -- BufEnter handler doesn't fire for the intermediate buffers), then do the final real
+    -- jump normally. setjumplist() doesn't exist in Neovim so we can't prune the list.
+    keymap.set("n", "<C-o>", function()
+      local list, pos = unpack(vim.fn.getjumplist())
+      if pos == 0 then return end
+
+      local skip = 0
+      local idx  = pos - 1  -- 0-based index of the entry <C-o> would jump to
+      while idx >= 0 do
+        local entry = list[idx + 1]
+        if not entry or not vim.api.nvim_buf_get_name(entry.bufnr):match("NvimTree_") then
+          break
         end
-      end,
-    })
+        skip = skip + 1
+        idx  = idx - 1
+      end
+
+      if idx < 0 then return end  -- only NvimTree entries remain, nowhere useful to go
+
+      for _ = 1, skip do
+        vim.cmd("noautocmd normal! \x0F")  -- advance past NvimTree silently
+      end
+      vim.cmd("normal! \x0F")             -- final real jump with autocmds
+    end, { noremap = true, desc = "Jump back (skip NvimTree entries)" })
   end
 }
