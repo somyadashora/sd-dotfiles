@@ -46,8 +46,9 @@ local sections = {
   {
     title = "QUICKFIX  (nvim-bqf — keys below work inside the qf window)",
     entries = {
-      { "<leader>co  /  cc", "toggle / close quickfix list" },
-      { "<leader>cf",         "focus / jump to quickfix window" },
+      { "<leader>qo  /  qc", "toggle / close quickfix list" },
+      { "<leader>qf",         "focus / jump to quickfix window" },
+      { "<leader>Q",          "open quickfix list in fzf picker" },
       { "]q  /  [q",          "next / prev quickfix item" },
       { "]Q  /  [Q",          "last / first quickfix item" },
       { "<C-q>  (telescope)", "send marked entries to quickfix" },

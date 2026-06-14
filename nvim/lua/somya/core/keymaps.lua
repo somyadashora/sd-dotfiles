@@ -60,7 +60,7 @@ keymap.set("n", "]q", "<cmd>cnext<CR>", { desc = "Next quickfix item" })
 keymap.set("n", "[q", "<cmd>cprev<CR>", { desc = "Prev quickfix item" })
 keymap.set("n", "]Q", "<cmd>clast<CR>", { desc = "Last quickfix item" })
 keymap.set("n", "[Q", "<cmd>cfirst<CR>", { desc = "First quickfix item" })
-keymap.set("n", "<leader>co", function()
+keymap.set("n", "<leader>qo", function()
   local qf_open = false
   for _, win in ipairs(vim.fn.getwininfo()) do
     if win.quickfix == 1 and win.loclist == 0 then
@@ -70,8 +70,8 @@ keymap.set("n", "<leader>co", function()
   end
   vim.cmd(qf_open and "cclose" or "copen")
 end, { desc = "Toggle quickfix list" })
-keymap.set("n", "<leader>cc", "<cmd>cclose<CR>", { desc = "Close quickfix list" })
-keymap.set("n", "<leader>cf", function()
+keymap.set("n", "<leader>qc", "<cmd>cclose<CR>", { desc = "Close quickfix list" })
+keymap.set("n", "<leader>qf", function()
   for _, win in ipairs(vim.fn.getwininfo()) do
     if win.quickfix == 1 and win.loclist == 0 then
       vim.api.nvim_set_current_win(win.winid)

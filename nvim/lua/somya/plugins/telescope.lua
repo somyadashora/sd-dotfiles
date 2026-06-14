@@ -107,7 +107,7 @@ return {
     keymap.set("n", "<leader>/", "<cmd>Telescope current_buffer_fuzzy_find<cr>", { desc = "Find string fuzzily in current buffer" })
     keymap.set("n", "<leader>:", "<cmd>Telescope command_history<cr>", { desc = "Find in command history" })
     keymap.set("n", "<leader>?", "<cmd>Telescope help_tags<cr>", { desc = "Find help tags" })
-    keymap.set("n", "<leader>q", "<cmd>Telescope quickfix<cr>", { desc = "Find in quickfix list" })
+    keymap.set("n", "<leader>Q", "<cmd>Telescope quickfix<cr>", { desc = "Open quickfix list in fzf picker" })
 
     keymap.set("n", "<leader>;", function()
       local pickers = require("telescope.pickers")
