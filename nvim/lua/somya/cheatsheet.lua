@@ -57,6 +57,12 @@ local sections = {
       { "<C-n>  /  <C-p>",    "preview next / prev file" },
       { "o",                   "open item and close quickfix" },
       { "<C-v>  /  <C-x>",    "open item in vertical / horizontal split" },
+      { "── bulk edit ──",    "run a command over the whole quickfix list" },
+      { ":cdo {cmd}",          "run {cmd} on every ENTRY (matched line)" },
+      { ":cfdo {cmd}",         "run {cmd} once per FILE in the list" },
+      { ":cdo s/old/new/g | update",   "replace on each entry, then save" },
+      { ":cfdo %s/old/new/g | update", "replace across each file, then save" },
+      { ":cdo normal @q",      "run macro q on every entry" },
     },
   },
   {
