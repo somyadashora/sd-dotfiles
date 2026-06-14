@@ -9,6 +9,27 @@ return {
   config = function()
     local telescope = require("telescope")
     local actions = require("telescope.actions")
+    local action_state = require("telescope.actions.state")
+
+    -- Open ALL Tab-marked entries on <CR>; fall back to default for a single entry
+    local function select_one_or_multi(prompt_bufnr)
+      local picker = action_state.get_current_picker(prompt_bufnr)
+      local multi = picker:get_multi_selection()
+      if not vim.tbl_isempty(multi) then
+        actions.close(prompt_bufnr)
+        for _, entry in ipairs(multi) do
+          local fname = entry.path or entry.filename
+          if fname then
+            vim.cmd("edit " .. vim.fn.fnameescape(fname))
+            if entry.lnum then
+              pcall(vim.api.nvim_win_set_cursor, 0, { entry.lnum, math.max((entry.col or 1) - 1, 0) })
+            end
+          end
+        end
+      else
+        actions.select_default(prompt_bufnr)
+      end
+    end
 
     telescope.setup({
       defaults = {
@@ -28,6 +49,11 @@ return {
           i = {
             ["<C-k>"] = actions.move_selection_previous, -- move to prev result
             ["<C-j>"] = actions.move_selection_next, -- move to next result
+            ["<C-q>"] = actions.smart_send_to_qflist + actions.open_qflist,
+            ["<CR>"] = select_one_or_multi, -- open all Tab-marked entries
+          },
+          n = {
+            ["<CR>"] = select_one_or_multi, -- open all Tab-marked entries
             ["<C-q>"] = actions.smart_send_to_qflist + actions.open_qflist,
           },
         },
