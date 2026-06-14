@@ -49,6 +49,7 @@ local sections = {
       { "<leader>qo  /  qc", "toggle / close quickfix list" },
       { "<leader>qf",         "focus / jump to quickfix window" },
       { "<leader>Q",          "open quickfix list in fzf picker" },
+      { "<leader>ql",         "append current line to quickfix" },
       { "]q  /  [q",          "next / prev quickfix item" },
       { "]Q  /  [Q",          "last / first quickfix item" },
       { "<C-q>  (telescope)", "send marked entries to quickfix" },

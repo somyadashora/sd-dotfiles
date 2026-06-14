@@ -80,4 +80,14 @@ keymap.set("n", "<leader>qf", function()
   end
   vim.cmd("copen") -- not open yet → open and focus
 end, { desc = "Focus quickfix window" })
+keymap.set("n", "<leader>ql", function()
+  vim.fn.setqflist({
+    {
+      bufnr = vim.api.nvim_get_current_buf(),
+      lnum = vim.fn.line("."),
+      col = vim.fn.col("."),
+      text = vim.fn.getline("."),
+    },
+  }, "a") -- "a" = append to the existing list
+end, { desc = "Add current line to quickfix" })
 
