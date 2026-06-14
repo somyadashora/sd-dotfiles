@@ -45,7 +45,9 @@ return {
 
     keymap.set("n", "<leader>fr", "<cmd>Telescope oldfiles<cr>", { desc = "Fuzzy find recent files" })
 
-    keymap.set("n", "<leader>fs", "<cmd>Telescope live_grep<cr>", { desc = "Find string in cwd" })
+    keymap.set("n", "<leader>fs", function()
+      require("telescope.builtin").live_grep(require("telescope.themes").get_ivy())
+    end, { desc = "Find string in cwd" })
     -- keymap.set("n", "<leader>fSi", "<cmd>Telescope live_grep no_ignore=true hidden=true<cr>", { desc = "Find string in cwd, don't respect gitignore" })
 
     keymap.set("n", "<leader>*", "<cmd>Telescope grep_string<cr>", { desc = "Find string under cursor in cwd" })
@@ -53,7 +55,9 @@ return {
     keymap.set("n", "<leader>fB", "<cmd>Telescope buffers<cr>", { desc = "Find buffers in bufferlist" })
     keymap.set("n", '<leader>"', "<cmd>Telescope registers<cr>", { desc = "Find registers in registerlist" })
     keymap.set("n", "<leader>j", "<cmd>Telescope jumplist<cr>", { desc = "Find jumps in jumplist" })
-    keymap.set("n", "<leader>`", "<cmd>Telescope marks<cr>", { desc = "Find marks in marklist" })
+    keymap.set("n", "<leader>`", function()
+      require("telescope.builtin").marks(require("telescope.themes").get_ivy())
+    end, { desc = "Find marks in marklist" })
     keymap.set("n", "<leader>fT", "<cmd>TodoTelescope<cr>", { desc = "Find Todo's" })
     keymap.set("n", "<leader>/", "<cmd>Telescope current_buffer_fuzzy_find<cr>", { desc = "Find string fuzzily in current buffer" })
     keymap.set("n", "<leader>:", "<cmd>Telescope command_history<cr>", { desc = "Find in command history" })
