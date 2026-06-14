@@ -62,6 +62,15 @@ local sections = {
     },
   },
   {
+    title = "BUFFERS  (bufferline)",
+    entries = {
+      { "<S-h>  /  <S-l>",   "prev / next buffer" },
+      { "<leader>bp  /  bn", "prev / next buffer" },
+      { "<leader>bg  /  bC", "pick buffer / pick buffer to close" },
+      { "<C-q>",              "close buffer, stay on active" },
+    },
+  },
+  {
     title = "NVIM-TREE  (full help: <leader>eh)",
     entries = {
       { "<leader>ee",        "toggle tree" },
