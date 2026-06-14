@@ -71,4 +71,13 @@ keymap.set("n", "<leader>co", function()
   vim.cmd(qf_open and "cclose" or "copen")
 end, { desc = "Toggle quickfix list" })
 keymap.set("n", "<leader>cc", "<cmd>cclose<CR>", { desc = "Close quickfix list" })
+keymap.set("n", "<leader>cf", function()
+  for _, win in ipairs(vim.fn.getwininfo()) do
+    if win.quickfix == 1 and win.loclist == 0 then
+      vim.api.nvim_set_current_win(win.winid)
+      return
+    end
+  end
+  vim.cmd("copen") -- not open yet → open and focus
+end, { desc = "Focus quickfix window" })
 
