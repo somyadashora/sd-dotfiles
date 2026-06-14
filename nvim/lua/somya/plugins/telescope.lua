@@ -15,8 +15,8 @@ return {
         dynamic_preview_title = true,
         layout_strategy = "horizontal",
         layout_config = {
-          width = 0.95,
-          height = 0.95,
+          width = 0.90,
+          height = 0.92,
           preview_width = 0.6,
         },
         path_display = { "smart" },
