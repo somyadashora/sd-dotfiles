@@ -44,6 +44,21 @@ local sections = {
     },
   },
   {
+    title = "QUICKFIX  (nvim-bqf — keys below work inside the qf window)",
+    entries = {
+      { "<leader>co  /  cc", "open / close quickfix list" },
+      { "]q  /  [q",          "next / prev quickfix item" },
+      { "]Q  /  [Q",          "last / first quickfix item" },
+      { "<C-q>  (telescope)", "send marked entries to quickfix" },
+      { "zf",                  "fzf fuzzy-filter the quickfix list" },
+      { "z,",                  "toggle preview normal / maximized" },
+      { "<C-f>  /  <C-b>",    "scroll preview down / up" },
+      { "<C-n>  /  <C-p>",    "preview next / prev file" },
+      { "o",                   "open item and close quickfix" },
+      { "<C-v>  /  <C-x>",    "open item in vertical / horizontal split" },
+    },
+  },
+  {
     title = "FOLDS  (nvim-ufo)",
     entries = {
       { "za  /  zA",  "toggle fold / toggle all nested folds" },
