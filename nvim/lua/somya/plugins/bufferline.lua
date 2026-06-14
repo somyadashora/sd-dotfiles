@@ -29,6 +29,8 @@ return {
     })
 
     local keymap = vim.keymap
+    keymap.set("n", "<S-h>",       "<cmd>BufferLineCyclePrev<cr>",   { desc = "Prev buffer" })
+    keymap.set("n", "<S-l>",       "<cmd>BufferLineCycleNext<cr>",   { desc = "Next buffer" })
     keymap.set("n", "<leader>bg",  "<cmd>BufferLinePick<cr>",        { desc = "Pick buffer by letter" })
     keymap.set("n", "<leader>bn",  "<cmd>BufferLineCycleNext<cr>",   { desc = "Next buffer" })
     keymap.set("n", "<leader>bp",  "<cmd>BufferLineCyclePrev<cr>",   { desc = "Prev buffer" })
