@@ -80,6 +80,7 @@ local sections = {
       { "<leader>hs  /  hr",  "stage / reset hunk" },
       { "<leader>hp",         "preview hunk inline" },
       { "<leader>hb",         "blame line (full)" },
+      { "<leader>hq  /  hQ",  "hunks → quickfix (buffer / all files)" },
       { "<leader>lg",         "open lazygit" },
     },
   },

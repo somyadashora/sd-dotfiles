@@ -40,6 +40,14 @@ return {
 				gs.diffthis("~")
 			end, "Diff this ~")
 
+			-- Send changed hunks to the quickfix list
+			map("n", "<leader>hq", function()
+				gs.setqflist(0)
+			end, "Hunks to quickfix (buffer)")
+			map("n", "<leader>hQ", function()
+				gs.setqflist("all")
+			end, "Hunks to quickfix (all files)")
+
 			-- Text object
 			map({ "o", "x" }, "ih", ":<C-U>Gitsigns select_hunk<CR>", "Gitsigns select hunk")
 		end,
