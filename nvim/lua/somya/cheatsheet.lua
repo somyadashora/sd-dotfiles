@@ -162,6 +162,17 @@ local sections = {
       { "<leader>d",     "line diagnostic float" },
     },
   },
+  {
+    title = "SLANG / SYSTEMVERILOG LSP  (:UseSlang to activate)",
+    entries = {
+      { ":UseSlang / :UseVerible", "switch active SV language server" },
+      { "<leader>Sd",   "trace signal drivers (incoming calls → quickfix)" },
+      { "<leader>Sl",   "trace signal loads (outgoing calls → quickfix)" },
+      { "<leader>Sq",   "open quickfix list (trace results)" },
+      { "<leader>Si",   "show active LSP clients for buffer" },
+      { "<leader>Rs",   "restart LSP" },
+    },
+  },
 
   -- ── Practical Vim tips ─────────────────────────────
   {
