@@ -12,6 +12,12 @@ return {
 
     telescope.setup({
       defaults = {
+        layout_strategy = "horizontal",
+        layout_config = {
+          width = 0.95,
+          height = 0.95,
+          preview_width = 0.6,
+        },
         path_display = { "smart" },
         preview = {
           -- enable/disable tree-sitter highlighting in preview (compatibility issue with ft_to_lang. currently enabledP)
