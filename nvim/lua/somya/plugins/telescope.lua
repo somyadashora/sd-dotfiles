@@ -12,6 +12,7 @@ return {
 
     telescope.setup({
       defaults = {
+        dynamic_preview_title = true,
         layout_strategy = "horizontal",
         layout_config = {
           width = 0.95,
