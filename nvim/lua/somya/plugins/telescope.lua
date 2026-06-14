@@ -35,6 +35,16 @@ return {
 
     telescope.load_extension("fzf")
 
+    -- show line numbers in the preview window (skip help pages)
+    vim.api.nvim_create_autocmd("User", {
+      pattern = "TelescopePreviewerLoaded",
+      callback = function(args)
+        if not (args.data and args.data.filetype == "help") then
+          vim.wo.number = true
+        end
+      end,
+    })
+
     -- set keymaps
     local keymap = vim.keymap -- for conciseness
 

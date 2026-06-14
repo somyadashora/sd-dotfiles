@@ -65,6 +65,7 @@ local sections = {
     title = "BUFFERS  (bufferline)",
     entries = {
       { "<S-h>  /  <S-l>",   "prev / next buffer" },
+      { "<leader>B",          "telescope buffer picker (normal mode, d=close)" },
       { "<leader>bp  /  bn", "prev / next buffer" },
       { "<leader>bg  /  bC", "pick buffer / pick buffer to close" },
       { "<C-q>",              "close buffer, stay on active" },
