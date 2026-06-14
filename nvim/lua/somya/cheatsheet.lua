@@ -50,7 +50,7 @@ local sections = {
       { "]q  /  [q",          "next / prev quickfix item" },
       { "]Q  /  [Q",          "last / first quickfix item" },
       { "<C-q>  (telescope)", "send marked entries to quickfix" },
-      { "zf",                  "fzf fuzzy-filter the quickfix list" },
+      { "zf",                  "fzf fuzzy-filter the quickfix list (needs fzf binary)" },
       { "z,",                  "toggle preview normal / maximized" },
       { "<C-f>  /  <C-b>",    "scroll preview down / up" },
       { "<C-n>  /  <C-p>",    "preview next / prev file" },

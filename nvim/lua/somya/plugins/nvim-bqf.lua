@@ -2,6 +2,11 @@ return {
   "kevinhwang91/nvim-bqf",
   ft = "qf", -- load when a quickfix/location-list window opens
   config = function()
+    -- bqf's fzf filter module errors at load time if the fzf binary is not on
+    -- Neovim's PATH (common on ETX/SLES). Only enable it when fzf is available;
+    -- all other bqf features (preview, splits, navigation) work without it.
+    local has_fzf = vim.fn.executable("fzf") == 1
+
     require("bqf").setup({
       auto_enable = true,
       auto_resize_height = true, -- shrink/grow the qf window to fit its contents
@@ -29,7 +34,7 @@ return {
         pscrolldown = "<C-f>", -- scroll preview down
         prevfile = "<C-p>", -- preview prev file's first item
         nextfile = "<C-n>", -- preview next file's first item
-        fzffilter = "zf", -- fuzzy-filter the quickfix list with fzf
+        fzffilter = has_fzf and "zf" or "", -- fzf fuzzy-filter (only if fzf present)
       },
       filter = {
         fzf = {
