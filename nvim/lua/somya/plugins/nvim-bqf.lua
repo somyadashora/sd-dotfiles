@@ -1,11 +1,16 @@
 return {
   "kevinhwang91/nvim-bqf",
   ft = "qf", -- load when a quickfix/location-list window opens
+  dependencies = {
+    -- bqf's fzf filter needs the junegunn/fzf *Vim plugin* (provides fzf#run),
+    -- not just the fzf binary. Without it, pressing zf throws at fzf.lua:573.
+    -- No build step: fzf#run uses the system fzf already on PATH.
+    "junegunn/fzf",
+  },
   config = function()
-    -- bqf's fzf filter module errors at load time if the fzf binary is not on
-    -- Neovim's PATH (common on ETX/SLES). Only enable it when fzf is available;
-    -- all other bqf features (preview, splits, navigation) work without it.
-    local has_fzf = vim.fn.executable("fzf") == 1
+    -- Only enable the fzf filter when fzf#run is actually available; all other
+    -- bqf features (preview, splits, navigation) work without it.
+    local has_fzf = vim.fn.exists("*fzf#run") == 1
 
     require("bqf").setup({
       auto_enable = true,
