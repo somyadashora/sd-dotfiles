@@ -173,6 +173,17 @@ local sections = {
       { "<leader>Rs",   "restart LSP" },
     },
   },
+  {
+    title = "SV LSP PROJECT SETUP  (shell, run once at repo root)",
+    entries = {
+      { "slang-init",              "build .slang/server.json + .f filelist (def/refs/diags)" },
+      { "slang-init -d . -t TOP",  "scan cwd, set top + build → enables cone tracing" },
+      { "slang-init --regen-only", "rebuild only the .f after adding/removing files" },
+      { "verible-init",            "build verible.filelist (.sv/.svh/.v) at repo root" },
+      { "verible-init -d . --rules", "scan cwd + scaffold .rules.verible_lint" },
+      { "<both> --force",          "overwrite existing config files" },
+    },
+  },
 
   -- ── Practical Vim tips ─────────────────────────────
   {
