@@ -7,10 +7,16 @@
 #   .slang/server.json  workspace config pointing at the filelist
 # and appends .slang/local/ to .gitignore.
 #
+# index vs build: `index`+`flags` give hover/def/refs/diagnostics. Driver/load
+# cone tracing (<leader>Sd / <leader>Sl) needs an elaborated `build` with a top
+# module. Pass -t/--top to bake `--top` into the filelist AND add a `build`
+# entry to server.json so tracing works out of the box.
+#
 # Usage:
 #   slang-init                  # scan ./rtl  -> .slang/rtl.f
 #   slang-init -d src           # scan ./src  -> .slang/src.f
-#   slang-init -d rtl -t my_top # also set --top my_top in the filelist
+#   slang-init -d . -t VtIommu  # set --top + build -> enables cone tracing
+#   slang-init --build          # add a build entry without changing the top
 #   slang-init --force          # overwrite existing .slang files
 #   slang-init --regen-only     # only rebuild the .f filelist, keep server.json
 #
@@ -22,13 +28,15 @@ dir="rtl"
 top=""
 force=0
 regen_only=0
+build=0
 
-usage() { sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+usage() { sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -d|--dir)        dir="${2:?-d needs a directory}"; shift 2 ;;
-    -t|--top)        top="${2:?-t needs a module name}"; shift 2 ;;
+    -t|--top)        top="${2:?-t needs a module name}"; shift 2 ; build=1 ;;
+    -b|--build)      build=1; shift ;;
     -f|--force)      force=1; shift ;;
     --regen-only)    regen_only=1; shift ;;
     -h|--help)       usage 0 ;;
@@ -76,15 +84,21 @@ fi
 if [[ -e "$conf" && $force -eq 0 ]]; then
   echo "slang-init: $conf exists -- use --force to overwrite" >&2
 else
+  build_line=""
+  if [[ $build -eq 1 ]]; then
+    build_line=",
+  \"build\": \"$flist\""
+    [[ -z "$top" ]] && echo "slang-init: WARN build enabled without --top; cone tracing needs a top module in $flist" >&2
+  fi
   cat > "$conf" <<JSON
 {
   "flags": "-f $flist",
   "index": [
     { "dirs": ["$dir"] }
-  ]
+  ]$build_line
 }
 JSON
-  echo "slang-init: wrote $conf"
+  echo "slang-init: wrote $conf$([[ $build -eq 1 ]] && echo ' (with build -> cone tracing enabled)')"
 fi
 
 # --- ignore personal local overrides -----------------------------------------
