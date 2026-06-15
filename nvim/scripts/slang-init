@@ -42,9 +42,13 @@ if [[ ! -d "$dir" ]]; then
   exit 1
 fi
 
-name="$(basename "$dir")"
+# name the filelist after the real dir (handles `.` -> project dir name)
+name="$(basename "$(cd "$dir" && pwd)")"
 flist=".slang/${name}.f"
 conf=".slang/server.json"
+
+# never sweep these into the filelist (vcs, our own config, common build dirs)
+prune=(-name .git -o -name .slang -o -name build -o -name sim -o -name work)
 
 mkdir -p .slang
 
@@ -55,12 +59,13 @@ else
   {
     # include dirs: the RTL dir plus every dir containing a .svh header
     echo "-I $dir"
-    find "$dir" -type f -name '*.svh' -exec dirname {} \; | sort -u \
-      | grep -vx "$dir" | sed 's/^/-I /' || true
+    find "$dir" \( "${prune[@]}" \) -prune -o -type f -name '*.svh' -printf '%h\n' \
+      | sort -u | grep -vx "$dir" | sed 's/^/-I /' || true
     [[ -n "$top" ]] && echo "--top $top"
     echo
     # compile units: .sv / .v (headers come in via -I, so not listed)
-    find "$dir" -type f \( -name '*.sv' -o -name '*.v' \) | sort
+    find "$dir" \( "${prune[@]}" \) -prune -o -type f \
+      \( -name '*.sv' -o -name '*.v' \) -print | sort
   } > "$flist"
   echo "slang-init: wrote $flist ($(grep -cE '\.(sv|v)$' "$flist") source files)"
 fi
