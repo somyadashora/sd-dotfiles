@@ -15,6 +15,8 @@ abbrev-alias watchtty="watch -d -n 1 'ps -f --forest --tty $1'"
 
 abbrev-alias getdotfiles="git -C $DOTFILES_DIR pull --rebase"
 
+abbrev-alias slang-init="$DOTFILES_DIR/nvim/scripts/slang-init"
+
 abbrev-alias prompt-tc='PROMPT_COMMAND="__tc_prompt_command"; echo "switched to TypeCraft prompt"'
 abbrev-alias prompt-default='PROMPT_COMMAND="__sd_prompt_command"; echo "switched to default prompt"'
 

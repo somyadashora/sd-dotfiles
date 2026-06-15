@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+# slang-init -- bootstrap slang-server config for a SystemVerilog project.
+#
+# Creates, at the project root:
+#   .slang/             config dir (also the LSP root marker)
+#   .slang/<name>.f     filelist of sources + flags, generated from your RTL dir
+#   .slang/server.json  workspace config pointing at the filelist
+# and appends .slang/local/ to .gitignore.
+#
+# Usage:
+#   slang-init                  # scan ./rtl  -> .slang/rtl.f
+#   slang-init -d src           # scan ./src  -> .slang/src.f
+#   slang-init -d rtl -t my_top # also set --top my_top in the filelist
+#   slang-init --force          # overwrite existing .slang files
+#   slang-init --regen-only     # only rebuild the .f filelist, keep server.json
+#
+# Run from the project root. Re-run after adding/removing source files to
+# refresh the filelist.
+set -euo pipefail
+
+dir="rtl"
+top=""
+force=0
+regen_only=0
+
+usage() { sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -d|--dir)        dir="${2:?-d needs a directory}"; shift 2 ;;
+    -t|--top)        top="${2:?-t needs a module name}"; shift 2 ;;
+    -f|--force)      force=1; shift ;;
+    --regen-only)    regen_only=1; shift ;;
+    -h|--help)       usage 0 ;;
+    *) echo "slang-init: unknown arg '$1'" >&2; usage 1 ;;
+  esac
+done
+
+dir="${dir%/}"
+if [[ ! -d "$dir" ]]; then
+  echo "slang-init: source dir '$dir' not found (run from project root, or pass -d DIR)" >&2
+  exit 1
+fi
+
+name="$(basename "$dir")"
+flist=".slang/${name}.f"
+conf=".slang/server.json"
+
+mkdir -p .slang
+
+# --- generate the .f filelist -------------------------------------------------
+if [[ -e "$flist" && $force -eq 0 ]]; then
+  echo "slang-init: $flist exists -- use --force to overwrite" >&2
+else
+  {
+    # include dirs: the RTL dir plus every dir containing a .svh header
+    echo "-I $dir"
+    find "$dir" -type f -name '*.svh' -exec dirname {} \; | sort -u \
+      | grep -vx "$dir" | sed 's/^/-I /' || true
+    [[ -n "$top" ]] && echo "--top $top"
+    echo
+    # compile units: .sv / .v (headers come in via -I, so not listed)
+    find "$dir" -type f \( -name '*.sv' -o -name '*.v' \) | sort
+  } > "$flist"
+  echo "slang-init: wrote $flist ($(grep -cE '\.(sv|v)$' "$flist") source files)"
+fi
+
+[[ $regen_only -eq 1 ]] && exit 0
+
+# --- generate the workspace config -------------------------------------------
+if [[ -e "$conf" && $force -eq 0 ]]; then
+  echo "slang-init: $conf exists -- use --force to overwrite" >&2
+else
+  cat > "$conf" <<JSON
+{
+  "flags": "-f $flist",
+  "index": [
+    { "dirs": ["$dir"] }
+  ]
+}
+JSON
+  echo "slang-init: wrote $conf"
+fi
+
+# --- ignore personal local overrides -----------------------------------------
+if [[ -f .gitignore ]] && grep -qxF ".slang/local/" .gitignore; then
+  :
+else
+  echo ".slang/local/" >> .gitignore
+  echo "slang-init: added .slang/local/ to .gitignore"
+fi
+
+echo "slang-init: done. Open a file under $dir/ and run :UseSlang, then :checkhealth vim.lsp"
