@@ -36,6 +36,17 @@ Entry point: `nvim/init.lua` → `somya.core` + `somya.lazy`
 `slang-server` (`~/.local/bin/slang-server`). Only one should be active at a time;
 switch with `:UseVerible` / `:UseSlang`.
 
+**Per-project LSP setup** — two bootstrap scripts in `nvim/scripts/` (aliased in
+`.bash_aliases`), run once at a project root:
+- `slang-init` — creates `.slang/server.json` + a `.f` filelist (indexing →
+  def/refs/diagnostics). `-t TOP` bakes `--top` into the filelist and adds a
+  `build` entry so driver/load cone tracing (`<leader>Sd`/`Sl`) works;
+  `--regen-only` refreshes just the filelist. `.svh` headers are pulled in via
+  `-I`, not listed as sources.
+- `verible-init` — creates `verible.filelist` at the repo root (lists `.sv`/
+  `.svh`/`.v` — verible has no `+incdir+`, so headers ARE listed); `--rules`
+  scaffolds `.rules.verible_lint`. No build/elaboration needed.
+
 **Clipboard fallback** (`nvim/scripts/nvim-clip`): a Python 3.6 tkinter daemon that owns the
 X CLIPBOARD selection, used on ETX/SLES environments without xclip/xsel/wl-copy. It is
 auto-detected and only activated when those native tools are absent.
