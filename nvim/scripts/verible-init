@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# verible-init -- bootstrap verible-verilog-ls config for a SystemVerilog project.
+#
+# Creates, at the project root:
+#   verible.filelist     line-by-line list of .sv/.svh/.v sources. Enables
+#                        project-wide go-to-def, references and hover. The LS
+#                        looks for this name in the project root (override with
+#                        --file_list_path). Verible has NO +incdir+ handling,
+#                        so header (.svh) files are listed here too, not as -I.
+#   .rules.verible_lint  (with --rules) starter lint config. The nvim config
+#                        runs verible with --rules_config_search, which walks up
+#                        parent dirs looking for this file.
+#
+# Verible needs no build/elaboration (unlike slang) -- the filelist alone gives
+# the full cross-file experience.
+#
+# Usage:
+#   verible-init                # scan ./rtl  -> ./verible.filelist
+#   verible-init -d .           # scan current dir
+#   verible-init -d src         # scan ./src
+#   verible-init --rules        # also scaffold .rules.verible_lint
+#   verible-init --force        # overwrite existing files
+#
+# Run from the project root. Re-run after adding/removing sources to refresh.
+set -euo pipefail
+
+dir="rtl"
+force=0
+rules=0
+
+usage() { sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -d|--dir)     dir="${2:?-d needs a directory}"; shift 2 ;;
+    -r|--rules)   rules=1; shift ;;
+    -f|--force)   force=1; shift ;;
+    -h|--help)    usage 0 ;;
+    *) echo "verible-init: unknown arg '$1'" >&2; usage 1 ;;
+  esac
+done
+
+dir="${dir%/}"
+if [[ ! -d "$dir" ]]; then
+  echo "verible-init: source dir '$dir' not found (run from project root, or pass -d DIR)" >&2
+  exit 1
+fi
+
+# never sweep these into the filelist (vcs, common build/output dirs)
+prune=(-name .git -o -name build -o -name sim -o -name work)
+
+# --- generate verible.filelist -----------------------------------------------
+flist="verible.filelist"
+if [[ -e "$flist" && $force -eq 0 ]]; then
+  echo "verible-init: $flist exists -- use --force to overwrite" >&2
+else
+  find "$dir" \( "${prune[@]}" \) -prune -o -type f \
+    \( -name '*.sv' -o -name '*.svh' -o -name '*.v' \) -print | sort > "$flist"
+  echo "verible-init: wrote $flist ($(wc -l < "$flist") files)"
+fi
+
+# --- optional starter lint rules ---------------------------------------------
+if [[ $rules -eq 1 ]]; then
+  rfile=".rules.verible_lint"
+  if [[ -e "$rfile" && $force -eq 0 ]]; then
+    echo "verible-init: $rfile exists -- use --force to overwrite" >&2
+  else
+    cat > "$rfile" <<'RULES'
+# verible lint rules: +enable / -disable, one per line (or comma-separated).
+# Full list: https://chipsalliance.github.io/verible/lint.html
+# Below are common noise-reducers for existing RTL -- tune to taste.
+-line-length
+-no-tabs
+RULES
+    echo "verible-init: wrote $rfile"
+  fi
+fi
+
+echo "verible-init: done. Open a file under $dir/ and run :UseVerible, then :checkhealth vim.lsp"

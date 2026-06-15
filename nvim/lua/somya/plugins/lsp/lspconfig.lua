@@ -116,10 +116,19 @@ return {
     -- automatic_enable in mason.lua will handle default setup for installed servers
 
     -- configure verible server with custom settings
+    -- PROJECT SETUP: run `verible-init` at the project root to generate:
+    --   verible.filelist     line-by-line list of .sv/.svh/.v -> project-wide
+    --                        go-to-def / references / hover (verible has no
+    --                        +incdir+, so headers MUST be listed here too)
+    --   .rules.verible_lint  optional lint rules (+enable / -disable); found
+    --                        via --rules_config_search up the dir tree
+    -- root_markers below let the LS locate the project root (where the filelist
+    -- lives); without it verible falls back to single-file mode.
     vim.lsp.config("verible", {
       capabilities = capabilities,
       cmd = { "verible-verilog-ls", "--rules_config_search" },
       filetypes = { "verilog", "systemverilog" },
+      root_markers = { "verible.filelist", ".rules.verible_lint", ".git" },
     })
 
     -- configure slang-server for system verilog
