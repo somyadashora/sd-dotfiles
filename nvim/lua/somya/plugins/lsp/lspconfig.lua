@@ -142,6 +142,14 @@ return {
         filetypes = { "systemverilog", "verilog" },
       })
 
+    -- Both SystemVerilog servers are INACTIVE by default. :UseVerible / :UseSlang
+    -- turn one on (and the other off). Disabling them explicitly here encodes the
+    -- intent in code instead of relying solely on mason-lspconfig's automatic_enable
+    -- exclude list (verible is a mason package, so without this it could be
+    -- auto-enabled if that exclude entry ever changed).
+    vim.lsp.enable("verible", false)
+    vim.lsp.enable("slang-server", false)
+
 local function stop_lsp_by_name(name)
     for _, client in ipairs(vim.lsp.get_clients({ name = name })) do
       client:stop()
