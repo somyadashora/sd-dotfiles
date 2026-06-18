@@ -17,6 +17,22 @@ return {
   init = function()
     vim.g.loaded_netrw = 1
     vim.g.loaded_netrwPlugin = 1
+
+    -- `nvim .` (or `nvim <dir>`): netrw is gone and nvim-tree is lazy, so a bare
+    -- directory buffer would have nothing to hijack it. Detect a single directory
+    -- argument and open the explorer on it at startup. File / no-arg launches
+    -- stay lazy (loaded on the cmds/keys above).
+    if vim.fn.argc(-1) == 1 then
+      local arg = vim.fn.argv(0)
+      if vim.fn.isdirectory(arg) == 1 then
+        vim.api.nvim_create_autocmd("VimEnter", {
+          once = true,
+          callback = function()
+            require("nvim-tree.api").tree.open({ path = arg })
+          end,
+        })
+      end
+    end
   end,
   config = function()
     local nvimtree = require("nvim-tree")
