@@ -3,8 +3,10 @@ return {
 -- Ristretto, Spectrum.
 {
   'loctvl842/monokai-pro.nvim',
-   lazy = false,
-   priority = 1000,
+   -- Only used by styler.nvim for per-filetype HDL schemes. styler lists this as
+   -- a dependency, so it loads (and applies opts) when styler loads on VeryLazy,
+   -- instead of as a priority-1000 startup colorscheme.
+   lazy = true,
    opts = {
      filter = 'pro', -- classic | octagon | pro | machine | ristretto | spectrum
      styles = {

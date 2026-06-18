@@ -1,7 +1,10 @@
  return {
     "Isrothy/neominimap.nvim",
     version = "v3.x.x",
-    lazy = false,
+    -- auto_enable is false, so nothing renders until a toggle map is pressed.
+    -- The keys below load it on demand; init (which sets vim.g.neominimap) still
+    -- runs at startup, so config is in place before the plugin loads.
+    cmd = "Neominimap",
     keys = {
       { "<leader>nm", "<cmd>Neominimap Toggle<CR>", desc = "Toggle minimap" },
       { "<leader>nf", "<cmd>Neominimap ToggleFocus<CR>", desc = "Toggle minimap focus" },

@@ -1,5 +1,8 @@
 return {
   "akinsho/bufferline.nvim",
+  -- Lazy: UI element, load just after startup instead of blocking it. Also
+  -- defers its scope.nvim dependency (~6ms) off the critical path.
+  event = "VeryLazy",
   dependencies = {
     "nvim-tree/nvim-web-devicons",
     -- scopes buffers to the tab they were opened in

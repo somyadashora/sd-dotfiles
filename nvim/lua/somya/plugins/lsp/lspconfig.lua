@@ -5,6 +5,9 @@ return {
     "hrsh7th/cmp-nvim-lsp",
     { "antosha417/nvim-lsp-file-operations", config = true },
     { "folke/neodev.nvim", opts = {} },
+    -- mason is lazy (cmd-only); pull it in here so mason-lspconfig's
+    -- automatic_enable runs before this server config on BufReadPre.
+    "williamboman/mason.nvim",
   },
   config = function()
     -- import mason_lspconfig plugin

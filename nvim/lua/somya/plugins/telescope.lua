@@ -1,5 +1,14 @@
 return {
   "nvim-telescope/telescope.nvim",
+  -- Lazy: load on the :Telescope command (covers the LSP <cmd>Telescope ...<CR>
+  -- maps) and on any of the leader pickers below. Keeps the picker stack +
+  -- fzf-native off startup; config() re-defines these maps with full behaviour.
+  cmd = "Telescope",
+  keys = {
+    "<leader>ff", "<leader>fFi", "<leader>fr", "<leader>fs", "<leader>*",
+    "<leader>B", "<leader>\"", "<leader>j", "<leader>`", "<leader>fT",
+    "<leader>/", "<leader>:", "<leader>?", "<leader>Q", "<leader>;",
+  },
   dependencies = {
     "nvim-lua/plenary.nvim",
     { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },

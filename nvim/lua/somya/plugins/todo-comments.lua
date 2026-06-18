@@ -1,5 +1,8 @@
 return {
   "folke/todo-comments.nvim",
+  -- Highlights need to be active when a file opens; defer to first buffer read
+  -- rather than startup. (Also loads as a telescope/trouble dependency.)
+  event = { "BufReadPre", "BufNewFile" },
   dependencies = { "nvim-lua/plenary.nvim" },
   config = function()
     require("todo-comments").setup({

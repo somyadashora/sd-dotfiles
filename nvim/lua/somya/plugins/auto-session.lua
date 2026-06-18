@@ -1,5 +1,9 @@
 return {
   "rmagatti/auto-session",
+  -- Lazy: auto_restore is disabled, so the plugin is only needed when one of its
+  -- session commands/maps fires. Nothing to do at startup.
+  cmd = { "SessionRestore", "SessionSave", "SessionDelete" },
+  keys = { "<leader>wr", "<leader>ws" },
   config = function()
     local auto_session = require("auto-session")
 

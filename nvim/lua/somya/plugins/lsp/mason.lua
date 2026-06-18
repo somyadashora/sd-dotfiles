@@ -1,5 +1,9 @@
 return {
   "williamboman/mason.nvim",
+  -- Lazy: the UI commands load mason on demand; nvim-lspconfig also lists mason
+  -- as a dependency, so mason-lspconfig's automatic_enable still runs before any
+  -- LSP attaches on BufReadPre. This keeps mason's ~60 modules off startup.
+  cmd = { "Mason", "MasonInstall", "MasonUninstall", "MasonUninstallAll", "MasonLog", "MasonUpdate" },
   dependencies = {
     "williamboman/mason-lspconfig.nvim",
   },

@@ -1,6 +1,23 @@
 return {
   "nvim-tree/nvim-tree.lua",
+  -- Lazy: load on first tree command or leader map. The <C-o> jumplist override
+  -- (set in config) only matters once an NvimTree buffer exists, so deferring it
+  -- until first open is harmless.
+  cmd = {
+    "NvimTreeToggle", "NvimTreeFindFileToggle", "NvimTreeCollapse",
+    "NvimTreeRefresh", "NvimTreeResize", "NvimTreeFindFile", "NvimTreeFocus",
+  },
+  keys = {
+    "<leader>ee", "<leader>ef", "<leader>ec", "<leader>er",
+    "<leader>e=", "<leader>e-", "<leader>eh",
+  },
   dependencies = "nvim-tree/nvim-web-devicons",
+  -- Disable netrw at startup (not in config) so it stays disabled even though
+  -- nvim-tree now loads lazily — init runs eagerly for lazy plugins too.
+  init = function()
+    vim.g.loaded_netrw = 1
+    vim.g.loaded_netrwPlugin = 1
+  end,
   config = function()
     local nvimtree = require("nvim-tree")
 

@@ -82,6 +82,8 @@
 return {
     {
       "hudson-trading/slang-server.nvim",
+      -- SystemVerilog helper — only needed when an SV/Verilog buffer is open.
+      ft = { "systemverilog", "verilog" },
       dependencies = {
         "MunifTanjim/nui.nvim",
       },
