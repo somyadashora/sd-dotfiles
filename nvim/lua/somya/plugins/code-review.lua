@@ -1,5 +1,9 @@
 return {
 	"scristobal/code-review.nvim",
+	-- Defer off the critical startup path: config reads .code-review.md from disk
+	-- and starts an fs_event watcher. VeryLazy (not keys) so annotations still
+	-- restore and render right after startup without needing a keypress.
+	event = "VeryLazy",
 	config = function()
 		local function set_hl()
 			vim.api.nvim_set_hl(0, "CodeReviewComment", {

@@ -1,5 +1,6 @@
 return {
   "nvim-lualine/lualine.nvim",
+  event = "VeryLazy",
   dependencies = { "nvim-tree/nvim-web-devicons" },
   config = function()
     local lualine = require("lualine")
@@ -95,12 +96,15 @@ return {
       nmode_curr_done = false
       nmode_prev_mode = nil
       nmode_awaiting_char = false
-      if nmode_timer then nmode_timer:stop(); nmode_timer:close(); nmode_timer = nil end
+      -- Keep the handle alive for reuse — only stop it, don't close.
+      if nmode_timer then nmode_timer:stop() end
     end
 
+    -- Reuse a single libuv timer instead of allocating + closing one on every
+    -- keystroke (restart_timer runs from the per-key on_key callback below).
     local function restart_timer()
-      if nmode_timer then nmode_timer:stop(); nmode_timer:close() end
-      nmode_timer = vim.uv.new_timer()
+      if not nmode_timer then nmode_timer = vim.uv.new_timer() end
+      nmode_timer:stop()
       nmode_timer:start(5000, 0, vim.schedule_wrap(reset_nmode))
     end
 
