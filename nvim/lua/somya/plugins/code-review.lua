@@ -69,6 +69,28 @@ return {
 			restyle(bufnr)
 		end
 
+		-- Override the preamble the plugin bakes into .code-review.md. The plugin
+		-- rebuilds the whole file in _sync_file (lua/review/init.lua), so rather than
+		-- reimplement it, let it write, then swap the one preamble line on disk.
+		local default_preamble = "Apply the following review comments to the codebase."
+		local custom_preamble = "Apply the following review comments to the codebase. Do not make unrelated changes, use the $sd-rtl skill"
+		local orig_sync_file = review._sync_file
+		review._sync_file = function(...)
+			local result = orig_sync_file(...)
+			local path = ".code-review.md"
+			if vim.fn.filereadable(path) == 1 then
+				local lines = vim.fn.readfile(path)
+				for i, l in ipairs(lines) do
+					if l == default_preamble then
+						lines[i] = custom_preamble
+						vim.fn.writefile(lines, path)
+						break
+					end
+				end
+			end
+			return result
+		end
+
 		-- Reach into the plugin's closure to get the live comments table
 		local function get_comments_table()
 			local i = 1
