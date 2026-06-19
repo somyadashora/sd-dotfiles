@@ -44,8 +44,10 @@ switch with `:UseVerible` / `:UseSlang`.
   `--regen-only` refreshes just the filelist. `.svh` headers are pulled in via
   `-I`, not listed as sources.
 - `verible-init` — creates `verible.filelist` at the repo root (lists `.sv`/
-  `.svh`/`.v` — verible has no `+incdir+`, so headers ARE listed); `--rules`
-  scaffolds `.rules.verible_lint`. No build/elaboration needed.
+  `.svh`/`.v` — verible has no `+incdir+`, so headers ARE listed) and a
+  `.verible_format` formatter `--flagfile` (auto-detected by conform's verible
+  formatter, walking up from the file; falls back to baked-in defaults if absent).
+  `--rules` also scaffolds `.rules.verible_lint`. No build/elaboration needed.
 
 **Clipboard fallback** (`nvim/scripts/nvim-clip`): a Python 3.6 tkinter daemon that owns the
 X CLIPBOARD selection, used on ETX/SLES environments without xclip/xsel/wl-copy. It is

@@ -7,6 +7,10 @@
 #                        looks for this name in the project root (override with
 #                        --file_list_path). Verible has NO +incdir+ handling,
 #                        so header (.svh) files are listed here too, not as -I.
+#   .verible_format      starter formatter config (a --flagfile: one --flag=value
+#                        per line, '#' comments). Always written. The nvim config
+#                        auto-detects it by walking up parent dirs; use it from
+#                        the CLI with: verible-verilog-format --flagfile=.verible_format
 #   .rules.verible_lint  (with --rules) starter lint config. The nvim config
 #                        runs verible with --rules_config_search, which walks up
 #                        parent dirs looking for this file.
@@ -28,7 +32,7 @@ dir="rtl"
 force=0
 rules=0
 
-usage() { sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+usage() { sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -57,6 +61,43 @@ else
   find "$dir" \( "${prune[@]}" \) -prune -o -type f \
     \( -name '*.sv' -o -name '*.svh' -o -name '*.v' \) -print | sort > "$flist"
   echo "verible-init: wrote $flist ($(wc -l < "$flist") files)"
+fi
+
+# --- formatter config (--flagfile) -------------------------------------------
+ffile=".verible_format"
+if [[ -e "$ffile" && $force -eq 0 ]]; then
+  echo "verible-init: $ffile exists -- use --force to overwrite" >&2
+else
+  cat > "$ffile" <<'FORMAT'
+# Verible SystemVerilog formatter config.
+# Used by Neovim (auto-detected) and: verible-verilog-format --flagfile=.verible_format
+# One --flag=value per line; '#' starts a comment.
+# Full reference: https://chipsalliance.github.io/verible/verilog_format.html
+
+# --- Indentation & line width -------------------------------------------------
+--column_limit=100
+--indentation_spaces=2
+--wrap_spaces=4
+
+# --- Alignment: align | flush-left | preserve | infer -------------------------
+--assignment_statement_alignment=align
+--enum_assignment_statement_alignment=align
+--module_net_variable_alignment=align
+--class_member_variable_alignment=align
+--struct_union_members_alignment=align
+--case_items_alignment=align
+--port_declarations_alignment=align
+--named_parameter_alignment=align
+--named_port_alignment=align
+--formal_parameters_alignment=align
+
+# --- Line wrapping ------------------------------------------------------------
+--port_declarations_indentation=wrap
+--formal_parameters_indentation=wrap
+--try_wrap_long_lines=true
+--wrap_end_else_clauses=false
+FORMAT
+  echo "verible-init: wrote $ffile"
 fi
 
 # --- optional starter lint rules ---------------------------------------------
