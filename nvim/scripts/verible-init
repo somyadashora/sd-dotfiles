@@ -124,34 +124,55 @@ RULES
       if command -v verible-verilog-lint >/dev/null 2>&1; then
         # Build the catalog straight from the installed binary (so it never goes
         # stale). --print_rules_file gives the authoritative rule names;
-        # --help_rules=all gives each name + description, but long names abut the
-        # description with no space, so we longest-prefix-match the known names
-        # to split name from description, then emit it word-wrapped as a comment
-        # above the disabled rule.
+        # --help_rules=all gives each name + description + a "Parameters:" block.
+        # Long names abut the description with no space, so we longest-prefix-
+        # match the known names to split name from description. We accumulate
+        # each rule's description and parameter lines and emit them word-wrapped
+        # as comments above the disabled rule.
         names=$(verible-verilog-lint --ruleset=all --print_rules_file 2>/dev/null | sed -E 's/=.*$//')
         verible-verilog-lint --help_rules=all 2>/dev/null | awk -v names="$names" '
           BEGIN { ncnt = split(names, na, "\n") }
-          function emit(text,   n, w, i, line) {
+          # word-wrap "text" to ~80 cols, each line led by "prefix"
+          function emit(prefix, text,   n, w, i, line) {
             n = split(text, w, /[ \t]+/)
-            line = "#"
+            line = prefix
             for (i = 1; i <= n; i++) {
-              if (length(line) + 1 + length(w[i]) > 80) { print line; line = "#" }
+              if (w[i] == "") continue
+              if (length(line) + 1 + length(w[i]) > 80) { print line; line = prefix }
               line = line " " w[i]
             }
-            if (line != "#") print line
+            if (line != prefix) print line
           }
-          /^[^ \t]/ {
+          function flush(   i) {
+            if (curname == "") return
+            emit("#", curname ": " curdesc)
+            if (np > 0) {
+              print "#   Parameters:"
+              for (i = 1; i <= np; i++) emit("#    ", param[i])
+            }
+            print "-" curname
+            print ""
+            curname = ""; curdesc = ""; np = 0; inparams = 0
+          }
+          /^[^ \t]/ {                              # header line: name + description
+            flush()
             best = ""; bl = 0
             for (i = 1; i <= ncnt; i++) {
               nm = na[i]
               if (nm != "" && substr($0, 1, length(nm)) == nm && length(nm) > bl) { best = nm; bl = length(nm) }
             }
             if (best == "") next
-            desc = substr($0, bl + 1); sub(/^[ \t]+/, "", desc)
-            emit(best ": " desc)
-            print "-" best
-            print ""
+            curname = best
+            curdesc = substr($0, bl + 1); sub(/^[ \t]+/, "", curdesc)
+            next
           }
+          {                                        # indented continuation lines
+            t = $0; sub(/^[ \t]+/, "", t)
+            if (t ~ /^Parameters?:/)       { inparams = 1; next }
+            if (t ~ /^Enabled by default/) { inparams = 0; next }
+            if (inparams && t != "") param[++np] = t
+          }
+          END { flush() }
         '
       else
         # verible not on PATH -- fall back to a couple of common noise-reducers.
