@@ -9,7 +9,7 @@ is installed globally into `~/.claude`.
 
 | Skill                 | Scope                                                    |
 |-----------------------|----------------------------------------------------------|
-| `nvim-sd-code-review` | Apply review comments from `.code-review.md` (consumer side of the `code-review.nvim` plugin). Language-agnostic; defers to the RTL skills for SystemVerilog. |
+| `sd-code-review`      | Apply review comments from `.code-review.md` (consumer side of the `code-review.nvim` plugin). Language-agnostic; defers to the RTL skills for SystemVerilog. |
 | `sd-rtl-coding`       | Synthesizable SystemVerilog **coding** contract (allowed/banned constructs, reset/clock discipline, FSM/latch rules). Project-agnostic; installed as-is. |
 | `sd-rtl-style`        | SystemVerilog **naming/style** conventions. A **template** — each project customizes it (snake_case vs camelCase, suffixes, prefixes). |
 

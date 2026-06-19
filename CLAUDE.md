@@ -57,7 +57,7 @@ auto-detected and only activated when those native tools are absent.
 
 `ai/skills/` holds portable skills shared with AI coding agents (Claude Code,
 Codex, Gemini, …):
-- `nvim-sd-code-review` — apply review comments from `.code-review.md` (consumer
+- `sd-code-review` — apply review comments from `.code-review.md` (consumer
   side of the `code-review.nvim` plugin). Language-agnostic.
 - `sd-rtl-coding` — synthesizable SV **coding** contract (allowed/banned
   constructs, reset/clock discipline, FSM/latch rules). Project-agnostic.
@@ -65,12 +65,12 @@ Codex, Gemini, …):
   customizes (snake_case vs camelCase, suffixes, prefixes).
 
 **Per-project install** — `nvim/scripts/init-ai` (aliased `init-ai`), run once at
-a project root. Copies both skills into `<project>/.claude/skills/` (Claude Code
+a project root. Copies the skills into `<project>/.claude/skills/` (Claude Code
 auto-discovers them). For other tools it creates `AGENTS.md` pointing at the
 skills **only if one doesn't already exist** — it never edits an existing
 `AGENTS.md`/`CLAUDE.md`, printing a paste-ready reference instead. `--force`
-overwrites; `--regen-only` refreshes only `sd-rtl-coding`, preserving the
-customized `sd-rtl-style`. Nothing is installed globally — per-project only.
+overwrites; `--regen-only` refreshes the project-agnostic skills, preserving the
+customized `sd-rtl-style` template. Nothing is installed globally — per-project only.
 
 ## tmux architecture
 

@@ -1,5 +1,5 @@
 ---
-name: nvim-sd-code-review
+name: sd-code-review
 description: Apply code review comments from .code-review.md. Use when the user says "review", "apply review", "apply comments", or invokes /review.
 ---
 
