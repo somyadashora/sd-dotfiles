@@ -73,7 +73,7 @@ return {
 		-- rebuilds the whole file in _sync_file (lua/review/init.lua), so rather than
 		-- reimplement it, let it write, then swap the one preamble line on disk.
 		local default_preamble = "Apply the following review comments to the codebase."
-		local custom_preamble = "Apply the following review comments to the codebase. Do not make unrelated changes, use the $sd-rtl skill"
+		local custom_preamble = "Apply the following review comments to the codebase. Do not make unrelated changes; for SystemVerilog/RTL use the sd-rtl-coding and sd-rtl-style skills"
 		local orig_sync_file = review._sync_file
 		review._sync_file = function(...)
 			local result = orig_sync_file(...)

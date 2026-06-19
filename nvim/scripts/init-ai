@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+# init-ai -- install portable AI coding skills into a project.
+#
+# Copies the sd-rtl-coding and sd-rtl-style skills from this dotfiles repo into
+# <project>/.claude/skills/, where Claude Code auto-discovers them. For other
+# tools (Codex/Gemini), it writes an AGENTS.md pointing at the skills -- but only
+# if AGENTS.md does not already exist; if it does, init-ai leaves it untouched
+# and prints a reference block for you to paste in. Existing local skills under
+# .claude/skills/ are never touched.
+#
+#   sd-rtl-coding  synthesizable SystemVerilog coding contract (allowed/banned
+#                  constructs, reset/clock discipline, FSM/latch rules).
+#                  Project-agnostic, installed as-is.
+#   sd-rtl-style   naming/style conventions -- a TEMPLATE you customize per
+#                  project. Never overwritten once present (unless --force).
+#
+# Usage:
+#   init-ai                  install both skills into ./
+#   init-ai -d path/to/proj  target a different project root
+#   init-ai --force          overwrite existing skill files (re-pull latest)
+#   init-ai --regen-only     refresh sd-rtl-coding only; keep customized
+#                            sd-rtl-style
+#   init-ai -h               this help
+#
+# Run from the project root (or pass -d). Re-running is safe.
+set -euo pipefail
+
+log()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
+ok()   { printf '\033[1;32m✓\033[0m %s\n' "$*"; }
+warn() { printf '\033[1;33mWARN:\033[0m %s\n' "$*" >&2; }
+die()  { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
+
+usage() { sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+
+dir="."
+force=0
+regen_only=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -d|--dir)     dir="${2:?-d needs a directory}"; shift 2 ;;
+    -f|--force)   force=1; shift ;;
+    --regen-only) regen_only=1; shift ;;
+    -h|--help)    usage 0 ;;
+    *) echo "init-ai: unknown arg '$1'" >&2; usage 1 ;;
+  esac
+done
+
+# Skill source lives in this dotfiles repo, two levels up from nvim/scripts/.
+# Resolve from the script's own path so the alias / absolute invocation works.
+script_dir="$(cd "$(dirname "$0")" && pwd)"
+src="$(cd "$script_dir/../../ai/skills" 2>/dev/null && pwd)" \
+  || die "skill source not found (expected $script_dir/../../ai/skills)"
+
+dir="${dir%/}"
+[[ -d "$dir" ]] || die "target dir '$dir' not found (run from project root, or pass -d DIR)"
+root="$(cd "$dir" && pwd)"
+
+skills_dst="$root/.claude/skills"
+mkdir -p "$skills_dst"
+
+# copy_skill NAME ALLOW_REGEN
+#   ALLOW_REGEN=1 -> --regen-only may refresh it (project-agnostic skill)
+#   ALLOW_REGEN=0 -> template; only --force overwrites an existing copy
+copy_skill() {
+  local name=$1 allow_regen=$2
+  local s="$src/$name" d="$skills_dst/$name"
+  [[ -d "$s" ]] || die "missing skill source: $s"
+
+  if [[ -e "$d" ]]; then
+    if [[ $force -eq 1 ]]; then
+      :
+    elif [[ $regen_only -eq 1 && $allow_regen -eq 1 ]]; then
+      :
+    else
+      warn "$name exists -- skipped (use --force to overwrite)"
+      return
+    fi
+  fi
+
+  rm -rf "$d"
+  cp -R "$s" "$d"
+  ok "installed $name -> ${d#"$root"/}"
+}
+
+copy_skill sd-rtl-coding 1
+copy_skill sd-rtl-style  0
+
+# --- cross-tool pointer (AGENTS.md) ------------------------------------------
+# Claude Code auto-discovers .claude/skills/; other tools read AGENTS.md.
+agents="$root/AGENTS.md"
+read -r -d '' agents_block <<'MD' || true
+## SystemVerilog RTL skills
+
+Before writing, editing, or addressing review comments on SystemVerilog
+(.sv/.svh/.v) in this repository, read and apply BOTH:
+
+- `.claude/skills/sd-rtl-coding/SKILL.md` — synthesizable coding contract
+  (allowed/banned constructs, reset/clock discipline, FSM/latch rules). Binding.
+- `.claude/skills/sd-rtl-style/SKILL.md` — naming/style conventions for this
+  project.
+MD
+
+if [[ -e "$agents" ]]; then
+  warn "AGENTS.md exists -- not modified. Add this reference yourself:"
+  printf '\n%s\n\n' "$agents_block"
+else
+  { printf '# AGENTS.md\n\n'; printf '%s\n' "$agents_block"; } > "$agents"
+  ok "created AGENTS.md -> ${agents#"$root"/}"
+fi
+
+log "Next: customize .claude/skills/sd-rtl-style/SKILL.md for this project's naming convention."

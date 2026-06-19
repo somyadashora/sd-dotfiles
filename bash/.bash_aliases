@@ -17,6 +17,7 @@ abbrev-alias getdotfiles="git -C $DOTFILES_DIR pull --rebase"
 
 abbrev-alias slang-init="$DOTFILES_DIR/nvim/scripts/slang-init"
 abbrev-alias verible-init="$DOTFILES_DIR/nvim/scripts/verible-init"
+abbrev-alias init-ai="$DOTFILES_DIR/nvim/scripts/init-ai"
 
 abbrev-alias prompt-tc='PROMPT_COMMAND="__tc_prompt_command"; echo "switched to TypeCraft prompt"'
 abbrev-alias prompt-default='PROMPT_COMMAND="__sd_prompt_command"; echo "switched to default prompt"'
