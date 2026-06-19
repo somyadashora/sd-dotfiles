@@ -106,13 +106,24 @@ if [[ $rules -eq 1 ]]; then
   if [[ -e "$rfile" && $force -eq 0 ]]; then
     echo "verible-init: $rfile exists -- use --force to overwrite" >&2
   else
-    cat > "$rfile" <<'RULES'
-# verible lint rules: +enable / -disable, one per line (or comma-separated).
-# Full list: https://chipsalliance.github.io/verible/lint.html
-# Below are common noise-reducers for existing RTL -- tune to taste.
--line-length
--no-tabs
+    {
+      cat <<'RULES'
+# verible lint rules -- every rule listed and DISABLED.
+# Enable a rule by removing its leading '-' (or change it to '+'). The text
+# after '=' is the rule's default config, shown so you can tune it once enabled.
+# One rule per line. NOTE: with everything disabled, nothing lints until you
+# opt rules back in. Reference: https://chipsalliance.github.io/verible/verilog_lint.html
 RULES
+      if command -v verible-verilog-lint >/dev/null 2>&1; then
+        # Dump the full rule set straight from the installed binary (so the list
+        # never goes stale), prefixing each rule with '-' to disable it.
+        verible-verilog-lint --ruleset=all --print_rules_file 2>/dev/null \
+          | sed -E 's/^([a-zA-Z])/-\1/'
+      else
+        # verible not on PATH -- fall back to a couple of common noise-reducers.
+        printf -- '-line-length\n-no-tabs\n'
+      fi
+    } > "$rfile"
     echo "verible-init: wrote $rfile"
   fi
 fi
