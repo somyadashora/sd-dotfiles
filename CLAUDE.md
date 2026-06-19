@@ -56,7 +56,9 @@ auto-detected and only activated when those native tools are absent.
 ## AI coding skills
 
 `ai/skills/` holds portable skills shared with AI coding agents (Claude Code,
-Codex, Gemini, …). Two SystemVerilog skills, deliberately split:
+Codex, Gemini, …):
+- `nvim-sd-code-review` — apply review comments from `.code-review.md` (consumer
+  side of the `code-review.nvim` plugin). Language-agnostic.
 - `sd-rtl-coding` — synthesizable SV **coding** contract (allowed/banned
   constructs, reset/clock discipline, FSM/latch rules). Project-agnostic.
 - `sd-rtl-style` — **naming/style** conventions. A template each project

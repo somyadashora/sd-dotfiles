@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
 # init-ai -- install portable AI coding skills into a project.
 #
-# Copies the sd-rtl-coding and sd-rtl-style skills from this dotfiles repo into
+# Copies the AI skills (code-review + sd-rtl-*) from this dotfiles repo into
 # <project>/.claude/skills/, where Claude Code auto-discovers them. For other
 # tools (Codex/Gemini), it writes an AGENTS.md pointing at the skills -- but only
 # if AGENTS.md does not already exist; if it does, init-ai leaves it untouched
 # and prints a reference block for you to paste in. Existing local skills under
 # .claude/skills/ are never touched.
 #
-#   sd-rtl-coding  synthesizable SystemVerilog coding contract (allowed/banned
-#                  constructs, reset/clock discipline, FSM/latch rules).
-#                  Project-agnostic, installed as-is.
-#   sd-rtl-style   naming/style conventions -- a TEMPLATE you customize per
-#                  project. Never overwritten once present (unless --force).
+#   nvim-sd-code-review  apply review comments from .code-review.md (paired with
+#                        the code-review.nvim plugin). Project-agnostic.
+#   sd-rtl-coding        synthesizable SystemVerilog coding contract
+#                        (allowed/banned constructs, reset/FSM rules).
+#                        Project-agnostic, installed as-is.
+#   sd-rtl-style         naming/style conventions -- a TEMPLATE you customize
+#                        per project. Never overwritten once present (--force).
 #
 # Usage:
 #   init-ai                  install both skills into ./
@@ -30,7 +32,7 @@ ok()   { printf '\033[1;32m✓\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33mWARN:\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
 
-usage() { sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+usage() { sed -n '2,27p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 
 dir="."
 force=0
@@ -83,17 +85,23 @@ copy_skill() {
   ok "installed $name -> ${d#"$root"/}"
 }
 
-copy_skill sd-rtl-coding 1
-copy_skill sd-rtl-style  0
+copy_skill nvim-sd-code-review 1
+copy_skill sd-rtl-coding      1
+copy_skill sd-rtl-style       0
 
 # --- cross-tool pointer (AGENTS.md) ------------------------------------------
 # Claude Code auto-discovers .claude/skills/; other tools read AGENTS.md.
 agents="$root/AGENTS.md"
 read -r -d '' agents_block <<'MD' || true
-## SystemVerilog RTL skills
+## AI skills
 
-Before writing, editing, or addressing review comments on SystemVerilog
-(.sv/.svh/.v) in this repository, read and apply BOTH:
+To apply code review comments (e.g. from `.code-review.md`), follow:
+
+- `.claude/skills/nvim-sd-code-review/SKILL.md` — read and apply each comment,
+  then clear the file.
+
+When writing, editing, or addressing review comments on SystemVerilog
+(.sv/.svh/.v) in this repository, also read and apply BOTH:
 
 - `.claude/skills/sd-rtl-coding/SKILL.md` — synthesizable coding contract
   (allowed/banned constructs, reset/clock discipline, FSM/latch rules). Binding.
