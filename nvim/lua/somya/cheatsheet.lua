@@ -437,13 +437,185 @@ local function open(secs, opts)
   end
 end
 
--- Full keymap cheatsheet
-local function open_cheatsheet()
-  open(sections, {
-    include_user_notes = true,
-    footer = "  Add notes: edit user_notes at the top of lua/somya/cheatsheet.lua",
-    title = "  Cheatsheet  ",
+-- ── NvChad-style grid cheatsheet (for <leader>fH) ──────
+-- Each section becomes a colored "card"; cards are packed into balanced columns
+-- that fill the window, like NvChad's NvCheatsheet.
+
+local N_HEAD = 8
+local function set_grid_hl()
+  local heads = { "#f7768e", "#e0af68", "#9ece6a", "#7dcfff", "#bb9af7", "#7aa2f7", "#2ac3de", "#ff9e64" }
+  for i, c in ipairs(heads) do
+    vim.api.nvim_set_hl(0, "SdCheatHead" .. i, { fg = "#16161e", bg = c, bold = true })
+  end
+  vim.api.nvim_set_hl(0, "SdCheatKey", { fg = "#16161e", bg = "#7dcfff", bold = true })
+  vim.api.nvim_set_hl(0, "SdCheatKey2", { fg = "#7dcfff", bold = true })
+  vim.api.nvim_set_hl(0, "SdCheatDesc", { fg = "#c0caf5" })
+  vim.api.nvim_set_hl(0, "SdCheatDivider", { fg = "#7f8bb0", italic = true })
+end
+
+-- Replace ambiguous-width glyphs with ASCII. strdisplaywidth() trusts
+-- 'ambiwidth' (single) and counts these as 1, but many terminals render them as
+-- 2 cells, which desyncs the grid and clips the right column. Keeping the grid
+-- pure-ASCII makes nvim's width math match what the terminal actually draws.
+local ascii_map = {
+  { "→", "->" }, { "←", "<-" }, { "—", "-" }, { "–", "-" },
+  { "…", "..." }, { "·", "-" }, { "─", "-" }, { "•", "*" },
+}
+local function to_ascii(s)
+  for _, m in ipairs(ascii_map) do
+    s = s:gsub(m[1], m[2])
+  end
+  return s
+end
+
+local function dwidth(s) return vim.fn.strdisplaywidth(s) end
+local function dpad(s, w)
+  local d = dwidth(s)
+  return d >= w and s or (s .. string.rep(" ", w - d))
+end
+local function dtrunc(s, w)
+  if dwidth(s) <= w then return s end
+  for i = vim.fn.strchars(s), 1, -1 do
+    local part = vim.fn.strcharpart(s, 0, i)
+    if dwidth(part) <= w - 3 then return part .. "..." end
+  end
+  return "..."
+end
+
+-- Build the padded cell-lines (each exactly col_w wide) for one section card.
+-- Every entry is a single line so the cards stay uniform (NvChad-style): the
+-- description sits left and the key sits in a pill on the right, with the
+-- description truncated to whatever space the key leaves.
+local function build_card(section, col_w, color_idx)
+  local cells = {}
+  local head_hl = "SdCheatHead" .. ((color_idx - 1) % N_HEAD + 1)
+  local title = dtrunc(to_ascii(section.title), col_w - 2)
+  local lpad = math.floor((col_w - dwidth(title)) / 2)
+  local htext = dpad(string.rep(" ", lpad) .. title, col_w)
+  table.insert(cells, { text = htext, hls = { { head_hl, 0, #htext } } })
+
+  for _, e in ipairs(section.entries) do
+    local is_div = (e[1]):find("──", 1, true) ~= nil
+    local key, desc = to_ascii(e[1]), to_ascii(e[2] or "")
+    if is_div then -- in-section sub-divider
+      local t = dpad(" " .. dtrunc(key, col_w - 1), col_w)
+      table.insert(cells, { text = t, hls = { { "SdCheatDivider", 0, #t } } })
+    elseif key == "" then -- desc-only line (e.g. user notes)
+      local t = dpad(" " .. dtrunc(desc, col_w - 1), col_w)
+      table.insert(cells, { text = t, hls = { { "SdCheatDesc", 1, #t } } })
+    elseif desc == "" then -- key/command-only line
+      local t = dpad(" " .. dtrunc(key, col_w - 1), col_w)
+      table.insert(cells, { text = t, hls = { { "SdCheatKey2", 1, #t } } })
+    else -- desc left (truncated), key pill right — always one line
+      local keyt = dtrunc(key, col_w - 6)
+      local keyp = " " .. keyt .. " "
+      local maxdesc = math.max(1, col_w - dwidth(keyp) - 2)
+      local desc_t = dtrunc(desc, maxdesc)
+      local left = dpad(" " .. desc_t, col_w - dwidth(keyp))
+      table.insert(cells, {
+        text = left .. keyp,
+        hls = { { "SdCheatDesc", 1, 1 + #desc_t }, { "SdCheatKey", #left, #left + #keyp } },
+      })
+    end
+  end
+  return cells
+end
+
+-- Stretch columns to fill the window: pick a column count from the available
+-- width (min ~40 wide, up to 3 columns) then widen each column to fill.
+local function open_grid(secs, win_title)
+  set_grid_hl()
+  local gap = 3
+  local avail = math.min(vim.o.columns - 6, math.floor(vim.o.columns * 0.92))
+  local ncols = math.max(1, math.min(3, math.floor(avail / (40 + gap))))
+  local col_w = math.floor((avail - (ncols - 1) * gap) / ncols)
+  local win_w = ncols * col_w + (ncols - 1) * gap
+
+  -- optional user-notes card first
+  local cards = {}
+  if #user_notes > 0 then
+    local notes = { title = "USER NOTES", entries = {} }
+    for _, n in ipairs(user_notes) do
+      table.insert(notes.entries, { "", n })
+    end
+    table.insert(cards, notes)
+  end
+  for _, s in ipairs(secs) do
+    table.insert(cards, s)
+  end
+
+  -- pack each card into the currently-shortest column
+  local cols, heights = {}, {}
+  for i = 1, ncols do cols[i], heights[i] = {}, 0 end
+  for idx, section in ipairs(cards) do
+    local cells = build_card(section, col_w, idx)
+    local mi = 1
+    for i = 2, ncols do if heights[i] < heights[mi] then mi = i end end
+    for _, cell in ipairs(cells) do table.insert(cols[mi], cell) end
+    table.insert(cols[mi], { text = string.rep(" ", col_w), hls = {} }) -- spacer row
+    heights[mi] = heights[mi] + #cells + 1
+  end
+  local maxh = 0
+  for i = 1, ncols do maxh = math.max(maxh, heights[i]) end
+
+  -- assemble rows side by side, collecting byte-accurate highlights
+  local blank = string.rep(" ", col_w)
+  local lines, hls = {}, {}
+  for r = 1, maxh do
+    local row, line_idx = "", #lines
+    for c = 1, ncols do
+      local cell = cols[c][r] or { text = blank, hls = {} }
+      local start = #row
+      row = row .. cell.text
+      for _, h in ipairs(cell.hls) do
+        table.insert(hls, { h[1], line_idx, start + h[2], start + h[3] })
+      end
+      if c < ncols then row = row .. string.rep(" ", gap) end
+    end
+    table.insert(lines, row)
+  end
+
+  local buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+  vim.bo[buf].modifiable = false
+  vim.bo[buf].bufhidden = "wipe"
+
+  local height = math.min(#lines, math.floor(vim.o.lines * 0.85))
+  vim.api.nvim_open_win(buf, true, {
+    relative = "editor",
+    width = win_w,
+    height = height,
+    row = math.floor((vim.o.lines - height) / 2),
+    col = math.floor((vim.o.columns - win_w) / 2),
+    style = "minimal",
+    border = "rounded",
+    title = win_title,
+    title_pos = "center",
   })
+  vim.wo.wrap = false
+  vim.wo.cursorline = false
+  -- 'style=minimal' clears the gutters once, but plugins re-enable a sign/fold
+  -- column after attach, which shifts the no-wrap rows right and clips the last
+  -- column. Force every gutter off and kill side-scroll so the grid stays put.
+  vim.wo.signcolumn = "no"
+  vim.wo.foldcolumn = "0"
+  vim.wo.number = false
+  vim.wo.relativenumber = false
+  vim.wo.sidescrolloff = 0
+  vim.wo.scrolloff = 0
+
+  local ns = vim.api.nvim_create_namespace("somya_cheatsheet_grid")
+  for _, h in ipairs(hls) do
+    pcall(vim.api.nvim_buf_add_highlight, buf, ns, h[1], h[2], h[3], h[4])
+  end
+  for _, key in ipairs({ "q", "<Esc>" }) do
+    vim.keymap.set("n", key, "<cmd>close<CR>", { buffer = buf, silent = true, nowait = true })
+  end
+end
+
+-- Full keymap cheatsheet (NvChad-style grid)
+local function open_cheatsheet()
+  open_grid(sections, "  sd-nvim cheatsheet  ")
 end
 
 -- Focused :cdo / :cfdo quickfix batch-command help
