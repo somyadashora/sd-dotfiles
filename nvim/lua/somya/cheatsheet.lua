@@ -76,11 +76,12 @@ local sections = {
       { "<C-v>  /  <C-x>",    "open item in vertical / horizontal split" },
       { "<C-t>",               "open item in new tab" },
       { "── bulk edit ──",    "run a command over the whole quickfix list" },
+      { "<leader>qh",          "full :cdo / :cfdo examples in a help window" },
       { ":cdo {cmd}",          "run {cmd} on every ENTRY (matched line)" },
       { ":cfdo {cmd}",         "run {cmd} once per FILE in the list" },
+      { ":cdo normal gcc → :wall",     "toggle-comment every entry's line" },
       { ":cdo s/old/new/g | update",   "replace on each entry, then save" },
       { ":cfdo %s/old/new/g | update", "replace across each file, then save" },
-      { ":cdo normal @q",      "run macro q on every entry" },
     },
   },
   {
