@@ -6,11 +6,13 @@
 -- Colors are catppuccin-based so the dark/light pairs feel consistent. The
 -- terminal must read clearly as "not the editor" (a cool navy #001424 tokyonight).
 local schemes = {
-  { name = "mint",     bg = "#15241f", fg = "#cdd6f4", accent = "#94e2d5", muted = "#5a8fa8" }, -- cool dark (default)
-  { name = "espresso", bg = "#2c211a", fg = "#cdd6f4", accent = "#fab387", muted = "#9d7e68" }, -- warm dark
-  { name = "purple",   bg = "#2a1d3d", fg = "#cdd6f4", accent = "#cba6f7", muted = "#7f7095" }, -- dark
-  { name = "latte",    bg = "#eff1f5", fg = "#4c4f69", accent = "#179299", muted = "#8c8fa1" }, -- cool light (catppuccin Latte)
-  { name = "cream",    bg = "#faf3e0", fg = "#5c5544", accent = "#fe640b", muted = "#9c917a" }, -- warm light
+  { name = "mint",     bg = "#15241f", fg = "#cdd6f4", accent = "#94e2d5", muted = "#5a8fa8" }, -- Teal (default)
+  { name = "espresso", bg = "#2c211a", fg = "#cdd6f4", accent = "#fab387", muted = "#9d7e68" }, -- Peach
+  { name = "purple",   bg = "#2a1d3d", fg = "#cdd6f4", accent = "#cba6f7", muted = "#7f7095" }, -- Mauve
+  { name = "rose",     bg = "#2b1a26", fg = "#cdd6f4", accent = "#f5c2e7", muted = "#9a6f8a" }, -- Pink
+  { name = "lavender", bg = "#1f1d3a", fg = "#cdd6f4", accent = "#b4befe", muted = "#6f72a0" }, -- Lavender
+  { name = "maroon",   bg = "#2c1a1d", fg = "#cdd6f4", accent = "#eba0ac", muted = "#9a6f76" }, -- Maroon
+  { name = "gold",     bg = "#262214", fg = "#cdd6f4", accent = "#f9e2af", muted = "#9c8f5e" }, -- Yellow
 }
 
 local function scheme_highlights(s)

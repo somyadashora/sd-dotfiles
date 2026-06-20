@@ -39,9 +39,10 @@ so they're independent terminals. Terminal windows get a distinct catppuccin-bas
 background (default mint/teal) so they stand out against the navy editor — applied
 window-locally (and re-applied on `ColorScheme`, so it survives styler.nvim's
 colorscheme-reload cycle) without leaking into normal buffers. `<leader>Tc` cycles
-through five schemes defined in the `schemes` table: `mint` (cool dark, default),
-`espresso` (warm dark), `purple`, `latte` (cool light), `cream` (warm light); cycling
-recolors open terminals live and updates the config so new terminals follow suit. In terminal mode `jk`
+through the dark, catppuccin-accented schemes in the `schemes` table: `mint` (Teal,
+default), `espresso` (Peach), `purple` (Mauve), `rose` (Pink), `lavender`, `maroon`,
+`gold` (Yellow); cycling recolors open terminals live and updates the config so new
+terminals follow suit. In terminal mode `jk`
 exits to normal, `<C-h/j/k/l>` navigate windows; `<esc>` is left alone so TUI apps work.
 
 **SystemVerilog LSP**: two servers are configured — `verible` (Mason-installed) and
