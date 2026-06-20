@@ -27,21 +27,22 @@ return {
     start_in_insert = true,
     persist_size = true,
     persist_mode = true,
-    -- A dark-but-distinct deep-purple background + violet border so the terminal
-    -- is immediately recognizable against the cool navy (#001424) tokyonight
-    -- editor. #2a1d3d is saturated/light enough to clearly read as "not the
-    -- editor" rather than just a hue shift. These are applied window-locally
+    -- A dark-but-distinct mint/teal background + catppuccin Teal border so the
+    -- terminal is immediately recognizable against the cool navy (#001424)
+    -- tokyonight editor. The green hue reads clearly as "not the editor" (the
+    -- editor is blue). Colors are catppuccin-mocha based: Teal #94e2d5 border,
+    -- Text #cdd6f4 fg, over a dark mint base. Applied window-locally
     -- (winhighlight) so they don't leak into normal buffers; toggleterm re-applies
     -- them on ColorScheme, surviving styler.nvim's colorscheme-reload cycle.
     shade_terminals = false,
     highlights = {
-      Normal = { guibg = "#2a1d3d" },
-      NormalFloat = { guibg = "#2a1d3d" },
-      FloatBorder = { guifg = "#c099ff", guibg = "#2a1d3d" },
-      StatusLine = { guibg = "#2a1d3d", guifg = "#c099ff" },
-      StatusLineNC = { guibg = "#2a1d3d", guifg = "#5a8fa8" },
-      WinBar = { guibg = "#2a1d3d", guifg = "#c099ff" },
-      WinBarNC = { guibg = "#2a1d3d", guifg = "#5a8fa8" },
+      Normal = { guibg = "#15241f", guifg = "#cdd6f4" },
+      NormalFloat = { guibg = "#15241f", guifg = "#cdd6f4" },
+      FloatBorder = { guifg = "#94e2d5", guibg = "#15241f" },
+      StatusLine = { guibg = "#15241f", guifg = "#94e2d5" },
+      StatusLineNC = { guibg = "#15241f", guifg = "#5a8fa8" },
+      WinBar = { guibg = "#15241f", guifg = "#94e2d5" },
+      WinBarNC = { guibg = "#15241f", guifg = "#5a8fa8" },
     },
   },
   config = function(_, opts)

@@ -35,10 +35,10 @@ Entry point: `nvim/init.lua` → `somya.core` + `somya.lazy`
 **Terminal** (`nvim/lua/somya/plugins/toggleterm.lua`): toggleterm.nvim under the
 `<leader>T` prefix — `Tt` toggle (last used, defaults to float), `Tf` float, `Th`
 bottom/horizontal, `Tv` vertical, `Ta` toggle-all. Each variant uses a distinct count
-so they're independent terminals. Terminal windows get a distinct deep-purple background
-(`#2a1d3d`) + violet border (`#c099ff`) — applied window-locally (and re-applied on
-`ColorScheme`, so it survives styler.nvim's colorscheme-reload cycle) so it stands out
-against the navy editor without leaking into normal buffers. In terminal mode `jk`
+so they're independent terminals. Terminal windows get a distinct catppuccin-based
+mint/teal background (`#15241f`) + Teal border (`#94e2d5`) — applied window-locally
+(and re-applied on `ColorScheme`, so it survives styler.nvim's colorscheme-reload cycle)
+so it stands out against the navy editor without leaking into normal buffers. In terminal mode `jk`
 exits to normal, `<C-h/j/k/l>` navigate windows; `<esc>` is left alone so TUI apps work.
 
 **SystemVerilog LSP**: two servers are configured — `verible` (Mason-installed) and
