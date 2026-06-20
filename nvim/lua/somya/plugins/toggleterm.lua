@@ -27,19 +27,21 @@ return {
     start_in_insert = true,
     persist_size = true,
     persist_mode = true,
-    -- A dark-but-distinct plum background + purple border so the terminal is
-    -- immediately recognizable against the navy (#011628) tokyonight editor.
-    -- These are applied window-locally (winhighlight), so they don't leak into
-    -- normal buffers and survive styler.nvim's per-filetype namespaces.
+    -- A dark-but-distinct deep-purple background + violet border so the terminal
+    -- is immediately recognizable against the cool navy (#001424) tokyonight
+    -- editor. #2a1d3d is saturated/light enough to clearly read as "not the
+    -- editor" rather than just a hue shift. These are applied window-locally
+    -- (winhighlight) so they don't leak into normal buffers; toggleterm re-applies
+    -- them on ColorScheme, surviving styler.nvim's colorscheme-reload cycle.
     shade_terminals = false,
     highlights = {
-      Normal = { guibg = "#1a1322" },
-      NormalFloat = { guibg = "#1a1322" },
-      FloatBorder = { guifg = "#c099ff", guibg = "#1a1322" },
-      StatusLine = { guibg = "#1a1322", guifg = "#c099ff" },
-      StatusLineNC = { guibg = "#1a1322", guifg = "#5a8fa8" },
-      WinBar = { guibg = "#1a1322", guifg = "#c099ff" },
-      WinBarNC = { guibg = "#1a1322", guifg = "#5a8fa8" },
+      Normal = { guibg = "#2a1d3d" },
+      NormalFloat = { guibg = "#2a1d3d" },
+      FloatBorder = { guifg = "#c099ff", guibg = "#2a1d3d" },
+      StatusLine = { guibg = "#2a1d3d", guifg = "#c099ff" },
+      StatusLineNC = { guibg = "#2a1d3d", guifg = "#5a8fa8" },
+      WinBar = { guibg = "#2a1d3d", guifg = "#c099ff" },
+      WinBarNC = { guibg = "#2a1d3d", guifg = "#5a8fa8" },
     },
   },
   config = function(_, opts)
