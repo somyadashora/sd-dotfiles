@@ -26,6 +26,10 @@ bash installers/install-termux-tools.sh  # tools for Termux (Android)
 Entry point: `nvim/init.lua` → `somya.core` + `somya.lazy`
 
 - `nvim/lua/somya/core/` — options, keymaps (leader = `<Space>`)
+- `nvim/lua/somya/plugins/which-key.lua` — names every `<leader>` prefix that fans
+  out into multiple keys via `opts.spec` (e.g. `c → +Cursor`, `t → +Terminal`), so
+  the popup labels groups instead of showing a bare count. Add a row when a new
+  prefix grows a second binding.
 - `nvim/lua/somya/lazy.lua` — bootstraps [lazy.nvim](https://github.com/folke/lazy.nvim);
   imports all of `somya.plugins` and `somya.plugins.lsp`
 - `nvim/lua/somya/plugins/` — one file per plugin, each returns a lazy spec table
