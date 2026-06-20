@@ -32,6 +32,14 @@ Entry point: `nvim/init.lua` → `somya.core` + `somya.lazy`
 - `nvim/lua/somya/plugins/lsp/` — `mason.lua` (installer) + `lspconfig.lua`
   (server config via `vim.lsp.config()` API, nvim-lspconfig 0.11+)
 
+**Terminal** (`nvim/lua/somya/plugins/toggleterm.lua`): toggleterm.nvim under the
+`<leader>T` prefix — `Tt` toggle (last used, defaults to float), `Tf` float, `Th`
+bottom/horizontal, `Tv` vertical, `Ta` toggle-all. Each variant uses a distinct count
+so they're independent terminals. Terminal windows get a distinct dark-plum background
+(`#1a1322`) + purple border (`#c099ff`) — applied window-locally so it stands out
+against the navy editor without leaking into normal buffers. In terminal mode `jk`
+exits to normal, `<C-h/j/k/l>` navigate windows; `<esc>` is left alone so TUI apps work.
+
 **SystemVerilog LSP**: two servers are configured — `verible` (Mason-installed) and
 `slang-server` (`~/.local/bin/slang-server`). Only one should be active at a time;
 switch with `:UseVerible` / `:UseSlang`.
