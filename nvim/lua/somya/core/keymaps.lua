@@ -90,4 +90,8 @@ keymap.set("n", "<leader>ql", function()
     },
   }, "a") -- "a" = append to the existing list
 end, { desc = "Add current line to quickfix" })
+-- Quickfix list STACK: nvim keeps up to 10 lists. Filtering in bqf (zn/zN) or a
+-- new :vimgrep pushes a new list and keeps the previous one — walk the stack here.
+keymap.set("n", "<leader>q[", "<cmd>silent! colder<CR>", { desc = "Older quickfix list" })
+keymap.set("n", "<leader>q]", "<cmd>silent! cnewer<CR>", { desc = "Newer quickfix list" })
 

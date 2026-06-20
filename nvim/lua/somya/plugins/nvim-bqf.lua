@@ -16,16 +16,7 @@ return {
       auto_enable = true,
       auto_resize_height = true, -- shrink/grow the qf window to fit its contents
       preview = {
-        win_height = 14,
-        win_vheight = 14,
-        delay_syntax = 80,
-        border = "rounded",
-        show_title = true,
-        should_preview_cb = function(bufnr)
-          -- skip preview for very large files
-          local ok, stat = pcall(vim.loop.fs_stat, vim.api.nvim_buf_get_name(bufnr))
-          return not (ok and stat and stat.size > 1024 * 1024)
-        end,
+        auto_preview = false, -- no preview popup window (was distracting)
       },
       -- in-quickfix keymaps (buffer-local); see <leader>fH cheatsheet
       func_map = {
@@ -34,11 +25,14 @@ return {
         split = "<C-x>", -- open in horizontal split
         vsplit = "<C-v>", -- open in vertical split
         tab = "<C-t>", -- open in new tab
-        ptogglemode = "z,", -- toggle preview between normal/maximized
-        pscrollup = "<C-b>", -- scroll preview up
-        pscrolldown = "<C-f>", -- scroll preview down
-        prevfile = "<C-p>", -- preview prev file's first item
-        nextfile = "<C-n>", -- preview next file's first item
+        -- Mark entries, then build a NEW quickfix list from the marks. The list
+        -- you filtered FROM is pushed onto the qf stack (not lost) — get it back
+        -- with :colder (<leader>q[) / :cnewer (<leader>q]).
+        stoggledown = "<Tab>", -- toggle mark on entry, move down
+        stoggleup = "<S-Tab>", -- toggle mark on entry, move up
+        sclear = "z<Tab>", -- clear all marks
+        filter = "zn", -- new list from MARKED entries
+        filterr = "zN", -- new list from UNMARKED entries
         fzffilter = has_fzf and "zf" or "", -- fzf fuzzy-filter (only if fzf present)
       },
       filter = {
