@@ -41,11 +41,14 @@ return {
         opts.desc = "Show LSP type definitions"
         keymap.set("n", "gt", "<cmd>Telescope lsp_type_definitions<CR>", opts) -- show lsp type definitions
 
-        opts.desc = "See available code actions"
-        keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts) -- see available code actions, in visual mode will apply to selection
+        -- Generic LSP actions live under <leader>v ("LSP / Code"). These work
+        -- with ANY attached server (verible, slang-server, lua_ls) — they are not
+        -- server-specific. Server-specific maps are guarded by client name below.
+        opts.desc = "LSP: code action"
+        keymap.set({ "n", "v" }, "<leader>va", vim.lsp.buf.code_action, opts) -- in visual mode applies to selection
 
-        opts.desc = "Smart rename"
-        keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts) -- smart rename
+        opts.desc = "LSP: smart rename"
+        keymap.set("n", "<leader>vr", vim.lsp.buf.rename, opts)
 
         opts.desc = "Show buffer diagnostics"
         keymap.set("n", "<leader>D", "<cmd>Telescope diagnostics bufnr=0<CR>", opts) -- show  diagnostics for file
@@ -62,22 +65,8 @@ return {
         opts.desc = "Show documentation for what is under cursor"
         keymap.set("n", "K", vim.lsp.buf.hover, opts) -- show documentation for what is under cursor
 
-        -- SLANG related keymaps
-        opts.desc = "Slang trace signal drivers"
-        keymap.set("n", "<leader>Sd", function()
-          vim.lsp.buf.incoming_calls()
-        end, opts)
-
-        opts.desc = "Slang trace signal loads"
-        keymap.set("n", "<leader>Sl", function()
-          vim.lsp.buf.outgoing_calls()
-        end, opts)
-
-        opts.desc = "Open quickfix list"
-        keymap.set("n", "<leader>Sq", "<cmd>copen<CR>", opts)
-
-        opts.desc = "Show active LSP clients"
-        keymap.set("n", "<leader>Si", function()
+        opts.desc = "LSP: info (active clients)"
+        keymap.set("n", "<leader>vi", function()
           local clients = vim.lsp.get_clients({ bufnr = ev.buf })
           if #clients == 0 then
             print("No active LSP clients for this buffer")
@@ -89,10 +78,25 @@ return {
           end
         end, opts)
 
+        opts.desc = "LSP: restart"
+        keymap.set("n", "<leader>vR", "<cmd>LspRestart<CR>", opts)
 
+        -- Server-specific keymaps. slang-server supports LSP call-hierarchy, which
+        -- we use for signal cone tracing; verible does not, so these only attach
+        -- when slang-server is the client. Switching with :UseVerible / :UseSlang
+        -- re-attaches the buffer, so these maps appear/disappear accordingly.
+        local client = vim.lsp.get_client_by_id(ev.data.client_id)
+        if client and client.name == "slang-server" then
+          opts.desc = "Slang: trace signal drivers"
+          keymap.set("n", "<leader>vd", function()
+            vim.lsp.buf.incoming_calls()
+          end, opts)
 
-        opts.desc = "Restart LSP"
-        keymap.set("n", "<leader>Rs", ":LspRestart<CR>", opts) -- mapping to restart lsp if necessary
+          opts.desc = "Slang: trace signal loads"
+          keymap.set("n", "<leader>vl", function()
+            vim.lsp.buf.outgoing_calls()
+          end, opts)
+        end
       end,
     })
 

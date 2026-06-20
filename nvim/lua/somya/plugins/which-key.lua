@@ -17,16 +17,17 @@ return {
       { "<leader>T", group = "Tabs" },
       { "<leader>b", group = "Buffers" },
       { "<leader>bc", group = "Close buffers" }, -- nested under Buffers
-      { "<leader>c", group = "Cursor" }, -- smear-cursor presets/colors (+ LSP code action)
+      { "<leader>c", group = "Cursor" }, -- smear-cursor presets/colors
       { "<leader>e", group = "Explorer" }, -- nvim-tree
       { "<leader>f", group = "Find" }, -- telescope
       { "<leader>l", group = "Lint & LazyGit" },
       { "<leader>m", group = "Multi-cursor" }, -- vim-visual-multi
       { "<leader>n", group = "Minimap & search" },
       { "<leader>q", group = "Quickfix" },
-      { "<leader>r", group = "Code review & rename" },
+      { "<leader>r", group = "Code review" }, -- code-review.nvim comments
       { "<leader>s", group = "Splits & windows" },
       { "<leader>t", group = "Terminal" },
+      { "<leader>v", group = "LSP / Code" }, -- generic LSP actions + slang-only cone tracing
       { "<leader>w", group = "Session" }, -- auto-session
       { "<leader>x", group = "Trouble & diagnostics" },
     },

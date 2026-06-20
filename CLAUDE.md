@@ -54,11 +54,19 @@ exits to normal, `<C-h/j/k/l>` navigate windows; `<esc>` is left alone so TUI ap
 `slang-server` (`~/.local/bin/slang-server`). Only one should be active at a time;
 switch with `:UseVerible` / `:UseSlang`.
 
+**LSP keymaps** (set on `LspAttach` in `lsp/lspconfig.lua`): generic actions — usable
+with any server — live under the `<leader>v` ("LSP / Code") group: `va` code action,
+`vr` smart rename, `vi` active-client info, `vR` restart. Navigation stays on `g*`
+(`gd/gD/gR/gi/gt`), `K` hover, `<leader>d`/`D` and `[d`/`]d` diagnostics. Server-specific
+maps are guarded by client name: the slang cone-tracing maps (`<leader>vd` drivers /
+`vl` loads, via LSP call-hierarchy) attach only when `slang-server` is the client, so
+they appear/disappear as you `:UseSlang` / `:UseVerible` (which re-attach the buffer).
+
 **Per-project LSP setup** — two bootstrap scripts in `nvim/scripts/` (aliased in
 `.bash_aliases`), run once at a project root:
 - `slang-init` — creates `.slang/server.json` + a `.f` filelist (indexing →
   def/refs/diagnostics). `-t TOP` bakes `--top` into the filelist and adds a
-  `build` entry so driver/load cone tracing (`<leader>Sd`/`Sl`) works;
+  `build` entry so driver/load cone tracing (`<leader>vd`/`vl`) works;
   `--regen-only` refreshes just the filelist. `.svh` headers are pulled in via
   `-I`, not listed as sources.
 - `verible-init` — creates `verible.filelist` at the repo root (lists `.sv`/
