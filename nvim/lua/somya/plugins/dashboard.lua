@@ -16,38 +16,75 @@ return {
       [[╚══════╝╚═════╝       ╚═╝  ╚═══╝  ╚═══╝  ╚═╝╚═╝     ╚═╝]],
     }
 
-    -- Cool purple→teal gradient (one hl per row), plus accent groups. Defined
-    -- here so they sit on top of whatever colorscheme loaded before VimEnter.
-    local grad = { "#c099ff", "#a99cf0", "#8fb0f5", "#74bdf0", "#6ad3df", "#94e2d5" }
-    for i, c in ipairs(grad) do
-      vim.api.nvim_set_hl(0, "SdNvimGrad" .. i, { fg = c, bold = true })
-    end
     vim.api.nvim_set_hl(0, "SdNvimHelp", { fg = "#7f8bb0" })
-    vim.api.nvim_set_hl(0, "SdNvimFooter", { fg = "#cba6f7", italic = true })
 
-    -- The date/time and machine lines sit in a colored "box" (dark text on an
-    -- accent background, like the cheatsheet key pills). A fresh accent is rolled
-    -- from this catppuccin palette on every dashboard draw, so each launch looks
-    -- a little different. The subheader is tinted to match for cohesion.
+    -- Everything visual is re-rolled on each dashboard draw so every launch looks
+    -- different:
+    --   • box accent  — bg of the date/machine pills (+ subheader/footer tint)
+    --   • window bg   — the whole dashboard background (applied via winhighlight)
+    --   • gradient    — a 6-color slice of a colour ring, taken from a random
+    --                   start, recolours the SD-NVIM art.
     local box_palette = {
       "#94e2d5", "#cba6f7", "#fab387", "#a6e3a1", "#89b4fa", "#f5c2e7", "#f9e2af",
     }
+    local bg_palette = {
+      "#1e1e2e", "#1a1b26", "#232136", "#11171c", "#1c1917", "#181f1a", "#1f1a24",
+    }
+    -- ordered so any 6 consecutive colours flow into a pleasant gradient
+    local grad_ring = {
+      "#f38ba8", "#fab387", "#f9e2af", "#a6e3a1", "#94e2d5", "#89dceb",
+      "#74c7ec", "#89b4fa", "#b4befe", "#cba6f7", "#f5c2e7", "#eba0ac",
+    }
     math.randomseed(vim.loop.hrtime() % 2147483647)
-    local last_idx
-    local function reroll_accent()
-      local idx = math.random(#box_palette)
-      while #box_palette > 1 and idx == last_idx do
-        idx = math.random(#box_palette)
+
+    local last_accent
+    local function reroll()
+      -- box accent (avoid an immediate repeat)
+      local ai = math.random(#box_palette)
+      while #box_palette > 1 and ai == last_accent do
+        ai = math.random(#box_palette)
       end
-      last_idx = idx
-      local c = box_palette[idx]
-      vim.api.nvim_set_hl(0, "SdNvimBox", { fg = "#181825", bg = c, bold = true })
-      vim.api.nvim_set_hl(0, "SdNvimSub", { fg = c, italic = true })
+      last_accent = ai
+      local accent = box_palette[ai]
+      vim.api.nvim_set_hl(0, "SdNvimBox", { fg = "#11111b", bg = accent, bold = true })
+      vim.api.nvim_set_hl(0, "SdNvimSub", { fg = accent, italic = true })
+      vim.api.nvim_set_hl(0, "SdNvimFooter", { fg = accent, italic = true })
+
+      -- whole-window background
+      local bg = bg_palette[math.random(#bg_palette)]
+      vim.api.nvim_set_hl(0, "SdNvimDashBg", { bg = bg, fg = "#c0caf5" })
+
+      -- gradient slice for the SD-NVIM art
+      local start = math.random(#grad_ring)
+      for i = 1, 6 do
+        local c = grad_ring[(start + i - 2) % #grad_ring + 1]
+        vim.api.nvim_set_hl(0, "SdNvimGrad" .. i, { fg = c, bold = true })
+      end
     end
-    reroll_accent()
+    reroll()
+
     -- Re-roll just before each (re)draw — FileType fires while alpha builds the
-    -- buffer, before it applies the node highlights, so the new color takes hold.
-    vim.api.nvim_create_autocmd("FileType", { pattern = "alpha", callback = reroll_accent })
+    -- buffer, before the screen redraws, so the new colours take hold. Also paint
+    -- the window background here (winhighlight is window-local) and clear it again
+    -- when the dashboard leaves the window, so the tint never leaks into files.
+    vim.api.nvim_create_autocmd("FileType", {
+      pattern = "alpha",
+      callback = function(ev)
+        reroll()
+        local win = vim.api.nvim_get_current_win()
+        vim.wo[win].winhighlight =
+          "Normal:SdNvimDashBg,NormalNC:SdNvimDashBg,EndOfBuffer:SdNvimDashBg,SignColumn:SdNvimDashBg"
+        vim.api.nvim_create_autocmd({ "BufWinLeave", "BufHidden" }, {
+          buffer = ev.buf,
+          once = true,
+          callback = function()
+            if vim.api.nvim_win_is_valid(win) then
+              vim.wo[win].winhighlight = ""
+            end
+          end,
+        })
+      end,
+    })
 
     local function boxed(s) return "  " .. s .. "  " end
 
@@ -84,16 +121,19 @@ return {
       opts = { position = "center", hl = "SdNvimSub" },
     }
 
+    -- Table-form hl ({{group, 0, -1}}) so alpha offsets the highlight by the
+    -- centering pad and the box hugs only the text — a string hl would paint
+    -- from the left window edge instead.
     local datenode = {
       type = "text",
       val = boxed(datetime()),
-      opts = { position = "center", hl = "SdNvimBox" },
+      opts = { position = "center", hl = { { "SdNvimBox", 0, -1 } } },
     }
 
     local infonode = {
       type = "text",
       val = boxed(sysinfo()),
-      opts = { position = "center", hl = "SdNvimBox" },
+      opts = { position = "center", hl = { { "SdNvimBox", 0, -1 } } },
     }
 
     -- Each button: a letter to press here + the equivalent <leader> keymap, so
