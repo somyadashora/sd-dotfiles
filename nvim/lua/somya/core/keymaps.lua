@@ -108,6 +108,34 @@ keymap.set("n", "<leader>ql", function()
 end, { desc = "Add current line to quickfix" })
 -- Quickfix list STACK: nvim keeps up to 10 lists. Filtering in bqf (zn/zN) or a
 -- new :vimgrep pushes a new list and keeps the previous one — walk the stack here.
-keymap.set("n", "<leader>q[", "<cmd>silent! colder<CR>", { desc = "Older quickfix list" })
-keymap.set("n", "<leader>q]", "<cmd>silent! cnewer<CR>", { desc = "Newer quickfix list" })
+-- Trouble's quickfix view always mirrors the CURRENT list, but :colder/:cnewer
+-- don't fire QuickFixCmdPost, so refresh any open Trouble window after switching.
+local function switch_qf_list(cmd)
+  vim.cmd("silent! " .. cmd)
+  if package.loaded["trouble"] then
+    require("trouble").refresh() -- no-op if no Trouble window is open
+  end
+end
+keymap.set("n", "<leader>q[", function() switch_qf_list("colder") end, { desc = "Older quickfix list" })
+keymap.set("n", "<leader>q]", function() switch_qf_list("cnewer") end, { desc = "Newer quickfix list" })
+keymap.set("n", "<leader>qx", function()
+  vim.fn.setqflist({}, "r") -- empty the current list (keeps its slot in the stack)
+end, { desc = "Clear quickfix list" })
+-- Format every FILE referenced in the quickfix list (once per file), then save.
+-- This is the qf-wide counterpart to <leader>vf / <leader>mf (single buffer).
+-- Generic per-entry/per-file commands stay manual via :cdo / :cfdo.
+keymap.set("n", "<leader>qF", function()
+  if vim.tbl_isempty(vim.fn.getqflist()) then
+    vim.notify("Quickfix list is empty", vim.log.levels.WARN)
+    return
+  end
+  local cur = vim.api.nvim_get_current_buf()
+  local ok, err = pcall(vim.cmd,
+    [[cfdo lua require('conform').format({ lsp_fallback = true, timeout_ms = 3000 }) vim.cmd('update')]])
+  pcall(vim.api.nvim_set_current_buf, cur) -- return to where we started
+  vim.notify(
+    ok and "Formatted all files in quickfix list" or ("Format-qf error: " .. tostring(err)),
+    ok and vim.log.levels.INFO or vim.log.levels.ERROR
+  )
+end, { desc = "Format all files in quickfix list" })
 
