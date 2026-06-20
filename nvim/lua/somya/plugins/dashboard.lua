@@ -38,8 +38,10 @@ return {
       local host = vim.loop.os_gethostname() or "?"
       local user = (vim.loop.os_get_passwd() or {}).username or os.getenv("USER") or "?"
       local nvim = vim.version()
-      return string.format("%s@%s   |   %s %s   |   nvim %d.%d.%d",
-        user, host, u.sysname, u.machine, nvim.major, nvim.minor, nvim.patch)
+      local cores = #(vim.loop.cpu_info() or {})
+      local gb = vim.loop.get_total_memory() / (1024 ^ 3)
+      return string.format("%s@%s   |   %s %s   |   %d cores  %.0f GB   |   nvim %d.%d.%d",
+        user, host, u.sysname, u.machine, cores, gb, nvim.major, nvim.minor, nvim.patch)
     end
 
     local header_hl = {}
