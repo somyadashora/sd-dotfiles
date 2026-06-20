@@ -1,4 +1,4 @@
--- Terminal color schemes, cycled at runtime with <leader>Tc.
+-- Terminal color schemes, cycled at runtime with <leader>tc.
 -- Each entry is a compact spec; `scheme_highlights` expands it into the
 -- per-element highlight table toggleterm applies window-locally (winhighlight):
 --   bg     window background          fg     normal text
@@ -64,15 +64,15 @@ end
 return {
   "akinsho/toggleterm.nvim",
   version = "*",
-  -- lazy-load on first <leader>T keypress or the :ToggleTerm command
+  -- lazy-load on first <leader>t keypress or the :ToggleTerm command
   cmd = { "ToggleTerm", "ToggleTermToggleAll" },
   keys = {
-    { "<leader>Tt", "<cmd>ToggleTerm<cr>", desc = "Toggle terminal (last used)" },
-    { "<leader>Tf", "<cmd>2ToggleTerm direction=float<cr>", desc = "Floating terminal" },
-    { "<leader>Th", "<cmd>3ToggleTerm direction=horizontal size=15<cr>", desc = "Bottom (horizontal) terminal" },
-    { "<leader>Tv", "<cmd>4ToggleTerm direction=vertical size=80<cr>", desc = "Vertical terminal" },
-    { "<leader>Ta", "<cmd>ToggleTermToggleAll<cr>", desc = "Toggle all terminals" },
-    { "<leader>Tc", function() apply_scheme(current + 1) end, desc = "Cycle terminal colorscheme" },
+    { "<leader>tt", "<cmd>ToggleTerm<cr>", desc = "Toggle terminal (last used)" },
+    { "<leader>tf", "<cmd>2ToggleTerm direction=float<cr>", desc = "Floating terminal" },
+    { "<leader>th", "<cmd>3ToggleTerm direction=horizontal size=15<cr>", desc = "Bottom (horizontal) terminal" },
+    { "<leader>tv", "<cmd>4ToggleTerm direction=vertical size=80<cr>", desc = "Vertical terminal" },
+    { "<leader>ta", "<cmd>ToggleTermToggleAll<cr>", desc = "Toggle all terminals" },
+    { "<leader>tc", function() apply_scheme(current + 1) end, desc = "Cycle terminal colorscheme" },
   },
   opts = {
     -- default geometry for horizontal/vertical splits
@@ -83,7 +83,7 @@ return {
         return math.floor(vim.o.columns * 0.4)
       end
     end,
-    direction = "float", -- default for <leader>Tt
+    direction = "float", -- default for <leader>tt
     float_opts = {
       border = "curved",
       winblend = 0,
@@ -94,7 +94,7 @@ return {
     -- Distinct background so the terminal is recognizable against the navy editor.
     -- Applied window-locally (winhighlight) so it doesn't leak into normal buffers;
     -- toggleterm re-applies on ColorScheme, surviving styler.nvim's colorscheme
-    -- reload. Cycle between `schemes` at runtime with <leader>Tc.
+    -- reload. Cycle between `schemes` at runtime with <leader>tc.
     shade_terminals = false,
     highlights = scheme_highlights(schemes[current]),
   },

@@ -33,12 +33,13 @@ Entry point: `nvim/init.lua` → `somya.core` + `somya.lazy`
   (server config via `vim.lsp.config()` API, nvim-lspconfig 0.11+)
 
 **Terminal** (`nvim/lua/somya/plugins/toggleterm.lua`): toggleterm.nvim under the
-`<leader>T` prefix — `Tt` toggle (last used, defaults to float), `Tf` float, `Th`
-bottom/horizontal, `Tv` vertical, `Ta` toggle-all. Each variant uses a distinct count
-so they're independent terminals. Terminal windows get a distinct catppuccin-based
+`<leader>t` prefix — `tt` toggle (last used, defaults to float), `tf` float, `th`
+bottom/horizontal, `tv` vertical, `ta` toggle-all. Each variant uses a distinct count
+so they're independent terminals. (Tab management lives at the `<leader>T` prefix in
+`core/keymaps.lua`.) Terminal windows get a distinct catppuccin-based
 background (default mint/teal) so they stand out against the navy editor — applied
 window-locally (and re-applied on `ColorScheme`, so it survives styler.nvim's
-colorscheme-reload cycle) without leaking into normal buffers. `<leader>Tc` cycles
+colorscheme-reload cycle) without leaking into normal buffers. `<leader>tc` cycles
 through the dark, catppuccin-accented schemes in the `schemes` table: `mint` (Teal,
 default), `espresso` (Peach), `purple` (Mauve), `rose` (Pink), `lavender`, `maroon`,
 `gold` (Yellow); cycling recolors open terminals live and updates the config so new
