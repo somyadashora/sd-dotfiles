@@ -40,6 +40,24 @@ return {
       end
     end
 
+    -- Yank Tab-marked entries (or the current one) into a register, mirroring how
+    -- <C-q> sends them to the quickfix list. entry.value is the raw line for grep
+    -- pickers and the path for file pickers; ordinal/[1] are fallbacks.
+    local function yank_entries(reg)
+      return function(prompt_bufnr)
+        local picker = action_state.get_current_picker(prompt_bufnr)
+        local sel = picker:get_multi_selection()
+        local entries = (not vim.tbl_isempty(sel)) and sel or { action_state.get_selected_entry() }
+        local lines = {}
+        for _, e in ipairs(entries) do
+          table.insert(lines, e.value or e.ordinal or e[1])
+        end
+        actions.close(prompt_bufnr)
+        vim.fn.setreg(reg, table.concat(lines, "\n"))
+        vim.notify(("Yanked %d entr%s to @%s"):format(#lines, #lines == 1 and "y" or "ies", reg))
+      end
+    end
+
     telescope.setup({
       defaults = {
         dynamic_preview_title = true,
@@ -59,11 +77,13 @@ return {
             ["<C-k>"] = actions.move_selection_previous, -- move to prev result
             ["<C-j>"] = actions.move_selection_next, -- move to next result
             ["<C-q>"] = actions.smart_send_to_qflist + actions.open_qflist,
+            ["<C-y>"] = yank_entries('"'), -- yank marked/current entries to the unnamed register
             ["<CR>"] = select_one_or_multi, -- open all Tab-marked entries
           },
           n = {
             ["<CR>"] = select_one_or_multi, -- open all Tab-marked entries
             ["<C-q>"] = actions.smart_send_to_qflist + actions.open_qflist,
+            ["<C-y>"] = yank_entries('"'), -- yank marked/current entries to the unnamed register
           },
         },
       },
