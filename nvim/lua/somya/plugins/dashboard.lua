@@ -22,11 +22,34 @@ return {
     for i, c in ipairs(grad) do
       vim.api.nvim_set_hl(0, "SdNvimGrad" .. i, { fg = c, bold = true })
     end
-    vim.api.nvim_set_hl(0, "SdNvimSub", { fg = "#94e2d5", italic = true })
     vim.api.nvim_set_hl(0, "SdNvimHelp", { fg = "#7f8bb0" })
     vim.api.nvim_set_hl(0, "SdNvimFooter", { fg = "#cba6f7", italic = true })
-    vim.api.nvim_set_hl(0, "SdNvimDate", { fg = "#7dcfff", bold = true })
-    vim.api.nvim_set_hl(0, "SdNvimInfo", { fg = "#9aa5ce" })
+
+    -- The date/time and machine lines sit in a colored "box" (dark text on an
+    -- accent background, like the cheatsheet key pills). A fresh accent is rolled
+    -- from this catppuccin palette on every dashboard draw, so each launch looks
+    -- a little different. The subheader is tinted to match for cohesion.
+    local box_palette = {
+      "#94e2d5", "#cba6f7", "#fab387", "#a6e3a1", "#89b4fa", "#f5c2e7", "#f9e2af",
+    }
+    math.randomseed(vim.loop.hrtime() % 2147483647)
+    local last_idx
+    local function reroll_accent()
+      local idx = math.random(#box_palette)
+      while #box_palette > 1 and idx == last_idx do
+        idx = math.random(#box_palette)
+      end
+      last_idx = idx
+      local c = box_palette[idx]
+      vim.api.nvim_set_hl(0, "SdNvimBox", { fg = "#181825", bg = c, bold = true })
+      vim.api.nvim_set_hl(0, "SdNvimSub", { fg = c, italic = true })
+    end
+    reroll_accent()
+    -- Re-roll just before each (re)draw — FileType fires while alpha builds the
+    -- buffer, before it applies the node highlights, so the new color takes hold.
+    vim.api.nvim_create_autocmd("FileType", { pattern = "alpha", callback = reroll_accent })
+
+    local function boxed(s) return "  " .. s .. "  " end
 
     -- Date/time (captured at startup) and a one-line machine summary. ASCII
     -- separators only, so alpha's centering matches what the terminal draws.
@@ -63,14 +86,14 @@ return {
 
     local datenode = {
       type = "text",
-      val = datetime(),
-      opts = { position = "center", hl = "SdNvimDate" },
+      val = boxed(datetime()),
+      opts = { position = "center", hl = "SdNvimBox" },
     }
 
     local infonode = {
       type = "text",
-      val = sysinfo(),
-      opts = { position = "center", hl = "SdNvimInfo" },
+      val = boxed(sysinfo()),
+      opts = { position = "center", hl = "SdNvimBox" },
     }
 
     -- Each button: a letter to press here + the equivalent <leader> keymap, so
@@ -145,7 +168,7 @@ return {
         local stats = lazy.stats()
         local ms = math.floor((stats.startuptime or 0) * 100 + 0.5) / 100
         footer.val = string.format("⚡ %d/%d plugins loaded in %sms", stats.loaded, stats.count, ms)
-        datenode.val = datetime() -- refresh now that startup has settled
+        datenode.val = boxed(datetime()) -- refresh now that startup has settled
         pcall(vim.cmd, "AlphaRedraw")
       end,
     })

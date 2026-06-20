@@ -32,6 +32,9 @@ Entry point: `nvim/init.lua` → `somya.core` + `somya.lazy`
   matching `<leader>` keymap, so it doubles as onboarding. It also shows a
   date/time line and a machine-info line (`user@host | OS arch | cores RAM
   | nvim ver`), computed at startup and refreshed once on `User VeryLazy`.
+  Both render in a colored "box" (dark text on an accent bg) whose accent is
+  re-rolled from a 7-color catppuccin palette on every draw (`FileType alpha`),
+  so each launch looks a little different; the subheader is tinted to match.
   `cheatsheet.lua`
   exposes `:Cheatsheet` / `:QfHelp` commands for the buttons.
 - `nvim/lua/somya/plugins/which-key.lua` — names every `<leader>` prefix that fans
