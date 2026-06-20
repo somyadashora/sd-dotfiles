@@ -284,20 +284,93 @@ local sections = {
 }
 
 -- ──────────────────────────────────────────────────────
+-- Focused :cdo / :cfdo quickfix batch-command help (opened with <leader>qh).
+-- Same renderer as the full cheatsheet, just a different dataset + window size.
+local qf_sections = {
+  {
+    title = "BASICS",
+    entries = {
+      { ":cdo {cmd}",   "run {cmd} once per ENTRY (every matched line)" },
+      { ":cfdo {cmd}",  "run {cmd} once per FILE in the list" },
+      { ":ldo / :lfdo", "same, but for the LOCATION list" },
+      { "save after",   "edits leave buffers modified → finish with :wall" },
+      { "rule of thumb", "line-specific → :cdo   •   whole-file → :cfdo" },
+    },
+  },
+  {
+    title = "NORMAL-MODE KEYS  (wrap mapped keys in :normal, not normal!)",
+    entries = {
+      { ":cdo normal gcc",        "toggle-comment each qf line        (then :wall)" },
+      { ":cdo normal A;<Esc>",    "append ';' to each line            (then :wall)" },
+      { ":cdo normal I// <Esc>",  "prepend '// ' to each line         (then :wall)" },
+      { ":cdo normal @q",         "replay macro q on each entry       (then :wall)" },
+      { ":cfdo normal gg=G",      "reindent each whole file           (then :wall)" },
+      { "why 'normal'",           "normal! ignores mappings — gcc needs plain normal" },
+    },
+  },
+  {
+    title = ":execute  (quote :normal so you can chain a save with | )",
+    entries = {
+      { [[:cdo execute "normal gcc" | update]],     "comment + save, per entry" },
+      { [[:cdo execute "normal A;\<Esc>" | update]], "append ';' + save, per entry" },
+      { [[:cfdo execute "normal gg=G" | update]],   "reindent + save, per file" },
+      { "the gotcha",  "bare :normal eats the rest of the line, so a trailing" },
+      { "",            "| update would become keystrokes — :execute fixes it" },
+    },
+  },
+  {
+    title = "EX COMMANDS  (no :normal — | update works directly)",
+    entries = {
+      { [[:cdo s/\<TODO\>/DONE/g | update]],        "substitute on each entry's line" },
+      { [[:cfdo %s/old_api/new_api/g | update]],    "rename across every file in the list" },
+      { [[:cfdo %!sort | update]],                  "pipe each whole file through `sort`" },
+      { [[:cdo s/$/;/ | update]],                   "append ';' to each entry's line (no :normal)" },
+      { [[:cfdo g/^\s*$/d | update]],               "delete blank lines in each file (careful)" },
+    },
+  },
+  {
+    title = "COMMENT THE WHOLE LIST  (Comment.nvim)",
+    entries = {
+      { ":cdo normal gcc   →  :wall",  "toggle — may cancel out on duplicate lines" },
+      { ":cdo lua require('Comment.api').comment.linewise.current()", "" },
+      { "   →  :wall",                  "always COMMENTS (no toggle) — safe with dups" },
+      { ":cdo lua require('Comment.api').uncomment.linewise.current()", "" },
+      { "   →  :wall",                  "always uncomments each entry's line" },
+    },
+  },
+  {
+    title = "GOTCHAS",
+    entries = {
+      { "per entry vs file",  ":cdo = each line  •  :cfdo = each file (once)" },
+      { "normal vs normal!",  "normal uses your mappings (gcc); normal! does not" },
+      { ":normal / :lua",     "consume the line → use :execute, or a trailing :wall" },
+      { "needs 'hidden'",     "(on here) so it can hop modified buffers before save" },
+      { "no line-shifting",   "avoid dd/J in :cdo — later entries' lnums go stale" },
+      { "stops on error",     "prefix with silent! to push past failures" },
+    },
+  },
+}
 
-local KEY_COL = 26  -- key column width; increase if keys get truncated
+-- ──────────────────────────────────────────────────────
 
-local function make_sep(title)
+local function make_sep(title, sep_width)
   local prefix = "  ── " .. title .. " "
-  return prefix .. string.rep("─", math.max(4, 84 - #prefix))
+  return prefix .. string.rep("─", math.max(4, (sep_width or 84) - #prefix))
 end
 
-local function build_lines()
+-- Render a list of {title, entries={{key, desc}, …}} sections into a float.
+-- opts: include_user_notes, footer, title, max_width, key_col, sep_width.
+-- An entry with an empty desc renders as a key-only line (for sub-headers /
+-- long commands that don't need a trailing description column).
+local function build_lines(secs, opts)
+  opts = opts or {}
+  local key_col = opts.key_col or 26
+  local sep_width = opts.sep_width or 84
   local lines = {}
   local hl_title = {}
 
-  if #user_notes > 0 then
-    table.insert(lines, make_sep("USER NOTES"))
+  if opts.include_user_notes and #user_notes > 0 then
+    table.insert(lines, make_sep("USER NOTES", sep_width))
     table.insert(hl_title, #lines)
     for _, note in ipairs(user_notes) do
       table.insert(lines, "  " .. note)
@@ -305,31 +378,38 @@ local function build_lines()
     table.insert(lines, "")
   end
 
-  for _, section in ipairs(sections) do
-    table.insert(lines, make_sep(section.title))
+  for _, section in ipairs(secs) do
+    table.insert(lines, make_sep(section.title, sep_width))
     table.insert(hl_title, #lines)
     for _, entry in ipairs(section.entries) do
-      local key, desc = entry[1], entry[2]
-      local pad = string.rep(" ", math.max(2, KEY_COL - #key))
-      table.insert(lines, "  " .. key .. pad .. desc)
+      local key, desc = entry[1], entry[2] or ""
+      if desc == "" then
+        table.insert(lines, "  " .. key)
+      else
+        local pad = string.rep(" ", math.max(2, key_col - #key))
+        table.insert(lines, "  " .. key .. pad .. desc)
+      end
     end
     table.insert(lines, "")
   end
 
-  table.insert(lines, "  Add notes: edit user_notes at the top of lua/somya/cheatsheet.lua")
+  if opts.footer then
+    table.insert(lines, opts.footer)
+  end
 
   return lines, hl_title
 end
 
-local function open()
-  local lines, hl_title = build_lines()
+local function open(secs, opts)
+  opts = opts or {}
+  local lines, hl_title = build_lines(secs, opts)
 
   local buf = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
   vim.bo[buf].modifiable = false
   vim.bo[buf].bufhidden = "wipe"
 
-  local width  = math.min(92, math.floor(vim.o.columns * 0.92))
+  local width  = math.min(opts.max_width or 92, math.floor(vim.o.columns * 0.92))
   local height = math.min(#lines + 2, math.floor(vim.o.lines * 0.90))
   local row    = math.floor((vim.o.lines   - height) / 2)
   local col    = math.floor((vim.o.columns - width)  / 2)
@@ -342,7 +422,7 @@ local function open()
     col       = col,
     style     = "minimal",
     border    = "rounded",
-    title     = "  Cheatsheet  ",
+    title     = opts.title or "  Cheatsheet  ",
     title_pos = "center",
   })
 
@@ -356,4 +436,22 @@ local function open()
   end
 end
 
-vim.keymap.set("n", "<leader>fH", open, { desc = "Open cheatsheet" })
+-- Full keymap cheatsheet
+vim.keymap.set("n", "<leader>fH", function()
+  open(sections, {
+    include_user_notes = true,
+    footer = "  Add notes: edit user_notes at the top of lua/somya/cheatsheet.lua",
+    title = "  Cheatsheet  ",
+  })
+end, { desc = "Open cheatsheet" })
+
+-- Focused :cdo / :cfdo quickfix batch-command help
+vim.keymap.set("n", "<leader>qh", function()
+  open(qf_sections, {
+    footer = "  Full keymap reference: <leader>fH",
+    max_width = 100,
+    key_col = 50,
+    sep_width = 96,
+    title = "  :cdo / :cfdo — quickfix batch commands  ",
+  })
+end, { desc = "Quickfix :cdo/:cfdo help" })
