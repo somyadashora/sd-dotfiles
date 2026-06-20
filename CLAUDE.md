@@ -26,6 +26,11 @@ bash installers/install-termux-tools.sh  # tools for Termux (Android)
 Entry point: `nvim/init.lua` → `somya.core` + `somya.lazy`
 
 - `nvim/lua/somya/core/` — options, keymaps (leader = `<Space>`)
+- `nvim/lua/somya/plugins/dashboard.lua` — alpha-nvim start screen ("SD-NVIM",
+  *nvim for Chip Design*) shown on `nvim` with no file args. Buttons run real
+  actions (find/grep/explorer/`:Cheatsheet`/`:QfHelp`/Lazy) and display the
+  matching `<leader>` keymap, so it doubles as onboarding. `cheatsheet.lua`
+  exposes `:Cheatsheet` / `:QfHelp` commands for the buttons.
 - `nvim/lua/somya/plugins/which-key.lua` — names every `<leader>` prefix that fans
   out into multiple keys via `opts.spec` (e.g. `c → +Cursor`, `t → +Terminal`), so
   the popup labels groups instead of showing a bare count. Add a row when a new

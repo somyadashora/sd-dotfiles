@@ -438,16 +438,16 @@ local function open(secs, opts)
 end
 
 -- Full keymap cheatsheet
-vim.keymap.set("n", "<leader>fH", function()
+local function open_cheatsheet()
   open(sections, {
     include_user_notes = true,
     footer = "  Add notes: edit user_notes at the top of lua/somya/cheatsheet.lua",
     title = "  Cheatsheet  ",
   })
-end, { desc = "Open cheatsheet" })
+end
 
 -- Focused :cdo / :cfdo quickfix batch-command help
-vim.keymap.set("n", "<leader>qh", function()
+local function open_qf_help()
   open(qf_sections, {
     footer = "  Full keymap reference: <leader>fH",
     max_width = 100,
@@ -455,4 +455,11 @@ vim.keymap.set("n", "<leader>qh", function()
     sep_width = 96,
     title = "  :cdo / :cfdo — quickfix batch commands  ",
   })
-end, { desc = "Quickfix :cdo/:cfdo help" })
+end
+
+vim.keymap.set("n", "<leader>fH", open_cheatsheet, { desc = "Open cheatsheet" })
+vim.keymap.set("n", "<leader>qh", open_qf_help, { desc = "Quickfix :cdo/:cfdo help" })
+
+-- Commands so other UI (e.g. the alpha dashboard buttons) can trigger these.
+vim.api.nvim_create_user_command("Cheatsheet", open_cheatsheet, { desc = "Open the keymap cheatsheet" })
+vim.api.nvim_create_user_command("QfHelp", open_qf_help, { desc = "Open the :cdo/:cfdo quickfix help" })
