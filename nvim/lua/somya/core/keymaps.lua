@@ -60,25 +60,41 @@ keymap.set("n", "]q", "<cmd>cnext<CR>", { desc = "Next quickfix item" })
 keymap.set("n", "[q", "<cmd>cprev<CR>", { desc = "Prev quickfix item" })
 keymap.set("n", "]Q", "<cmd>clast<CR>", { desc = "Last quickfix item" })
 keymap.set("n", "[Q", "<cmd>cfirst<CR>", { desc = "First quickfix item" })
+-- Find an open quickfix OR location-list window in the current tabpage (both
+-- have win.quickfix == 1). Location-list windows look identical to quickfix but
+-- :cclose/:copen don't act on them — so detect by winid and close by winid,
+-- which works for either. (Without this, pressing <leader>qc on a loclist was a
+-- no-op, and <leader>qo opened a 2nd quickfix window stacked under the loclist.)
+local function find_list_win()
+  local cur_tab = vim.fn.tabpagenr()
+  for _, win in ipairs(vim.fn.getwininfo()) do
+    if win.tabnr == cur_tab and win.quickfix == 1 then
+      return win.winid
+    end
+  end
+  return nil
+end
 keymap.set("n", "<leader>qo", function()
-  local qf_open = false
-  for _, win in ipairs(vim.fn.getwininfo()) do
-    if win.quickfix == 1 and win.loclist == 0 then
-      qf_open = true
-      break
-    end
+  local win = find_list_win()
+  if win then
+    pcall(vim.api.nvim_win_close, win, false) -- close whichever list window is open
+  else
+    vim.cmd("copen")
   end
-  vim.cmd(qf_open and "cclose" or "copen")
 end, { desc = "Toggle quickfix list" })
-keymap.set("n", "<leader>qc", "<cmd>cclose<CR>", { desc = "Close quickfix list" })
-keymap.set("n", "<leader>qf", function()
-  for _, win in ipairs(vim.fn.getwininfo()) do
-    if win.quickfix == 1 and win.loclist == 0 then
-      vim.api.nvim_set_current_win(win.winid)
-      return
-    end
+keymap.set("n", "<leader>qc", function()
+  local win = find_list_win()
+  if win then
+    pcall(vim.api.nvim_win_close, win, false)
   end
-  vim.cmd("copen") -- not open yet → open and focus
+end, { desc = "Close quickfix/loclist window" })
+keymap.set("n", "<leader>qf", function()
+  local win = find_list_win()
+  if win then
+    vim.api.nvim_set_current_win(win)
+  else
+    vim.cmd("copen") -- not open yet → open and focus
+  end
 end, { desc = "Focus quickfix window" })
 keymap.set("n", "<leader>ql", function()
   vim.fn.setqflist({

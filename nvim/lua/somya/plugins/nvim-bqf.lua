@@ -34,6 +34,14 @@ return {
         filter = "zn", -- new list from MARKED entries
         filterr = "zN", -- new list from UNMARKED entries
         fzffilter = has_fzf and "zf" or "", -- fzf fuzzy-filter (only if fzf present)
+        -- preview popup is disabled (auto_preview=false) — drop its manual
+        -- controls too so they don't linger as dead keys in the qf `z` menu
+        ptogglemode = "",
+        ptoggleauto = "",
+        ptoggleitem = "",
+        pscrollup = "",
+        pscrolldown = "",
+        pscrollorig = "",
       },
       filter = {
         fzf = {

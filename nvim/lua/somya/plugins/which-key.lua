@@ -6,6 +6,20 @@ return {
     vim.o.timeoutlen = 700
   end,
   opts = {
+    -- Inside a quickfix/loclist window, the global `z*` maps (folds, scrolls) are
+    -- useless clutter — hide them so only nvim-bqf's buffer-local quickfix `z`
+    -- actions (zn/zN/z<Tab>/zf/zp/zo) show. Global maps arrive here without a
+    -- buffer field; bqf's are buffer-local, so we only drop the global ones.
+    filter = function(mapping)
+      if vim.bo.buftype == "quickfix"
+        and type(mapping.lhs) == "string"
+        and mapping.lhs:match("^z")
+        and (not mapping.buffer or mapping.buffer == 0)
+      then
+        return false
+      end
+      return true
+    end,
     -- Name every <leader> prefix that fans out into multiple keybindings, so the
     -- popup shows e.g. "+Cursor" instead of a bare "c  →  +9 keymaps". Easy to
     -- forget what the less-used prefixes do otherwise. (mode defaults to normal,
