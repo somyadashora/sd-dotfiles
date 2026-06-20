@@ -25,6 +25,22 @@ return {
     vim.api.nvim_set_hl(0, "SdNvimSub", { fg = "#94e2d5", italic = true })
     vim.api.nvim_set_hl(0, "SdNvimHelp", { fg = "#7f8bb0" })
     vim.api.nvim_set_hl(0, "SdNvimFooter", { fg = "#cba6f7", italic = true })
+    vim.api.nvim_set_hl(0, "SdNvimDate", { fg = "#7dcfff", bold = true })
+    vim.api.nvim_set_hl(0, "SdNvimInfo", { fg = "#9aa5ce" })
+
+    -- Date/time (captured at startup) and a one-line machine summary. ASCII
+    -- separators only, so alpha's centering matches what the terminal draws.
+    local function datetime()
+      return os.date("%A, %d %b %Y   |   %H:%M")
+    end
+    local function sysinfo()
+      local u = vim.loop.os_uname()
+      local host = vim.loop.os_gethostname() or "?"
+      local user = (vim.loop.os_get_passwd() or {}).username or os.getenv("USER") or "?"
+      local nvim = vim.version()
+      return string.format("%s@%s   |   %s %s   |   nvim %d.%d.%d",
+        user, host, u.sysname, u.machine, nvim.major, nvim.minor, nvim.patch)
+    end
 
     local header_hl = {}
     for i = 1, #header_lines do
@@ -39,8 +55,20 @@ return {
 
     local subheader = {
       type = "text",
-      val = "« nvim for Chip Design »",
+      val = "« nVim for Chip Design - by Somya Dashora »",
       opts = { position = "center", hl = "SdNvimSub" },
+    }
+
+    local datenode = {
+      type = "text",
+      val = datetime(),
+      opts = { position = "center", hl = "SdNvimDate" },
+    }
+
+    local infonode = {
+      type = "text",
+      val = sysinfo(),
+      opts = { position = "center", hl = "SdNvimInfo" },
     }
 
     -- Each button: a letter to press here + the equivalent <leader> keymap, so
@@ -90,6 +118,9 @@ return {
         header,
         { type = "padding", val = 1 },
         subheader,
+        { type = "padding", val = 1 },
+        datenode,
+        infonode,
         { type = "padding", val = 2 },
         buttons,
         { type = "padding", val = 1 },
@@ -112,6 +143,7 @@ return {
         local stats = lazy.stats()
         local ms = math.floor((stats.startuptime or 0) * 100 + 0.5) / 100
         footer.val = string.format("⚡ %d/%d plugins loaded in %sms", stats.loaded, stats.count, ms)
+        datenode.val = datetime() -- refresh now that startup has settled
         pcall(vim.cmd, "AlphaRedraw")
       end,
     })
