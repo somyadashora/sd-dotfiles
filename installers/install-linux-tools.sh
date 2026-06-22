@@ -10,6 +10,10 @@ OPT_DIR="${OPT_DIR:-$HOME/.somyadashora/sd-tools}"
 FONT_DIR="${FONT_DIR:-$HOME/.local/share/fonts/MesloNerdFonts}"
 VERSION_DIR="${OPT_DIR}/.versions"
 GITHUB_API="${GITHUB_API:-https://api.github.com}"
+# Neovim's official Linux tarballs (neovim/neovim) are built against a recent
+# glibc. Hosts with an older glibc get the same versions from
+# neovim/neovim-releases, which builds against an older glibc.
+NVIM_GLIBC_MIN="${NVIM_GLIBC_MIN:-2.34}"
 FORCE=0
 SKIP_FONTS=0
 
@@ -27,6 +31,8 @@ Environment overrides:
   OPT_DIR       Directory for downloaded tool payloads. Default: ~/.local/opt/sd-tools
   FONT_DIR      Directory for Linux user fonts. Default: ~/.local/share/fonts/MesloNerdFonts
   GITHUB_TOKEN  Optional token to avoid GitHub API rate limits.
+  NVIM_GLIBC_MIN  Min host glibc for official neovim/neovim builds. Older hosts
+                  fall back to neovim/neovim-releases. Default: 2.34
 
 Notes:
   - This script never uses sudo and never uses system package managers.
@@ -142,6 +148,17 @@ needs_exact_tag_update() {
   return 0
 }
 
+glibc_version() {
+  local version=""
+  if have getconf; then
+    version=$(getconf GNU_LIBC_VERSION 2>/dev/null | grep -Eo '[0-9]+\.[0-9]+' | head -n 1)
+  fi
+  if [[ -z "$version" ]] && have ldd; then
+    version=$(ldd --version 2>/dev/null | head -n 1 | grep -Eo '[0-9]+\.[0-9]+' | head -n 1)
+  fi
+  printf '%s' "$version"
+}
+
 host_arch() {
   case "$(uname -m)" in
     x86_64|amd64) echo x86_64 ;;
@@ -177,8 +194,16 @@ skip_incompatible_binary() {
 }
 
 install_nvim() {
-  local arch=$1 tag version asset url tmp archive root target
-  tag=$(latest_tag neovim/neovim)
+  local arch=$1 repo glibc tag version asset url tmp archive root target
+  repo="neovim/neovim"
+  glibc=$(glibc_version)
+  if [[ -n "$glibc" ]] && ! version_ge "$glibc" "$NVIM_GLIBC_MIN"; then
+    repo="neovim/neovim-releases"
+    log "Host glibc ${glibc} < ${NVIM_GLIBC_MIN}; using ${repo} for older-glibc builds."
+  elif [[ -z "$glibc" ]]; then
+    warn "Could not detect glibc version; using ${repo} (newer-glibc builds)."
+  fi
+  tag=$(latest_tag "$repo")
   [[ -n "$tag" ]] || die "Could not resolve latest Neovim release."
   needs_update neovim nvim "$tag" || return 0
   case "$arch" in
@@ -187,7 +212,7 @@ install_nvim() {
     *) warn "No Neovim Linux asset for ${arch}; skipping."; return 0 ;;
   esac
   version=$(strip_v "$tag")
-  url="https://github.com/neovim/neovim/releases/download/${tag}/${asset}"
+  url="https://github.com/${repo}/releases/download/${tag}/${asset}"
   tmp=$(tmpdir); archive="$tmp/$asset"
   download "$url" "$archive"
   tar -xzf "$archive" -C "$tmp"
