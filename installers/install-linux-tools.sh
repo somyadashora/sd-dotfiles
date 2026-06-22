@@ -16,6 +16,7 @@ GITHUB_API="${GITHUB_API:-https://api.github.com}"
 NVIM_GLIBC_MIN="${NVIM_GLIBC_MIN:-2.34}"
 FORCE=0
 SKIP_FONTS=0
+SKIP_RUSTUP=0
 
 usage() {
   cat <<'USAGE'
@@ -24,6 +25,8 @@ Usage: ./install-linux-tools.sh [options]
 Options:
   --force       Reinstall tools even when the detected version is current.
   --skip-fonts  Do not install MesloLGS Nerd Font.
+  --skip-rustup Do not bootstrap Rust/cargo via rustup when it is needed to
+                build the tree-sitter CLI from source.
   -h, --help    Show this help.
 
 Environment overrides:
@@ -45,6 +48,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --force) FORCE=1 ;;
     --skip-fonts) SKIP_FONTS=1 ;;
+    --skip-rustup) SKIP_RUSTUP=1 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -146,6 +150,24 @@ needs_exact_tag_update() {
     return 1
   fi
   return 0
+}
+
+# Make cargo available, bootstrapping a no-sudo Rust toolchain via rustup when
+# it is missing (into ~/.cargo and ~/.rustup). Returns non-zero if cargo still
+# cannot be found afterwards.
+ensure_cargo() {
+  have cargo && return 0
+  [[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
+  have cargo && return 0
+  [[ "$SKIP_RUSTUP" == 1 ]] && return 1
+  log "Bootstrapping Rust/cargo via rustup (no sudo, into ~/.cargo and ~/.rustup)"
+  if ! curl --proto '=https' --tlsv1.2 -fsSL https://sh.rustup.rs \
+      | sh -s -- -y --no-modify-path --profile minimal; then
+    warn "rustup bootstrap failed."
+    return 1
+  fi
+  [[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
+  have cargo
 }
 
 glibc_version() {
@@ -343,17 +365,50 @@ install_fd() {
 }
 
 install_tree_sitter() {
-  local tag version
+  local arch=$1 tag version asset url tmp archive binary target
   tag=$(latest_tag tree-sitter/tree-sitter)
   [[ -n "$tag" ]] || die "Could not resolve latest tree-sitter release."
   needs_update tree-sitter tree-sitter "$tag" || return 0
   version=$(strip_v "$tag")
-  if have cargo; then
+
+  # Prefer the prebuilt binary (no cargo/compiler needed); these ship as a
+  # single gzipped executable.
+  case "$arch" in
+    x86_64) asset="tree-sitter-linux-x64.gz" ;;
+    arm64) asset="tree-sitter-linux-arm64.gz" ;;
+    armv7) asset="tree-sitter-linux-arm.gz" ;;
+    x86) asset="tree-sitter-linux-x86.gz" ;;
+    *) asset="" ;;
+  esac
+  if [[ -n "$asset" ]]; then
+    url="https://github.com/tree-sitter/tree-sitter/releases/download/${tag}/${asset}"
+    tmp=$(tmpdir); archive="$tmp/$asset"
+    download "$url" "$archive"
+    gzip -d "$archive"
+    binary="${archive%.gz}"
+    chmod +x "$binary"
+    if test_binary "$binary"; then
+      target="$OPT_DIR/tree-sitter-$version"
+      mkdir -p "$target"
+      mv "$binary" "$target/tree-sitter"
+      link_binary "$target/tree-sitter" tree-sitter
+      rm -rf "$tmp"
+      ok "Installed tree-sitter ${version}."
+      return 0
+    fi
+    skip_incompatible_binary tree-sitter "$tmp"
+  fi
+
+  # Fallback: build from source with cargo when no prebuilt binary fits
+  # (e.g. host glibc is older than the prebuilt binary requires). Bootstraps
+  # rustup if cargo is missing, since a cargo build links against the host's
+  # own glibc and runs anywhere.
+  if ensure_cargo; then
     log "Installing tree-sitter CLI ${version} with cargo --no-default-features"
     CARGO_INSTALL_ROOT="$HOME/.local" cargo install --locked --no-default-features "tree-sitter-cli@${version}"
     ok "Installed tree-sitter ${version}."
   else
-    warn "cargo is missing; cannot install tree-sitter CLI without sudo on this host."
+    warn "No usable prebuilt tree-sitter binary for ${arch} and cargo is unavailable; skipping."
   fi
 }
 
@@ -545,7 +600,7 @@ main() {
   install_fzf "$arch"
   install_ripgrep "$arch"
   install_fd "$arch"
-  install_tree_sitter
+  install_tree_sitter "$arch"
   install_slang_server "$arch"
   install_delta "$arch"
   install_bat "$arch"
