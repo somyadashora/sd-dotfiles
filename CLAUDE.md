@@ -51,6 +51,26 @@ Entry point: `nvim/init.lua` → `somya.core` + `somya.lazy`
 - `nvim/lua/somya/plugins/lsp/` — `mason.lua` (installer) + `lspconfig.lua`
   (server config via `vim.lsp.config()` API, nvim-lspconfig 0.11+)
 
+**Completion & snippets** (`nvim/lua/somya/plugins/nvim-cmp.lua`): nvim-cmp with
+LuaSnip as the snippet engine. `<Tab>`/`<S-Tab>` expand a snippet or jump between
+placeholders (falling back to cmp menu nav); `<C-j>`/`<C-k>` move the menu. Two
+snippet sources load: `friendly-snippets` (VSCode JSON, via `from_vscode`) and our
+own Lua snippets (via `from_lua`, pointed at two roots under
+`stdpath("config")/snippets` — `nvim/` is symlinked to `~/.config/nvim`). The Lua
+loader is a snipmate-style collection: every `.lua` file in a folder named after the
+filetype is loaded, so it's **one snippet per file**. The SystemVerilog set is split
+into two collections by synthesizability — `nvim/snippets/sv-design/systemverilog/`
+(synthesizable: module, interface, package, function, case, if, for, foreach, begin,
+always_ff `aff`/`affs`, `acomb`, `fsm`, `tenum`/`tstruct`, `genfor`) and
+`nvim/snippets/sv-tb/systemverilog/` (verification/non-synth: class, uvmclass, task,
+constraint, covergroup, comment_box `///`, initial, fork, `assertp`, clocking,
+`uvmobj`, `uvmseq`). Both map to the `systemverilog` filetype, so the split is
+organizational — **all** snippets are available in any `.sv`/`.svh` buffer.
+Files use LuaSnip's `snip_env` globals (`s`, `i`,
+`d`, `sn`, `fmt`, `rep`, …) directly — no requires. Snippets are written with `fmt`
+(literal `{` `}` escaped as `{{` `}}`); module/class/uvm names default to the file
+name via a dynamic node (`d(1, function() return sn(nil, i(1, fname())) end)`).
+
 **Terminal** (`nvim/lua/somya/plugins/toggleterm.lua`): toggleterm.nvim under the
 `<leader>t` prefix — `tt` toggle (last used, defaults to float), `tf` float, `th`
 bottom/horizontal, `tv` vertical, `ta` toggle-all. Each variant uses a distinct count

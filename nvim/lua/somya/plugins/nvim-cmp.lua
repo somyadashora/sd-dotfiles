@@ -25,6 +25,15 @@ return {
     -- loads vscode style snippets from installed plugins (e.g. friendly-snippets)
     require("luasnip.loaders.from_vscode").lazy_load()
 
+    -- loads our own Lua snippets, split into synthesizable (sv-design) and
+    -- verification (sv-tb) collections; both map to the `systemverilog`
+    -- filetype, so every snippet is available in any .sv/.svh buffer.
+    -- (stdpath("config") resolves to ~/.config/nvim, symlinked to this repo's nvim/)
+    local snip_root = vim.fn.stdpath("config") .. "/snippets"
+    require("luasnip.loaders.from_lua").lazy_load({
+      paths = { snip_root .. "/sv-design", snip_root .. "/sv-tb" },
+    })
+
     cmp.setup({
       completion = {
         completeopt = "menu,menuone,preview,noselect",
@@ -42,6 +51,26 @@ return {
         ["<C-Space>"] = cmp.mapping.complete(), -- show completion suggestions
         ["<C-e>"] = cmp.mapping.abort(), -- close completion window
         ["<CR>"] = cmp.mapping.confirm({ select = false }),
+        -- Tab / S-Tab: expand a snippet or jump between its placeholders,
+        -- falling back to cmp menu navigation, then a normal <Tab>.
+        ["<Tab>"] = cmp.mapping(function(fallback)
+          if luasnip.expand_or_locally_jumpable() then
+            luasnip.expand_or_jump()
+          elseif cmp.visible() then
+            cmp.select_next_item()
+          else
+            fallback()
+          end
+        end, { "i", "s" }),
+        ["<S-Tab>"] = cmp.mapping(function(fallback)
+          if luasnip.locally_jumpable(-1) then
+            luasnip.jump(-1)
+          elseif cmp.visible() then
+            cmp.select_prev_item()
+          else
+            fallback()
+          end
+        end, { "i", "s" }),
       }),
       -- sources for autocompletion
       sources = cmp.config.sources({
