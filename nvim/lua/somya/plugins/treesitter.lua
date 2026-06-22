@@ -32,20 +32,31 @@ return {
         install_dir = vim.fn.stdpath("data") .. "/site",
       })
 
-      if vim.fn.executable("tree-sitter") == 1 then
+      -- nvim-treesitter's main branch needs the tree-sitter CLI to compile
+      -- parsers. On hosts without it (e.g. old glibc, no cargo/rustup) parsers
+      -- can't be built, so disable treesitter dynamically and let Neovim's
+      -- built-in syntax highlighting take over instead.
+      local has_cli = vim.fn.executable("tree-sitter") == 1
+
+      if has_cli then
         treesitter.install(parsers)
       else
         vim.notify(
-          "tree-sitter CLI not found; skipping parser installation",
+          "tree-sitter CLI not found; treesitter disabled, using built-in syntax",
           vim.log.levels.WARN
         )
+        pcall(vim.cmd, "syntax enable")
       end
 
       vim.api.nvim_create_autocmd("FileType", {
         callback = function(args)
-          local ok = pcall(vim.treesitter.start, args.buf)
-          if ok then
-            vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+          local buf = args.buf
+          -- Use treesitter only when the CLI is present and a parser actually
+          -- starts; otherwise fall back to built-in syntax for this buffer.
+          if has_cli and pcall(vim.treesitter.start, buf) then
+            vim.bo[buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+          elseif vim.bo[buf].syntax == "" then
+            vim.bo[buf].syntax = vim.bo[buf].filetype
           end
         end,
       })
