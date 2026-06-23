@@ -8,6 +8,10 @@ return {
     require("todo-comments").setup({
       highlight = {
         pattern = [[.*<(KEYWORDS)\s*:?]], -- match with or without colon
+        -- "wide" (default) draws one char past the keyword (finish+1), which
+        -- overflows 'end_col' when a colon-less keyword sits at end-of-line
+        -- (e.g. `-- TODO`). "bg" highlights just the keyword, no overflow.
+        keyword = "bg",
       },
       search = {
         pattern = [[\b(KEYWORDS):?]], -- match with or without colon

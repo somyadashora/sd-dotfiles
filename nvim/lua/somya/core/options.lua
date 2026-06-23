@@ -43,7 +43,7 @@ opt.guicursor = "n-v-c:block-blinkwait500-blinkoff250-blinkon600-Cursor/lCursor,
 -- (have to use iterm2 or any other true color terminal)
 opt.termguicolors = true
 opt.background = "dark" -- colorschemes that can be light or dark will be made dark
-opt.signcolumn = "yes:2" -- show sign column so that text doesn't shift
+opt.signcolumn = "no" -- statuscol.nvim owns the gutter (reads signs from extmarks)
 
 -- backspace
 opt.backspace = "indent,eol,start" -- allow backspace on indent, end of line or insert mode start position

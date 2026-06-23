@@ -26,6 +26,30 @@ keymap.set("n", "<leader>nh", ":nohl<CR>", { desc = "Clear search highlights"})
 keymap.set("n", "<leader>ld", ":lua vim.diagnostic.enable(false)<CR>", { desc = "disable lint messages" })
 keymap.set("n", "<leader>le", ":lua vim.diagnostic.enable(true)<CR>", { desc = "enable lint messages" })
 
+-- Cycle line-number modes: hybrid -> absolute -> relative -> two-column -> ...
+-- The first three just toggle 'number'/'relativenumber'. The fourth sets the
+-- window var `ln_twocol`, which statuscol.nvim reads to render absolute + hybrid
+-- side by side (see plugins/statuscol.lua). statuscol keeps the git column on
+-- the right in every mode.
+keymap.set("n", "<leader>ln", function()
+  if vim.w.ln_twocol then                               -- two-column -> hybrid
+    vim.w.ln_twocol = false
+    vim.wo.number, vim.wo.relativenumber = true, true
+    vim.notify("Line numbers: hybrid", vim.log.levels.INFO)
+  elseif vim.wo.number and vim.wo.relativenumber then   -- hybrid -> absolute
+    vim.wo.number, vim.wo.relativenumber = true, false
+    vim.notify("Line numbers: absolute", vim.log.levels.INFO)
+  elseif vim.wo.number then                             -- absolute -> relative
+    vim.wo.number, vim.wo.relativenumber = false, true
+    vim.notify("Line numbers: relative", vim.log.levels.INFO)
+  else                                                  -- relative -> two-column
+    vim.w.ln_twocol = true
+    vim.wo.number, vim.wo.relativenumber = true, false  -- ensure the gutter draws
+    vim.notify("Line numbers: two columns (absolute + hybrid)", vim.log.levels.INFO)
+  end
+  vim.cmd("redraw!") -- statuscolumn doesn't re-eval on a window-var change alone
+end, { desc = "Cycle line numbers (hybrid/absolute/relative/two-column)" })
+
 -- Delete mark (dm{char}, mirrors m{char} to set)
 keymap.set("n", "dm", function()
   local char = vim.fn.getcharstr()

@@ -3,7 +3,11 @@ return {
     event = "VeryLazy",
     opts = {
       default_mappings = true,
-      builtin_marks = { ".", "<", ">", "^", "[", "]", "'"},
+      -- Trimmed: dropped [ ] ^ . so they don't crowd the 2-slot left sign
+      -- column (shared with diagnostics/TODO; git has its own column via
+      -- statuscol). The marks still work for jumping (`[, `], etc), they just
+      -- no longer paint a sign. Keep visual bounds + last-jump.
+      builtin_marks = { "<", ">", "'" },
       cyclic = true,
       sign_priority = { lower = 15, upper = 20, builtin = 12, bookmark = 25 },
     },

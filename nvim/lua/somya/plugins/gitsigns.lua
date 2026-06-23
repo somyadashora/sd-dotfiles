@@ -2,6 +2,9 @@ return {
 	"lewis6991/gitsigns.nvim",
 	event = { "BufReadPre", "BufNewFile" },
 	opts = {
+		-- Git signs render in their own dedicated gutter column (right of the
+		-- line number) via statuscol.nvim, so sign_priority no longer affects
+		-- placement — see plugins/statuscol.lua.
 		on_attach = function(bufnr)
 			local gs = package.loaded.gitsigns
 
