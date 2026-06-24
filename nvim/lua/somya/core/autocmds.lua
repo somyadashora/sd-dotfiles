@@ -28,5 +28,14 @@ vim.api.nvim_create_autocmd("TextYankPost", {
   desc = "Highlight yanked text",
   callback = function()
     vim.hl.on_yank({ higroup = "YankFlash", timeout = 200 })
+    -- The extmark only shows once the screen redraws, but Neovim skips redraws
+    -- while input is pending -- so on a slow machine, yanking in quick
+    -- succession can let the 200ms clear-timer win before the flash ever paints.
+    -- Force a redraw to paint it now, but only for interactive yanks: skip
+    -- deletes/changes (no flash anyway) and macros (a forced redraw per
+    -- iteration defeats redraw batching).
+    if vim.v.event.operator == "y" and vim.fn.reg_executing() == "" then
+      vim.cmd("redraw")
+    end
   end,
 })
