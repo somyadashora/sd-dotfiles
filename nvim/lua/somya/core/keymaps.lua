@@ -63,6 +63,13 @@ keymap.set("n", "<leader>Sb", "[s", { desc = "Prev misspelled word" })
 keymap.set("n", "<leader>Sa", "zg", { desc = "Add word to spellfile" })
 keymap.set("n", "<leader>S?", "z=", { desc = "Suggest spelling corrections" })
 
+-- Move the visual selection up/down, keeping it selected and reindenting (gv=gv).
+-- Visual-mode only — moving a single line in normal mode isn't worth a keymap.
+-- J=down, K=up (intuitive). In visual mode this overrides the builtin join (J)
+-- and keywordprg (K); join is still available via :'<,'>join.
+keymap.set("x", "J", ":m '>+1<CR>gv=gv", { desc = "Move selection down" })
+keymap.set("x", "K", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
+
 -- increment/decrement numbers
 keymap.set("n", "<leader>+", "<C-a>", { desc = "Increment number" }) -- increment
 keymap.set("n", "<leader>-", "<C-x>", { desc = "Decrement number" }) -- decrement
