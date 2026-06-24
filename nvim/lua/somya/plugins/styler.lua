@@ -3,11 +3,7 @@ return {
   event = "VeryLazy",
   -- Pull in the colorschemes styler switches to, so they load with styler rather
   -- than eagerly at startup. (catppuccin/tokyonight already load via priority.)
-  -- oxocarbon = dedicated near-black + pastel scheme used only for markdown.
-  dependencies = {
-    "loctvl842/monokai-pro.nvim",
-    "nyoom-engineering/oxocarbon.nvim",
-  },
+  dependencies = { "loctvl842/monokai-pro.nvim" },
   config = function()
     require("styler").setup({
       themes = {
@@ -25,8 +21,8 @@ return {
         -- Build / config
         make          = { colorscheme = "tokyonight-moon" },
 
-        -- Markdown — dedicated near-black background with pastel accents.
-        markdown      = { colorscheme = "oxocarbon" },
+        -- Markdown
+        markdown      = { colorscheme = "catppuccin-frappe" },
 
         -- Git
         gitcommit     = { colorscheme = "catppuccin-latte" },
