@@ -38,6 +38,7 @@ return {
       { "<leader>l", group = "Lint & LazyGit" },
       { "<leader>m", group = "Multi-cursor" }, -- vim-visual-multi
       { "<leader>n", group = "Minimap & search" },
+      { "<leader>o", group = "Outline" }, -- aerial symbol outline
       { "<leader>q", group = "Quickfix" },
       { "<leader>r", group = "Code review" }, -- code-review.nvim comments
       { "<leader>s", group = "Splits & windows" },
