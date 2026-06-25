@@ -86,6 +86,56 @@ keymap.set("n", "<leader>Tn", "<cmd>tabn<CR>", { desc = "Go to next tab" }) --  
 keymap.set("n", "<leader>Tp", "<cmd>tabp<CR>", { desc = "Go to previous tab" }) --  go to previous tab
 keymap.set("n", "<leader>Tf", "<cmd>tabnew %<CR>", { desc = "Open current buffer in new tab" }) --  move current buffer to new tab
 
+-- Open a new tab scoped to a project dir: tab-local cwd (:tcd) isolates the
+-- explorer root and Telescope find/grep/buffers to that dir. nvim-tree re-roots
+-- via sync_root_with_cwd; Telescope pickers default their cwd to getcwd().
+vim.api.nvim_create_user_command("TabProject", function(opts)
+  vim.cmd("tabnew")
+  vim.cmd("tcd " .. vim.fn.fnameescape(opts.args))
+  require("nvim-tree.api").tree.open()
+end, { nargs = 1, complete = "dir", desc = "New tab scoped to a project dir" })
+
+-- <leader>TP: fuzzy-pick a directory (fd --type d, rooted at the current cwd) and
+-- open it as a scoped project tab. <CR> on a dir runs :TabProject on it. Falls
+-- back to a typed vim.ui.input prompt if fd isn't installed.
+keymap.set("n", "<leader>TP", function()
+  local fd = vim.fn.executable("fd") == 1 and "fd" or (vim.fn.executable("fdfind") == 1 and "fdfind" or nil)
+  if not fd then
+    vim.ui.input({ prompt = "Project dir: ", completion = "dir" }, function(dir)
+      if dir and dir ~= "" then vim.cmd("TabProject " .. vim.fn.fnameescape(dir)) end
+    end)
+    return
+  end
+
+  local pickers = require("telescope.pickers")
+  local finders = require("telescope.finders")
+  local conf = require("telescope.config").values
+  local actions = require("telescope.actions")
+  local action_state = require("telescope.actions.state")
+  local cwd = vim.fn.getcwd()
+
+  pickers.new(require("telescope.themes").get_ivy(), {
+    prompt_title = "Project dir → new scoped tab",
+    cwd = cwd,
+    finder = finders.new_oneshot_job(
+      { fd, "--type", "d", "--hidden", "--exclude", ".git" },
+      { cwd = cwd, entry_maker = require("telescope.make_entry").gen_from_file({ cwd = cwd }) }
+    ),
+    sorter = conf.file_sorter({}),
+    previewer = false,
+    attach_mappings = function(prompt_bufnr)
+      actions.select_default:replace(function()
+        local entry = action_state.get_selected_entry()
+        actions.close(prompt_bufnr)
+        if entry then
+          vim.cmd("TabProject " .. vim.fn.fnameescape(entry.path or (cwd .. "/" .. entry.value)))
+        end
+      end)
+      return true
+    end,
+  }):find()
+end, { desc = "Pick a dir (fd) → new scoped tab" }) -- isolated explorer + pickers
+
 -- quickfix list navigation (enhanced by nvim-bqf)
 keymap.set("n", "]q", "<cmd>cnext<CR>", { desc = "Next quickfix item" })
 keymap.set("n", "[q", "<cmd>cprev<CR>", { desc = "Prev quickfix item" })

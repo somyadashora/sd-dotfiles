@@ -42,6 +42,15 @@ return {
     vim.g.loaded_netrwPlugin = 1
 
     nvimtree.setup({
+      -- Follow the tab-local working directory: :tcd (and switching into a tab
+      -- with a different local dir) fires DirChanged, which re-roots the tree.
+      -- Pairs with the <leader>TP / :TabProject scoped-tab flow in core/keymaps.
+      sync_root_with_cwd = true,
+      respect_buf_cwd = true,
+      update_focused_file = {
+        enable = true,
+        update_root = true,
+      },
       view = {
         width = 25,
         relativenumber = true,

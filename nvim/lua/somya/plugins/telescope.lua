@@ -126,12 +126,13 @@ return {
     keymap.set("n", "<leader>B", function()
       require("telescope.builtin").buffers({
         initial_mode = "normal",
+        cwd_only = true, -- only buffers under the tab-local cwd (:tcd) — scopes per project tab
         attach_mappings = function(_, map)
           map("n", "d", actions.delete_buffer) -- close buffer under cursor with d
           return true
         end,
       })
-    end, { desc = "Open buffer picker (normal mode, d=close)" })
+    end, { desc = "Open buffer picker (normal mode, d=close, cwd-scoped)" })
     keymap.set("n", '<leader>"', "<cmd>Telescope registers<cr>", { desc = "Find registers in registerlist" })
     keymap.set("n", "<leader>j", "<cmd>Telescope jumplist<cr>", { desc = "Find jumps in jumplist" })
     keymap.set("n", "<leader>`", function()
