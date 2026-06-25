@@ -12,9 +12,12 @@ return {
   "nvim-treesitter/nvim-treesitter-context",
   event = { "BufReadPost", "BufNewFile" },
   opts = {
-    max_lines = 4,          -- cap the sticky header height (deeply nested blocks)
+    -- Headroom so a full always -> (if ->) case -> case-item stack all shows at
+    -- once without being trimmed. The case levels come from our query extension
+    -- at nvim/queries/systemverilog/context.scm (the bundled SV query omits case).
+    max_lines = 6,          -- cap the sticky header height (deeply nested blocks)
     multiline_threshold = 1, -- collapse multi-line scope openers to one line
-    trim_scope = "outer",    -- if over max_lines, drop the outermost context first
+    trim_scope = "outer",    -- if still over max_lines, drop the outermost first
     mode = "cursor",         -- context follows the cursor, not just the top line
   },
   config = function(_, opts)
