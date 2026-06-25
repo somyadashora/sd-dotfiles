@@ -31,12 +31,42 @@ return {
     -- alongside the always/initial/final/fork blocks from our queries/ extension.
     local sv_kinds = vim.list_extend(vim.deepcopy(default_kinds), { "Namespace" })
 
+    -- queries/systemverilog/aerial.scm names always blocks by their keyword
+    -- (always_comb/always_ff/…). For a NAMED block (`always_comb begin : my_logic`)
+    -- upgrade that to the begin-block label here. This is done in Lua, not as a
+    -- second query pattern, because tree-sitter yields the shallow keyword match
+    -- before the deep label match, so a label pattern always loses aerial's
+    -- same-node dedup — order-independent only in Lua.
+    local function sv_child(node, ntype) -- first NAMED child of a given type
+      for c in node:iter_children() do
+        if c:named() and c:type() == ntype then return c end
+      end
+    end
+    local function sv_always_label(node, bufnr)
+      -- always_construct → statement → statement_item → seq_block → simple_identifier
+      local stmt = sv_child(node, "statement")
+      local sitem = stmt and sv_child(stmt, "statement_item")
+      local seq = sitem and sv_child(sitem, "seq_block")
+      local id = seq and sv_child(seq, "simple_identifier")
+      return id and vim.treesitter.get_node_text(id, bufnr) or nil
+    end
+
     require("aerial").setup({
       backends = { "treesitter", "lsp" }, -- treesitter first → works without LSP
       filter_kind = {
         ["_"] = default_kinds,    -- all other filetypes: aerial's default
         systemverilog = sv_kinds, -- + Namespace so generate blocks appear
       },
+      post_parse_symbol = function(bufnr, item, ctx)
+        if ctx.lang == "systemverilog" then
+          local node = (ctx.match.symbol or ctx.match.type or {}).node
+          if node and node:type() == "always_construct" then
+            local label = sv_always_label(node, bufnr)
+            if label then item.name = label end
+          end
+        end
+        return true
+      end,
       layout = {
         default_direction = "right", -- outline on the right, like a minimap
         min_width = 28,
