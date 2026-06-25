@@ -14,7 +14,7 @@ return {
   -- Two maps under the <leader>o ("+Outline") group, both conflict-free.
   "stevearc/aerial.nvim",
   cmd = { "AerialToggle", "AerialOpen", "AerialNavToggle" },
-  keys = { "<leader>oo", "<leader>os" },
+  keys = { "<leader>oo", "<leader>os", "[o", "]o" },
   dependencies = {
     "nvim-treesitter/nvim-treesitter",
     "nvim-tree/nvim-web-devicons",
@@ -84,5 +84,12 @@ return {
       require("telescope").load_extension("aerial")
       vim.cmd("Telescope aerial")
     end, { desc = "Outline symbols (Telescope)" })
+
+    -- Jump the cursor through symbols (works in the code buffer, outline open or
+    -- not). ]o next, [o prev — mirrors the ]q/[q quickfix bracket idiom.
+    vim.keymap.set("n", "]o", function() require("aerial").next() end,
+      { desc = "Next outline symbol (aerial)" })
+    vim.keymap.set("n", "[o", function() require("aerial").prev() end,
+      { desc = "Prev outline symbol (aerial)" })
   end,
 }
