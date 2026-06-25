@@ -65,7 +65,12 @@ return {
         layout_config = {
           width = 0.90,
           height = 0.92,
-          preview_width = 0.6,
+          -- preview_width is strategy-specific: the `center` strategy (used by
+          -- dressing.nvim for vim.ui.select) rejects it and newer telescope
+          -- errors hard on unsupported keys. Keep it under the strategies that
+          -- accept it instead of at the top level, where it leaks into center.
+          horizontal = { preview_width = 0.6 },
+          vertical = { preview_width = 0.6 },
         },
         path_display = { "smart" },
         preview = {
