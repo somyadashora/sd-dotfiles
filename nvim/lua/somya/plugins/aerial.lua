@@ -53,6 +53,7 @@ return {
 
     require("aerial").setup({
       backends = { "treesitter", "lsp" }, -- treesitter first → works without LSP
+      autojump = true, -- moving the cursor in the outline follows it in the source
       filter_kind = {
         ["_"] = default_kinds,    -- all other filetypes: aerial's default
         systemverilog = sv_kinds, -- + Namespace so generate blocks appear
