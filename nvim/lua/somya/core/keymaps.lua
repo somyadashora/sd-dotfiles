@@ -170,3 +170,64 @@ keymap.set("n", "<leader>qF", function()
   )
 end, { desc = "Format all files in quickfix list" })
 
+-- Marks → quickfix. Collects only user-set LETTER marks: a–z from the current
+-- buffer (lowercase marks are buffer-local) and A–Z global file marks (across
+-- files, possibly unloaded). The volatile builtins ('<>[]^.`" etc) and numbered
+-- shada marks are skipped on purpose — they move every time you jump, yank, or
+-- edit, so they'd make the list stale the moment you navigate. Pushes a NEW qf
+-- list (title "Marks") rather than replacing, so the previous list survives in
+-- the stack and is reachable with <leader>q[ (:colder).
+local function marks_to_qf()
+  local items = {}
+  local function add(m, bufnr, filename)
+    local lnum, col = m.pos[2], m.pos[3]
+    local letter = m.mark:sub(2) -- strip the leading "'"
+    local loaded = bufnr and bufnr ~= 0 and vim.api.nvim_buf_is_loaded(bufnr)
+    local line = loaded and (vim.fn.getbufline(bufnr, lnum)[1] or "") or ""
+    items[#items + 1] = {
+      bufnr = (bufnr and bufnr ~= 0) and bufnr or nil,
+      filename = (not bufnr or bufnr == 0) and filename or nil,
+      lnum = lnum,
+      col = col,
+      text = ("[%s] %s"):format(letter, (line:gsub("^%s+", ""))),
+    }
+  end
+  -- lowercase a–z: buffer-local to the current buffer
+  local cur = vim.api.nvim_get_current_buf()
+  for _, m in ipairs(vim.fn.getmarklist(cur)) do
+    if m.mark:match("^'%l$") then add(m, cur, nil) end
+  end
+  -- uppercase A–Z: global file marks (pos[1] is the bufnr if loaded, else 0)
+  for _, m in ipairs(vim.fn.getmarklist()) do
+    if m.mark:match("^'%u$") then add(m, m.pos[1], m.file) end
+  end
+  if vim.tbl_isempty(items) then
+    vim.notify("No letter marks set (a–z in this buffer, A–Z global)", vim.log.levels.WARN)
+    return false
+  end
+  -- sort by file/buffer then line so each file reads top-to-bottom
+  table.sort(items, function(a, b)
+    local fa = a.filename or (a.bufnr and vim.api.nvim_buf_get_name(a.bufnr)) or ""
+    local fb = b.filename or (b.bufnr and vim.api.nvim_buf_get_name(b.bufnr)) or ""
+    if fa ~= fb then return fa < fb end
+    return (a.lnum or 0) < (b.lnum or 0)
+  end)
+  vim.fn.setqflist({}, " ", { title = "Marks", items = items })
+  return true
+end
+keymap.set("n", "<leader>qm", function()
+  if marks_to_qf() then
+    local win = find_list_win()
+    if win then
+      vim.api.nvim_set_current_win(win)
+    else
+      vim.cmd("copen")
+    end
+  end
+end, { desc = "Marks → quickfix list" })
+keymap.set("n", "<leader>xm", function()
+  if marks_to_qf() then
+    vim.cmd("Trouble qflist open")
+  end
+end, { desc = "Marks → Trouble (quickfix view)" })
+
