@@ -20,8 +20,23 @@ return {
     "nvim-tree/nvim-web-devicons",
   },
   config = function()
+    -- aerial's default kind set (everything except Namespace).
+    local default_kinds = {
+      "Class", "Constructor", "Enum", "Function",
+      "Interface", "Module", "Method", "Struct",
+    }
+    -- SV adds "Namespace": generate blocks are captured by the bundled SV query
+    -- as kind "Namespace", which the default filter hides. Widen it for SV only
+    -- (via the per-filetype table form, "_" = fallback) so generate blocks show
+    -- alongside the always/initial/final/fork blocks from our queries/ extension.
+    local sv_kinds = vim.list_extend(vim.deepcopy(default_kinds), { "Namespace" })
+
     require("aerial").setup({
       backends = { "treesitter", "lsp" }, -- treesitter first → works without LSP
+      filter_kind = {
+        ["_"] = default_kinds,    -- all other filetypes: aerial's default
+        systemverilog = sv_kinds, -- + Namespace so generate blocks appear
+      },
       layout = {
         default_direction = "right", -- outline on the right, like a minimap
         min_width = 28,
