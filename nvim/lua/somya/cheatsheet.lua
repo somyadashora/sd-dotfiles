@@ -67,6 +67,7 @@ local sections = {
       { "]q  /  [q",          "next / prev quickfix item" },
       { "]Q  /  [Q",          "last / first quickfix item" },
       { "<leader>q[ / q]",    "older / newer quickfix list (:colder/:cnewer, refreshes Trouble)" },
+      { "<leader>qS / qL / qD", "save / load / delete a NAMED quickfix list (persists to disk)" },
       { "<C-q>  (telescope)", "send marked entries to quickfix" },
       { "<C-y>  (telescope)", "yank marked/current entries to unnamed register" },
       { "── inside qf window (nvim-bqf) ──", "" },

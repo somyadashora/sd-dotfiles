@@ -231,3 +231,99 @@ keymap.set("n", "<leader>xm", function()
   end
 end, { desc = "Marks → Trouble (quickfix view)" })
 
+-- Named, on-disk quickfix lists. The qf STACK (<leader>q[/q]) is session-only and
+-- unnamed; these maps persist a list under a name so it can be recalled in any
+-- future session. Storage is one JSON file keyed by name; each entry records its
+-- cwd + timestamp so the load/delete picker can disambiguate lists saved in
+-- different projects. Gotcha: qf item bufnr is meaningless across sessions, so we
+-- store absolute FILENAMES on save and let setqflist re-resolve them on load.
+local NAMED_QF_FILE = vim.fn.stdpath("state") .. "/named-qf.json"
+local function named_qf_read()
+  local f = io.open(NAMED_QF_FILE, "r")
+  if not f then return {} end
+  local raw = f:read("*a")
+  f:close()
+  local ok, tbl = pcall(vim.json.decode, raw)
+  return (ok and type(tbl) == "table") and tbl or {}
+end
+local function named_qf_write(store)
+  local f = io.open(NAMED_QF_FILE, "w")
+  if not f then
+    vim.notify("Could not write " .. NAMED_QF_FILE, vim.log.levels.ERROR)
+    return
+  end
+  f:write(vim.json.encode(store))
+  f:close()
+end
+-- Render "name · 23 items · /abs/cwd · 2026-06-25" rows for the pickers.
+local function named_qf_label(name, entry)
+  local n = entry.items and #entry.items or 0
+  return ("%s · %d item%s · %s · %s"):format(
+    name, n, n == 1 and "" or "s", entry.cwd or "?", entry.saved_at or "?")
+end
+-- Pick one saved list by name via vim.ui.select (prettified by dressing.nvim).
+local function named_qf_pick(store, prompt, on_choice)
+  local names = vim.tbl_keys(store)
+  if vim.tbl_isempty(names) then
+    vim.notify("No saved quickfix lists", vim.log.levels.WARN)
+    return
+  end
+  table.sort(names)
+  vim.ui.select(names, {
+    prompt = prompt,
+    format_item = function(name) return named_qf_label(name, store[name]) end,
+  }, function(name)
+    if name then on_choice(name) end
+  end)
+end
+keymap.set("n", "<leader>qS", function()
+  local cur = vim.fn.getqflist({ items = 1, title = 1 })
+  if vim.tbl_isempty(cur.items) then
+    vim.notify("Quickfix list is empty — nothing to save", vim.log.levels.WARN)
+    return
+  end
+  vim.ui.input({ prompt = "Save quickfix list as: ", default = cur.title ~= "" and cur.title or nil },
+    function(name)
+      if not name or name:match("^%s*$") then return end
+      name = vim.trim(name)
+      local items = {}
+      for _, it in ipairs(cur.items) do
+        items[#items + 1] = {
+          filename = it.bufnr ~= 0 and vim.api.nvim_buf_get_name(it.bufnr) or "",
+          lnum = it.lnum,
+          col = it.col,
+          text = it.text,
+          type = it.type,
+        }
+      end
+      local store = named_qf_read()
+      local existed = store[name] ~= nil
+      store[name] = { cwd = vim.fn.getcwd(), saved_at = os.date("%Y-%m-%d %H:%M"), items = items }
+      named_qf_write(store)
+      vim.notify(("%s quickfix list %q (%d items)"):format(
+        existed and "Overwrote" or "Saved", name, #items), vim.log.levels.INFO)
+    end)
+end, { desc = "Save quickfix list (named)" })
+keymap.set("n", "<leader>qL", function()
+  local store = named_qf_read()
+  named_qf_pick(store, "Load quickfix list:", function(name)
+    -- Push as a NEW list so the current one survives in the stack (<leader>q[).
+    vim.fn.setqflist({}, " ", { title = name, items = store[name].items })
+    if package.loaded["trouble"] then require("trouble").refresh() end
+    local win = find_list_win()
+    if win then
+      vim.api.nvim_set_current_win(win)
+    else
+      vim.cmd("copen")
+    end
+  end)
+end, { desc = "Load quickfix list (named)" })
+keymap.set("n", "<leader>qD", function()
+  local store = named_qf_read()
+  named_qf_pick(store, "Delete saved quickfix list:", function(name)
+    store[name] = nil
+    named_qf_write(store)
+    vim.notify(("Deleted saved quickfix list %q"):format(name), vim.log.levels.INFO)
+  end)
+end, { desc = "Delete saved quickfix list" })
+
