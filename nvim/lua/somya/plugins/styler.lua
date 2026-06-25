@@ -3,7 +3,13 @@ return {
   event = "VeryLazy",
   -- Pull in the colorschemes styler switches to, so they load with styler rather
   -- than eagerly at startup. (catppuccin/tokyonight already load via priority.)
-  dependencies = { "loctvl842/monokai-pro.nvim", "marko-cerovac/material.nvim" },
+  dependencies = {
+    "loctvl842/monokai-pro.nvim",
+    "marko-cerovac/material.nvim",
+    "rebelot/kanagawa.nvim",
+    "scottmckendry/cyberdream.nvim",
+    "ku1ik/vim-monokai",
+  },
   config = function()
     -- The per-filetype theme table + enable/disable/browse logic all live in
     -- core/theme.lua so the colorscheme default and styler share one home.

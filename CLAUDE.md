@@ -52,18 +52,22 @@ Entry point: `nvim/init.lua` → `somya.core` + `somya.lazy`
 - `nvim/lua/somya/plugins/lsp/` — `mason.lua` (installer) + `lspconfig.lua`
   (server config via `vim.lsp.config()` API, nvim-lspconfig 0.11+)
 - `nvim/lua/somya/plugins/colorschemes/` — one file per colorscheme plugin
-  (`tokyonight.lua`, `catppuccin.lua`, `monokai-pro.lua`, `material.lua`); the
+  (`tokyonight.lua`, `catppuccin.lua`, `monokai-pro.lua`, `material.lua`,
+  `kanagawa.lua`, `cyberdream.lua`, `vim-monokai.lua`); the
   switching/orchestration logic lives in `core/theme.lua` (see below)
 
 **Theme / colorscheme management** (`nvim/lua/somya/core/theme.lua` is the single
 source of truth): the colorscheme *plugins* live in `plugins/colorschemes/` —
 tokyonight (`tokyonight.lua`, customized via `on_colors` + hl overrides) and
 catppuccin (`catppuccin.lua`, also a palette source for hl overrides elsewhere)
-load eagerly; monokai-pro and material (`material.lua`) are lazy, loaded as
-styler dependencies. The many scheme *names* you see in `:Telescope colorscheme`
-(tokyonight-storm/moon, catppuccin-frappe/latte/…, monokai-pro-spectrum) are
-built-in **variants** of those plugins, not separate files — except material,
-which has one name (`material`) with the variant set via `vim.g.material_style`.
+load eagerly; monokai-pro, material (`material.lua`), kanagawa, cyberdream, and
+vim-monokai are lazy, loaded as styler dependencies. The many scheme *names* you
+see in `:Telescope colorscheme` (tokyonight-storm/moon, catppuccin-frappe/latte/…,
+monokai-pro-spectrum, kanagawa-wave/dragon/lotus) are built-in **variants** of
+those plugins, not separate files — except material and cyberdream, which each
+have one name (`material` / `cyberdream`; variant set via `vim.g.material_style`
+and cyberdream's `variant` opt), and vim-monokai, a classic Vimscript scheme with
+the single name `monokai` (no setup()).
 `theme.lua` holds `M.default` (the startup
 colorscheme — `tokyonight.lua` loads it via `require`; edit this one line to
 change the default) and `M.styler_themes` (the per-filetype table). styler.nvim

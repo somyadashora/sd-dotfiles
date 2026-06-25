@@ -1,11 +1,14 @@
 -- Central theme/colorscheme management.
 --
 -- The colorscheme *plugins* live in plugins/colorschemes/ — tokyonight and
--- catppuccin (loaded eagerly), plus monokai-pro and material (loaded via styler).
--- Most expose many *variants*: tokyonight-night/storm/moon, catppuccin-latte/
--- frappe/macchiato/mocha, monokai-pro-<filter> — those names are what you see in
--- `:Telescope colorscheme`, not separate files. (material is the exception: it
--- has one name, `material`, with the variant set via `vim.g.material_style`.)
+-- catppuccin (loaded eagerly), plus monokai-pro, material, kanagawa, cyberdream,
+-- and vim-monokai (loaded via styler). Most expose many *variants*:
+-- tokyonight-night/storm/moon, catppuccin-latte/frappe/macchiato/mocha,
+-- monokai-pro-<filter>, kanagawa-wave/dragon/lotus — those names are what you see
+-- in `:Telescope colorscheme`, not separate files. (material and cyberdream are
+-- exceptions: one name each — `material` / `cyberdream` — with the variant set via
+-- `vim.g.material_style` / cyberdream's `variant` opt. vim-monokai is the classic
+-- Vimscript scheme, single name `monokai`.)
 --
 -- Two layers cooperate:
 --   1. A single global default colorscheme (M.default), loaded at startup.
