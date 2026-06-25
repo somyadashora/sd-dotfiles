@@ -33,8 +33,9 @@ return {
           colors.fg_sidebar = fg_dark
         end,
       })
-      -- load the colorscheme here
-      vim.cmd([[colorscheme tokyonight]])
+      -- load the colorscheme here (default lives in core/theme.lua — edit it
+      -- there to change the startup scheme; browse alternatives via <leader>uc)
+      vim.cmd("colorscheme " .. require("somya.core.theme").default)
 
       local function apply_hl_overrides(ns)
         ns = ns or 0

@@ -49,6 +49,24 @@ Entry point: `nvim/init.lua` → `somya.core` + `somya.lazy`
   imports all of `somya.plugins` and `somya.plugins.lsp`
 - `nvim/lua/somya/plugins/` — one file per plugin, each returns a lazy spec table
 - `nvim/lua/somya/plugins/lsp/` — `mason.lua` (installer) + `lspconfig.lua`
+
+**Theme / colorscheme management** (`nvim/lua/somya/core/theme.lua` is the single
+source of truth): only two colorscheme *plugins* are installed — tokyonight
+(`tokyonight.lua`, customized via `on_colors` + hl overrides) and catppuccin
+(`catppuccin.lua`, also a palette source for hl overrides elsewhere) — plus
+monokai-pro (`monokai-pro.lua`, lazy, loaded only as a styler dependency). The
+many scheme *names* you see in `:Telescope colorscheme` (tokyonight-storm/moon,
+catppuccin-frappe/latte/…, monokai-pro-spectrum) are built-in **variants** of
+those plugins, not separate files. `theme.lua` holds `M.default` (the startup
+colorscheme — `tokyonight.lua` loads it via `require`; edit this one line to
+change the default) and `M.styler_themes` (the per-filetype table). styler.nvim
+*overrides* the global scheme **per filetype, window-locally** (sv→monokai,
+python→catppuccin, …), which is why `:colorscheme X` changes the file explorer
+but not a pinned `.sv`/`.py` buffer. To browse with a true full-window preview,
+styler must be suspended first: `<leader>uc` / `:ThemeBrowse` turns styler off
+and opens the picker with `enable_preview`; `<leader>uy` / `:StylerToggle`
+flips styler on/off (off = reset every window's hl namespace to 0 + drop
+styler's autocmds; on = re-`setup()`). The `<leader>u` prefix is "+UI / Theme".
   (server config via `vim.lsp.config()` API, nvim-lspconfig 0.11+)
 
 **Completion & snippets** (`nvim/lua/somya/plugins/nvim-cmp.lua`): nvim-cmp with

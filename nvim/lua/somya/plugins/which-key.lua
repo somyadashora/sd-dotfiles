@@ -41,6 +41,7 @@ return {
       { "<leader>r", group = "Code review" }, -- code-review.nvim comments
       { "<leader>s", group = "Splits & windows" },
       { "<leader>t", group = "Terminal" },
+      { "<leader>u", group = "UI / Theme" }, -- styler toggle + colorscheme browse
       { "<leader>v", group = "LSP / Code" }, -- generic LSP actions + slang-only cone tracing
       { "<leader>w", group = "Session" }, -- auto-session
       { "<leader>x", group = "Trouble & diagnostics" },
