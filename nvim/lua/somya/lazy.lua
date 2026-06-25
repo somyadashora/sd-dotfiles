@@ -11,7 +11,11 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
-require("lazy").setup({ { import = "somya.plugins" }, {import = "somya.plugins.lsp"} }, {
+require("lazy").setup({
+  { import = "somya.plugins" },
+  { import = "somya.plugins.lsp" },
+  { import = "somya.plugins.colorschemes" },
+}, {
   change_detection = {
     notify = false,
   },

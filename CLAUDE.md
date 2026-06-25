@@ -46,18 +46,25 @@ Entry point: `nvim/init.lua` → `somya.core` + `somya.lazy`
   the popup labels groups instead of showing a bare count. Add a row when a new
   prefix grows a second binding.
 - `nvim/lua/somya/lazy.lua` — bootstraps [lazy.nvim](https://github.com/folke/lazy.nvim);
-  imports all of `somya.plugins` and `somya.plugins.lsp`
+  imports `somya.plugins`, `somya.plugins.lsp`, and `somya.plugins.colorschemes`
+  (subdirs need their own import entry — they aren't auto-recursed)
 - `nvim/lua/somya/plugins/` — one file per plugin, each returns a lazy spec table
 - `nvim/lua/somya/plugins/lsp/` — `mason.lua` (installer) + `lspconfig.lua`
+  (server config via `vim.lsp.config()` API, nvim-lspconfig 0.11+)
+- `nvim/lua/somya/plugins/colorschemes/` — one file per colorscheme plugin
+  (`tokyonight.lua`, `catppuccin.lua`, `monokai-pro.lua`, `material.lua`); the
+  switching/orchestration logic lives in `core/theme.lua` (see below)
 
 **Theme / colorscheme management** (`nvim/lua/somya/core/theme.lua` is the single
-source of truth): only two colorscheme *plugins* are installed — tokyonight
-(`tokyonight.lua`, customized via `on_colors` + hl overrides) and catppuccin
-(`catppuccin.lua`, also a palette source for hl overrides elsewhere) — plus
-monokai-pro (`monokai-pro.lua`, lazy, loaded only as a styler dependency). The
-many scheme *names* you see in `:Telescope colorscheme` (tokyonight-storm/moon,
-catppuccin-frappe/latte/…, monokai-pro-spectrum) are built-in **variants** of
-those plugins, not separate files. `theme.lua` holds `M.default` (the startup
+source of truth): the colorscheme *plugins* live in `plugins/colorschemes/` —
+tokyonight (`tokyonight.lua`, customized via `on_colors` + hl overrides) and
+catppuccin (`catppuccin.lua`, also a palette source for hl overrides elsewhere)
+load eagerly; monokai-pro and material (`material.lua`) are lazy, loaded as
+styler dependencies. The many scheme *names* you see in `:Telescope colorscheme`
+(tokyonight-storm/moon, catppuccin-frappe/latte/…, monokai-pro-spectrum) are
+built-in **variants** of those plugins, not separate files — except material,
+which has one name (`material`) with the variant set via `vim.g.material_style`.
+`theme.lua` holds `M.default` (the startup
 colorscheme — `tokyonight.lua` loads it via `require`; edit this one line to
 change the default) and `M.styler_themes` (the per-filetype table). styler.nvim
 *overrides* the global scheme **per filetype, window-locally** (sv→monokai,
@@ -67,7 +74,6 @@ styler must be suspended first: `<leader>uc` / `:ThemeBrowse` turns styler off
 and opens the picker with `enable_preview`; `<leader>uy` / `:StylerToggle`
 flips styler on/off (off = reset every window's hl namespace to 0 + drop
 styler's autocmds; on = re-`setup()`). The `<leader>u` prefix is "+UI / Theme".
-  (server config via `vim.lsp.config()` API, nvim-lspconfig 0.11+)
 
 **Completion & snippets** (`nvim/lua/somya/plugins/nvim-cmp.lua`): nvim-cmp with
 LuaSnip as the snippet engine. `<Tab>`/`<S-Tab>` expand a snippet or jump between
