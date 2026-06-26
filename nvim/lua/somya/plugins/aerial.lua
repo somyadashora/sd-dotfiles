@@ -4,12 +4,14 @@ return {
   -- of scrolling. Complements the fuzzy finder (find any file) and Harpoon (pinned
   -- working set) with "jump around inside one big file by its skeleton".
   --
-  -- backends = { "treesitter", "lsp" }: treesitter first, so the outline works
-  -- immediately off the SV grammar even with NO language server attached (e.g. a
-  -- fresh project root before slang's filelist is built). When a server IS up
-  -- (verible or slang), its richer document symbols take over. Document symbols are
-  -- per-file/parse-derived, so this works even before slang has an elaborated
-  -- design — unlike cone tracing, it never needs the full filelist.
+  -- backends (treesitter, lsp, markdown, asciidoc, man): treesitter first, so the
+  -- outline works immediately off the SV grammar even with NO language server
+  -- attached (e.g. a fresh project root before slang's filelist is built). When a
+  -- server IS up (verible or slang), its richer document symbols take over.
+  -- Document symbols are per-file/parse-derived, so this works even before slang
+  -- has an elaborated design — unlike cone tracing, it never needs the full
+  -- filelist. markdown/asciidoc/man are non-treesitter fallbacks (heading-based),
+  -- so prose files (no parser) still get an outline.
   --
   -- Two maps under the <leader>o ("+Outline") group, both conflict-free.
   "stevearc/aerial.nvim",
@@ -52,7 +54,10 @@ return {
     end
 
     require("aerial").setup({
-      backends = { "treesitter", "lsp" }, -- treesitter first → works without LSP
+      -- treesitter first → works without LSP; markdown/asciidoc/man are
+      -- non-treesitter fallbacks (they parse heading structure directly), so
+      -- `.md`/`.adoc`/man pages get an outline even with no parser installed.
+      backends = { "treesitter", "lsp", "markdown", "asciidoc", "man" },
       autojump = true, -- moving the cursor in the outline follows it in the source
       filter_kind = {
         ["_"] = default_kinds,    -- all other filetypes: aerial's default
