@@ -78,6 +78,12 @@ M.overrides_common = {
   Search        = { bg = "#e8d4a8", fg = "#1e1e2e" },
   IncSearch     = { bg = "#f0a07a", fg = "#1e1e2e", bold = true },
   CurSearch     = { bg = "#f0a07a", fg = "#1e1e2e", bold = true },
+  -- Trouble windows aren't pinned by styler, so they use the global scheme —
+  -- but most schemes link TroubleNormal to the (muted) NormalFloat, making the
+  -- window look dim. Re-link to Normal so Trouble matches the editor on every
+  -- scheme. (Native quickfix already uses Normal, so it needs nothing.)
+  TroubleNormal   = { link = "Normal" },
+  TroubleNormalNC = { link = "Normal" },
 }
 
 -- Per-scheme cursor / line-number / cursorline. Ordered list: the FIRST entry
