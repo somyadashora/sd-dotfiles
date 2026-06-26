@@ -10,7 +10,7 @@ return {
   },
   version = "*",
   config = function()
-    require("bufferline").setup({
+    local opts = {
       options = {
         mode                 = "buffers",
         separator_style      = "slant",
@@ -29,6 +29,15 @@ return {
           },
         },
       },
+    }
+
+    require("bufferline").setup(opts)
+
+    -- bufferline derives its highlights from the colorscheme only at setup time,
+    -- so re-run setup on every colorscheme switch to keep the tabline in sync.
+    vim.api.nvim_create_autocmd("ColorScheme", {
+      group = vim.api.nvim_create_augroup("BufferlineFollowColorscheme", { clear = true }),
+      callback = function() require("bufferline").setup(opts) end,
     })
 
     local keymap = vim.keymap
