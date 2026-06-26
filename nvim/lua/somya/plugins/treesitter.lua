@@ -7,23 +7,43 @@ return {
     },
     config = function()
       local parsers = {
-        "json",
-        "yaml",
-        "markdown",
-        "markdown_inline",
+        -- HDL / VLSI (the systemverilog grammar also covers Verilog)
+        "systemverilog",
+        "vhdl",
+        "tcl", -- also drives the EDA .do/.sdc/.xdc/.upf files (see core/filetypes.lua)
+
+        -- Scripting
         "python",
         "bash",
+        "perl", -- legacy EDA flow scripting
+        "awk",  -- log / report / coverage post-processing
         "lua",
         "vim",
+
+        -- Build
+        "make",
+        "cmake",
+        "starlark", -- Bazel (BUILD / *.bzl)
         "dockerfile",
+
+        -- Docs
+        "markdown",
+        "markdown_inline",
+        "latex",  -- specs / design docs / papers
+        "bibtex",
+        "vimdoc",
+
+        -- Data / config
+        "json",
+        "yaml",
+        "toml",
+        "xml", -- IP-XACT, register descriptions, tool/project configs
+        "csv", -- coverage / report tables
+
+        -- Misc
+        "c",
         "gitignore",
         "query",
-        "vimdoc",
-        "c",
-        "tcl",
-        "make",
-        "vhdl",
-        "systemverilog",
       }
 
       local treesitter = require("nvim-treesitter")

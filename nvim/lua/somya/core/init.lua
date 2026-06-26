@@ -1,4 +1,5 @@
 require("somya.core.options")
+require("somya.core.filetypes")
 require("somya.core.keymaps")
 require("somya.core.autocmds")
 require("somya.cheatsheet")
