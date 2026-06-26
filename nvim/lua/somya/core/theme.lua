@@ -28,7 +28,7 @@ local M = {}
 -- `colorscheme` command (priority 1000) and lists this scheme's plugin as a
 -- dependency so it's loaded + set up first. If you point this at a different
 -- lazy scheme, add it to tokyonight.lua's `dependencies` too.
-M.default = "monokai-pro"
+M.default = "monokai-catppuccin"
 
 -- ── styler.nvim: per-filetype window-local colorschemes ─────────────────────
 M.styler_themes = {

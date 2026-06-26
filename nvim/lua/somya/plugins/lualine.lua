@@ -19,6 +19,24 @@ return {
       s = "SELECT", S = "S-LINE", ["\19"] = "S-BLOCK", t = "TERMINAL",
     }
 
+    -- Mode pill background, keyed by the first char of mode(). Normal follows the
+    -- live cursor colour (vim.g.cursor_color, cycled with <leader>cC); the rest are
+    -- fixed catppuccin accents so the mode stays identifiable at a glance.
+    local mode_pill_bg = {
+      i = "#a6e3a1",                                 -- insert:  green
+      v = "#cba6f7", V = "#cba6f7", ["\22"] = "#cba6f7", -- visual(/block): purple
+      s = "#cba6f7", S = "#cba6f7", ["\19"] = "#cba6f7", -- select: purple
+      c = "#fab387",                                 -- command: orange (peach)
+      R = "#f38ba8",                                 -- replace: red
+      t = "#a6e3a1",                                 -- terminal: green
+    }
+    local function mode_pill_color()
+      if vim.g.vm_active then return "#f38ba8" end   -- multi-cursor: pink
+      local m = vim.fn.mode():sub(1, 1)
+      if m == "n" then return vim.g.cursor_color or "#ffd866" end
+      return mode_pill_bg[m] or vim.g.cursor_color or "#ffd866"
+    end
+
     -- nmode_prev: completed commands (dim)   nmode_curr: keys being built (bright)
     --
     -- Boundary detection uses three signals, checked at the top of every vim.on_key
@@ -140,10 +158,10 @@ return {
               if vim.g.vm_active then return "MULTI" end
               return mode_labels[vim.fn.mode()] or vim.fn.mode():upper()
             end,
+            -- Normal mode matches the cursor colour (cycled with <leader>cC);
+            -- other modes use fixed accents (see mode_pill_color above).
             color = function()
-              if vim.g.vm_active then
-                return { bg = "#f38ba8", fg = "#1e1e2e", gui = "bold" }
-              end
+              return { bg = mode_pill_color(), fg = "#13131d", gui = "bold" }
             end,
           },
         },

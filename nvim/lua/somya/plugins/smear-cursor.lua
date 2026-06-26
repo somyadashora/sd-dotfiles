@@ -114,6 +114,9 @@ return {
       end
       local color = cursor_colors[current_color_idx].color
       cfg.cursor_color = color
+      -- Publish the active cursor colour so the lualine mode pill can match it
+      -- (lualine_a reads vim.g.cursor_color; see plugins/lualine.lua).
+      vim.g.cursor_color = color
       smear.setup(cfg)
       current_idx = idx
     end
@@ -200,6 +203,9 @@ return {
     vim.keymap.set("n", "<leader>cC", function()
       current_color_idx = (current_color_idx % #cursor_colors) + 1
       apply(current_idx)
+      -- apply() republished vim.g.cursor_color; redraw the lualine pill now so it
+      -- recolors immediately instead of on the next render.
+      pcall(function() require("lualine").refresh() end)
       vim.notify(cursor_colors[current_color_idx].name, vim.log.levels.INFO, { title = "cursor colour" })
     end, { desc = "Cursor: cycle colour" })
 
