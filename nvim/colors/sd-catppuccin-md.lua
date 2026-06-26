@@ -32,14 +32,15 @@ hl("StatusLine",  { fg = c.text, bg = bg_alt })
 hl("CursorLine",  { bg = cline })
 hl("ColorColumn", { bg = bg_alt })
 
--- Treesitter tags fenced code blocks with the markdown-specific subgroups below,
--- which Catppuccin leaves UNDEFINED. In a styler window an undefined group falls
--- back to the GLOBAL scheme (sd-monokai-catppuccin, which colors code yellow), so
--- fenced blocks would bleed yellow while inline `code` stays green. Pin them to
--- Mocha's own @markup.raw.block (green) so code blocks match the rest of Mocha.
+-- Treesitter tags markdown code with the markdown-specific subgroups below, which
+-- Catppuccin leaves UNDEFINED (it only defines the generic @markup.raw[.block]).
+-- In a styler window an undefined group falls back to the GLOBAL scheme
+-- (sd-monokai-catppuccin, which colors code yellow), so both inline `code` and
+-- fenced blocks bleed yellow. Pin them to Mocha's own green @markup.raw[.block].
+hl("@markup.raw.markdown_inline", { link = "@markup.raw" }) -- inline `code`
 for _, g in ipairs({
-  "@markup.raw.block.markdown",
-  "@markup.raw.delimiter.markdown",
+  "@markup.raw.block.markdown",      -- fenced ``` blocks
+  "@markup.raw.delimiter.markdown",  -- the ``` fences
   "@markup.raw.delimiter",
 }) do
   hl(g, { link = "@markup.raw.block" })
