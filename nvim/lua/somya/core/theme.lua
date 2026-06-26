@@ -55,6 +55,112 @@ M.styler_themes = {
   gitrebase     = { colorscheme = "catppuccin-latte" },
 }
 
+-- ── Per-colorscheme highlight overrides ─────────────────────────────────────
+-- Tweaks we want on top of whatever colorscheme is active: cursor, line-number,
+-- and cursorline colors that differ PER scheme, plus a set of common tweaks
+-- (search, marks) that stay consistent everywhere.
+--
+-- This used to live (hardcoded, one global set) inside colorschemes/tokyonight.lua,
+-- which made that file the de-facto "theme main file". It now lives here, the
+-- single source of truth, and is keyed by the colorscheme name — so a .sv buffer
+-- (monokai-pro-spectrum) and a .py buffer (catppuccin-frappe) each get the colors
+-- defined for THEIR scheme. To give a new colorscheme its own line-number /
+-- cursorline / cursor colors, just add an entry to M.overrides below.
+--
+-- Applied both to the global scheme (ns 0) and into every styler per-filetype
+-- namespace (see M.wire_overrides). A scheme with no matching entry keeps its
+-- own native cursor/gutter colors — only the common set is forced.
+
+-- Forced on every scheme (the deliberately-consistent bits).
+M.overrides_common = {
+  MarkSignHL    = { fg = "#ff475f", bold = true },
+  MarkSignNumHL = { fg = "#ff475f", bold = true },
+  Search        = { bg = "#e8d4a8", fg = "#1e1e2e" },
+  IncSearch     = { bg = "#f0a07a", fg = "#1e1e2e", bold = true },
+  CurSearch     = { bg = "#f0a07a", fg = "#1e1e2e", bold = true },
+}
+
+-- Per-scheme cursor / line-number / cursorline. Ordered list: the FIRST entry
+-- whose Lua pattern matches the active scheme name wins, so put specific
+-- patterns before broad ones (e.g. "^catppuccin%-latte" before "^catppuccin").
+-- One entry covers a whole family of variants (all monokai-pro-* names, …).
+M.overrides = {
+  -- Monokai Pro — yellow accents (accent3 #ffd866) on warm bg #2d2a2e.
+  { pat = "^monokai%-pro", hl = {
+    Cursor       = { fg = "#2d2a2e", bg = "#ffd866" },
+    lCursor      = { fg = "#2d2a2e", bg = "#ffd866" },
+    CursorLine   = { bg = "#403e41" }, -- dimmed5: subtle warm band
+    LineNr       = { fg = "#9a8c52" }, -- desaturated yellow, inactive lines
+    CursorLineNr = { fg = "#ffd866", bold = true },
+  } },
+
+  -- TokyoNight (storm/moon, used by sh/tcl/make via styler) — the original
+  -- navy/blue/pink set this file used to force globally, scoped to tokyonight.
+  { pat = "^tokyonight", hl = {
+    CursorLine   = { bg = "#143652" },
+    LineNr       = { fg = "#5a8fa8" },
+    CursorLineNr = { fg = "#ff79c6", bold = true },
+  } },
+
+  -- Add your future schemes here, e.g.:
+  -- { pat = "^my%-catppuccin%-mono", hl = { LineNr = {...}, CursorLine = {...}, ... } },
+}
+
+-- Return the per-scheme hl table for a colorscheme name (nil if none matches).
+function M.overrides_for(scheme)
+  scheme = scheme or vim.g.colors_name or ""
+  for _, e in ipairs(M.overrides) do
+    if scheme:match(e.pat) then return e.hl end
+  end
+  return nil
+end
+
+-- Apply common + per-scheme overrides into highlight namespace `ns` for `scheme`.
+function M.apply_overrides(ns, scheme)
+  ns = ns or 0
+  for group, spec in pairs(M.overrides_common) do
+    vim.api.nvim_set_hl(ns, group, spec)
+  end
+  local hl = M.overrides_for(scheme)
+  if hl then
+    for group, spec in pairs(hl) do
+      vim.api.nvim_set_hl(ns, group, spec)
+    end
+  end
+end
+
+-- Wire the overrides up: apply to the global scheme now + on every ColorScheme,
+-- and into each styler per-filetype namespace as windows/filetypes appear.
+-- styler loads its schemes into window-local namespaces named
+-- "styler__<colorscheme>_<bg>" (note the DOUBLE underscore — styler concatenates
+-- "styler_", the scheme, and the bg with "_", and its first element already ends
+-- in "_") WITHOUT firing ColorScheme, so we parse the scheme back out of the
+-- namespace name (`_+` eats both leading underscores) and apply its overrides.
+function M.wire_overrides()
+  M.apply_overrides(0, vim.g.colors_name)
+  vim.api.nvim_create_autocmd("ColorScheme", {
+    callback = function(ev) M.apply_overrides(0, ev.match) end,
+  })
+  vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter" }, {
+    callback = function()
+      vim.schedule(function()
+        for name, ns in pairs(vim.api.nvim_get_namespaces()) do
+          local scheme = name:match("^styler_+(.+)_[^_]*$")
+          if scheme then M.apply_overrides(ns, scheme) end
+        end
+      end)
+    end,
+  })
+end
+
+-- Startup bootstrap: load the default colorscheme, then wire overrides. Called
+-- once from colorschemes/tokyonight.lua (the eager priority-1000 plugin), after
+-- its setup() — so tokyonight + monokai-pro (its dependency) are both ready.
+function M.bootstrap()
+  vim.cmd("colorscheme " .. M.default)
+  M.wire_overrides()
+end
+
 M.styler_enabled = true
 
 -- Resume styler: (re)register its autocmds and re-pin every open window.

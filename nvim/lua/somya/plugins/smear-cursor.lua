@@ -97,8 +97,9 @@ return {
       { name = "Red",     color = "#ff5555" },
       { name = "White",   color = "#f8f8f2" },
       { name = "Purple",  color = "#bd93f9" },
+      { name = "Yellow",  color = "#ffd866" }, -- monokai accent3, matches theme
     }
-    local current_color_idx = 3 -- default: red
+    local current_color_idx = 6 -- default: yellow (matches the monokai-pro theme)
 
     -- ─── Apply a profile by index ─────────────────────────────────────────
     local current_idx = 1
