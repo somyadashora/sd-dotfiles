@@ -32,4 +32,17 @@ hl("StatusLine",  { fg = c.text, bg = bg_alt })
 hl("CursorLine",  { bg = cline })
 hl("ColorColumn", { bg = bg_alt })
 
+-- Treesitter tags fenced code blocks with the markdown-specific subgroups below,
+-- which Catppuccin leaves UNDEFINED. In a styler window an undefined group falls
+-- back to the GLOBAL scheme (sd-monokai-catppuccin, which colors code yellow), so
+-- fenced blocks would bleed yellow while inline `code` stays green. Pin them to
+-- Mocha's own @markup.raw.block (green) so code blocks match the rest of Mocha.
+for _, g in ipairs({
+  "@markup.raw.block.markdown",
+  "@markup.raw.delimiter.markdown",
+  "@markup.raw.delimiter",
+}) do
+  hl(g, { link = "@markup.raw.block" })
+end
+
 vim.g.colors_name = "sd-catppuccin-md"
