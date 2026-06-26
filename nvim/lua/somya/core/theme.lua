@@ -28,7 +28,7 @@ local M = {}
 -- `colorscheme` command (priority 1000) and lists this scheme's plugin as a
 -- dependency so it's loaded + set up first. If you point this at a different
 -- lazy scheme, add it to tokyonight.lua's `dependencies` too.
-M.default = "monokai-catppuccin"
+M.default = "sd-monokai-catppuccin"
 
 -- ── styler.nvim: per-filetype window-local colorschemes ─────────────────────
 M.styler_themes = {
@@ -46,8 +46,9 @@ M.styler_themes = {
   -- Build / config
   make          = { colorscheme = "tokyonight-moon" },
 
-  -- Markdown
-  markdown      = { colorscheme = "catppuccin-frappe" },
+  -- Markdown — custom dark-Catppuccin scheme (colors/sd-catppuccin-md.lua) that
+  -- keeps headings and code in distinct color families for technical docs.
+  markdown      = { colorscheme = "sd-catppuccin-md" },
 
   -- Git
   gitcommit     = { colorscheme = "catppuccin-latte" },
@@ -109,7 +110,7 @@ M.overrides = {
   } },
 
   -- Add your future schemes here, e.g.:
-  -- { pat = "^my%-catppuccin%-mono", hl = { LineNr = {...}, CursorLine = {...}, ... } },
+  -- { pat = "^sd%-monokai%-catppuccin", hl = { LineNr = {...}, CursorLine = {...}, ... } },
 }
 
 -- Return the per-scheme hl table for a colorscheme name (nil if none matches).

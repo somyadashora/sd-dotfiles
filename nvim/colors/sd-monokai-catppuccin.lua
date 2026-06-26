@@ -1,19 +1,20 @@
--- monokai-catppuccin ─ Monokai Pro's highlight *structure* with the Catppuccin
+-- sd-monokai-catppuccin ─ Monokai Pro's highlight *structure* with the Catppuccin
 -- (Mocha) pastel palette dropped into Monokai's 15 palette slots, on a much
--- darker background than stock Catppuccin so the pastels really pop.
+-- darker background than stock Catppuccin so the pastels really pop. (The "sd-"
+-- prefix marks it as a custom, in-repo scheme.)
 --
 -- It's not a separate plugin: it drives monokai-pro.nvim through its public
 -- `override_palette` hook, so every Monokai highlight group (editor, syntax,
 -- treesitter, LSP, plugins) is reused verbatim — only the colors change.
 --
 -- This lives in colors/ (not plugins/colorschemes/) because it's a colorscheme
--- *file*, not a lazy plugin spec — `:colorscheme monokai-catppuccin`, Telescope's
--- picker, and <leader>uc all discover it from the runtimepath.
+-- *file*, not a lazy plugin spec — `:colorscheme sd-monokai-catppuccin`,
+-- Telescope's picker, and <leader>uc all discover it from the runtimepath.
 --
 -- override_palette is a GLOBAL monokai-pro setting, so we snapshot the live config,
 -- apply our palette, then restore it — otherwise styler's monokai-pro-spectrum on
 -- .sv buffers would turn Catppuccin too. (To give this scheme its own line-number
--- / cursor tweaks, add a { pat = "^monokai%-catppuccin", hl = {...} } entry to
+-- / cursor tweaks, add a { pat = "^sd%-monokai%-catppuccin", hl = {...} } entry to
 -- core/theme.lua → M.overrides.)
 
 local ok, mp = pcall(require, "monokai-pro")
@@ -64,14 +65,14 @@ theme.clear_cache()
 -- and fires ColorScheme as that name. Suppress that fire (otherwise our
 -- per-scheme overrides in core/theme.lua would apply monokai-pro's values on top
 -- of ours), then set the real name and fire ColorScheme ourselves so everything
--- — our overrides, lualine's auto theme, … — reacts to "monokai-catppuccin".
+-- — our overrides, lualine's auto theme, … — reacts to "sd-monokai-catppuccin".
 local ei = vim.o.eventignore
 vim.o.eventignore = "ColorScheme"
 mp.load() -- applies the catppuccin highlights to the global namespace
 vim.o.eventignore = ei
 
-vim.g.colors_name = "monokai-catppuccin"
-vim.api.nvim_exec_autocmds("ColorScheme", { pattern = "monokai-catppuccin" })
+vim.g.colors_name = "sd-monokai-catppuccin"
+vim.api.nvim_exec_autocmds("ColorScheme", { pattern = "sd-monokai-catppuccin" })
 
 -- Restore the original config (drops override_palette) so later monokai-pro /
 -- monokai-pro-spectrum loads (e.g. styler on .sv) are completely unaffected.
