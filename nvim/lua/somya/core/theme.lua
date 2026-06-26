@@ -24,7 +24,11 @@ local M = {}
 
 -- ── Single source of truth: the startup colorscheme ────────────────────────
 -- Edit this one line to change the default applied on `nvim` launch.
-M.default = "tokyonight"
+-- NOTE: the default must be loadable at startup. tokyonight.lua runs the
+-- `colorscheme` command (priority 1000) and lists this scheme's plugin as a
+-- dependency so it's loaded + set up first. If you point this at a different
+-- lazy scheme, add it to tokyonight.lua's `dependencies` too.
+M.default = "monokai-pro"
 
 -- ── styler.nvim: per-filetype window-local colorschemes ─────────────────────
 M.styler_themes = {

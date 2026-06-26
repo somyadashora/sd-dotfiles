@@ -70,6 +70,11 @@ return {
       end,
       layout = {
         default_direction = "right", -- outline on the right, like a minimap
+        -- "edge" docks aerial at the far right of the *editor*, not relative to
+        -- the focused window. Without it (default "window"), opening the outline
+        -- while the cursor is in the file explorer wedges aerial between the tree
+        -- and the code, shoving everything over. "edge" keeps the tree untouched.
+        placement = "edge",
         min_width = 28,
       },
       show_guides = true, -- tree guide lines for nested scopes

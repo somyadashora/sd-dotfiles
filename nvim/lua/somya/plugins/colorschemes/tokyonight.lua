@@ -2,6 +2,11 @@ return {
   {
     "folke/tokyonight.nvim",
     priority = 1000, -- make sure to load this before all the other start plugins
+    -- The default scheme (core/theme.lua → M.default = "monokai-pro") is applied
+    -- by the `colorscheme` command below, so its plugin must already be loaded.
+    -- Listing it as a dependency makes lazy load + setup() it before this config
+    -- runs. (Swap this if you change M.default to another lazy scheme.)
+    dependencies = { "loctvl842/monokai-pro.nvim" },
     config = function()
       local bg = "#011628"
       local bg_dark = "#011423"
@@ -37,11 +42,24 @@ return {
       -- there to change the startup scheme; browse alternatives via <leader>uc)
       vim.cmd("colorscheme " .. require("somya.core.theme").default)
 
+      -- Monokai Pro 'pro' accent palette (single source for the overrides below):
+      --   yellow #ffd866  red #ff6188  orange #fc9867  green #a9dc76
+      --   cyan   #78dce8  purple #ab9df2  bg #2d2a2e
+      local mono_yellow     = "#ffd866"  -- accent3
+      local mono_yellow_dim = "#9a8c52"  -- desaturated accent3 for inactive lines
+      local mono_bg         = "#2d2a2e"
+      local mono_cursorline = "#403e41"  -- dimmed5: subtle warm band over mono_bg
+
       local function apply_hl_overrides(ns)
         ns = ns or 0
-        vim.api.nvim_set_hl(ns, "CursorLine",    { bg = "#143652" })
-        vim.api.nvim_set_hl(ns, "LineNr",        { fg = "#5a8fa8" })
-        vim.api.nvim_set_hl(ns, "CursorLineNr",  { fg = "#ff79c6", bold = true })
+        -- Warm monokai band (was tokyonight navy #143652, which clashed on the
+        -- #2d2a2e monokai background).
+        vim.api.nvim_set_hl(ns, "CursorLine",    { bg = mono_cursorline })
+        -- Block cursor + line numbers in monokai yellow (was pink/blue).
+        vim.api.nvim_set_hl(ns, "Cursor",        { fg = mono_bg, bg = mono_yellow })
+        vim.api.nvim_set_hl(ns, "lCursor",       { fg = mono_bg, bg = mono_yellow })
+        vim.api.nvim_set_hl(ns, "LineNr",        { fg = mono_yellow_dim })
+        vim.api.nvim_set_hl(ns, "CursorLineNr",  { fg = mono_yellow, bold = true })
         vim.api.nvim_set_hl(ns, "MarkSignHL",    { fg = "#ff475f", bold = true })
         vim.api.nvim_set_hl(ns, "MarkSignNumHL", { fg = "#ff475f", bold = true })
         vim.api.nvim_set_hl(ns, "Search",    { bg = "#e8d4a8", fg = "#1e1e2e" })

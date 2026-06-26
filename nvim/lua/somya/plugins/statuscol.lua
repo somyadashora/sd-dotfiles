@@ -46,7 +46,7 @@ return {
       relculright = true, -- right-align the relative number (tidy hybrid mode)
       ft_ignore = {
         "alpha", "dashboard", "NvimTree", "neo-tree", "toggleterm", "lazy",
-        "mason", "TelescopePrompt", "help", "qf", "trouble", "Outline",
+        "mason", "TelescopePrompt", "help", "qf", "trouble", "Outline", "aerial",
       },
       segments = {
         -- 1. fold column (ufo) on the far left
