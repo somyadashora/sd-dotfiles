@@ -92,6 +92,10 @@ keymap.set("n", "<leader>Tf", "<cmd>tabnew %<CR>", { desc = "Open current buffer
 vim.api.nvim_create_user_command("TabProject", function(opts)
   vim.cmd("tabnew")
   vim.cmd("tcd " .. vim.fn.fnameescape(opts.args))
+  -- Name the tab after the project dir's basename so bufferline's right-side
+  -- tabpage indicator shows e.g. "cva6" instead of a bare number (it renders the
+  -- tab-local `name` var). Rename later with :BufferLineTabRename <name>.
+  vim.t.name = vim.fn.fnamemodify(opts.args, ":t")
   require("nvim-tree.api").tree.open()
 end, { nargs = 1, complete = "dir", desc = "New tab scoped to a project dir" })
 

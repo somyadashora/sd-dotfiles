@@ -712,3 +712,9 @@ vim.keymap.set("n", "<leader>qh", open_qf_help, { desc = "Quickfix :cdo/:cfdo he
 -- Commands so other UI (e.g. the alpha dashboard buttons) can trigger these.
 vim.api.nvim_create_user_command("Cheatsheet", open_cheatsheet, { desc = "Open the keymap cheatsheet" })
 vim.api.nvim_create_user_command("QfHelp", open_qf_help, { desc = "Open the :cdo/:cfdo quickfix help" })
+
+-- Expose the float renderers so other modules can render their own help popups
+-- with the same look (e.g. telekasten's <leader>Z? notes help). `open` takes a
+-- list of {title, entries={{key, desc}, …}} sections + an opts table (title,
+-- max_width, key_col, sep_width, footer, include_user_notes).
+return { open = open, open_grid = open_grid }

@@ -47,6 +47,7 @@ return {
       { "<leader>v", group = "LSP / Code" }, -- generic LSP actions + slang-only cone tracing
       { "<leader>w", group = "Session" }, -- auto-session
       { "<leader>x", group = "Trouble & diagnostics" },
+      { "<leader>Z", group = "Notes" }, -- telekasten note-taking
     },
   },
 }

@@ -117,6 +117,25 @@ default), `espresso` (Peach), `purple` (Mauve), `rose` (Pink), `lavender`, `maro
 terminals follow suit. In terminal mode `jk`
 exits to normal, `<C-h/j/k/l>` navigate windows; `<esc>` is left alone so TUI apps work.
 
+**Note-taking** (`nvim/lua/somya/plugins/telekasten.lua`): telekasten.nvim over a
+single local vault at `~/.somyadashora/sd-notes` (a **local** git repo — never
+pushed, so notes stay per-machine; commits are manual). The vault is bootstrapped
+on first use (`ensure_repo`: `mkdir -p` + `git init` + write `notes.md` if absent),
+so no manual setup. All maps live under the `<leader>Z` ("+Notes") prefix. The
+headline pair is a jump-to-notes-tab / jump-back: `<leader>Zz` opens (or switches
+to) a dedicated **notes tab** — a new tab tagged with a tab-local `vim.t.is_notes_tab`
+flag plus a tab-local `name` var set to **"Notz"** — bufferline's right-side
+tabpage indicator renders that `name` var in place of the tab number, so the notes
+tab shows "Notz" there (Neovim tabs have no native name)), `tcd`-scoped to the
+vault, opening `notes.md`; `<leader>Zr` returns to the tab you
+came from (remembered tabpage handle). The rest are telekasten actions — `Zf` find,
+`Zs` search/grep, `Zn` new, `Zd` today's daily, `Zw` this week's weekly, `Zl`/`Zk`
+insert/follow link, `Zb` backlinks, `Zc` toggle calendar (calendar-vim dep; in the
+calendar `<CR>` opens that day's daily note, ←/→ month, ↑/↓ year, `t`/`r`/`q`
+today/redisplay/close), `Zp` panel — plus `Z?`, a help popup that reuses the
+cheatsheet float renderer (`somya.cheatsheet` now `return`s `{ open, open_grid }`
+so other modules can render help with the same look).
+
 **SystemVerilog LSP**: two servers are configured — `verible` (Mason-installed) and
 `slang-server` (`~/.local/bin/slang-server`). Only one should be active at a time;
 switch with `:UseVerible` / `:UseSlang`.
