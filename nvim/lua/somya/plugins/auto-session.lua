@@ -23,10 +23,40 @@ return {
   config = function()
     local auto_session = require("auto-session")
 
+    -- `curdir` + `tabpages` already persist each tab's :tcd, so tabs scoped to
+    -- different project dirs (<leader>TP) restore to their own root. Add
+    -- `localoptions` (auto-session recommends it) so window-local filetype /
+    -- highlighting come back correctly, and `winpos` for the full layout.
+    vim.o.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions"
+
     auto_session.setup({
       auto_save = false,     -- exit-save is driven by our VimLeavePre hook (init)
       auto_restore = false,  -- never auto-open a session at launch
       suppressed_dirs = { "~/", "~/Dev/", "~/Downloads", "~/Documents", "~/Desktop/" },
+      -- nvim-tree + session restore clash: a saved NvimTree window force-loads
+      -- nvim-tree mid-restore, and its sync_root_with_cwd / update_focused_file
+      -- autocmds then fire on the restore's own :tcd storm, thrashing the explorer
+      -- (E367, "disabling auto save"). So close every tab's tree BEFORE saving —
+      -- the session then holds no NvimTree windows and nvim-tree stays lazy during
+      -- restore — and reopen the tree AFTER restore (tab.sync.open re-pins the
+      -- rest as you switch tabs).
+      pre_save_cmds = {
+        function()
+          if package.loaded["nvim-tree"] then
+            pcall(vim.cmd, "tabdo NvimTreeClose")
+          end
+        end,
+      },
+      post_restore_cmds = {
+        function()
+          vim.schedule(function()
+            pcall(function()
+              require("lazy").load({ plugins = { "nvim-tree.lua" } })
+              require("nvim-tree.api").tree.open()
+            end)
+          end)
+        end,
+      },
     })
 
     local keymap = vim.keymap
