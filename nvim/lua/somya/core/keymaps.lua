@@ -94,8 +94,11 @@ vim.api.nvim_create_user_command("TabProject", function(opts)
   vim.cmd("tcd " .. vim.fn.fnameescape(opts.args))
   -- Name the tab after the project dir's basename so bufferline's right-side
   -- tabpage indicator shows e.g. "cva6" instead of a bare number (it renders the
-  -- tab-local `name` var). Rename later with :BufferLineTabRename <name>.
-  vim.t.name = vim.fn.fnamemodify(opts.args, ":t")
+  -- tab-local `name` var). Derive from getcwd() AFTER :tcd — it's normalized with
+  -- no trailing slash, so :t always yields the basename (fnamemodify on the raw
+  -- arg returns "" when the picker hands us a path with a trailing slash, which
+  -- renders a blank tab label). Rename later with :BufferLineTabRename <name>.
+  vim.t.name = vim.fn.fnamemodify(vim.fn.getcwd(), ":t")
   require("nvim-tree.api").tree.open()
 end, { nargs = 1, complete = "dir", desc = "New tab scoped to a project dir" })
 
