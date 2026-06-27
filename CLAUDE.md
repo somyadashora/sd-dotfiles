@@ -72,12 +72,16 @@ the single name `monokai` (no setup()).
 colorscheme — `tokyonight.lua` loads it via `require`; edit this one line to
 change the default) and `M.styler_themes` (the per-filetype table). styler.nvim
 *overrides* the global scheme **per filetype, window-locally** (sv→monokai,
-python→catppuccin, …), which is why `:colorscheme X` changes the file explorer
-but not a pinned `.sv`/`.py` buffer. To browse with a true full-window preview,
-styler must be suspended first: `<leader>uc` / `:ThemeBrowse` turns styler off
-and opens the picker with `enable_preview`; `<leader>uy` / `:StylerToggle`
-flips styler on/off (off = reset every window's hl namespace to 0 + drop
-styler's autocmds; on = re-`setup()`). The `<leader>u` prefix is "+UI / Theme".
+python→catppuccin, …) — but it now starts **OFF** (`M.styler_enabled = false`),
+so on launch every window just shows `M.default`. Turn per-filetype themes on with
+`<leader>uy` / `:StylerToggle`; only then does `:colorscheme X` change the file
+explorer but not a pinned `.sv`/`.py` buffer. The toggle flips styler on/off
+(off = reset every window's hl namespace to 0 + drop styler's autocmds; on =
+`setup()`, which re-pins all open windows). Starting `false` means the *first*
+`<leader>uy` enables it. For a true full-window preview, styler must be off (its
+default state): `<leader>uc` / `:ThemeBrowse` opens the picker with
+`enable_preview`, suspending styler first only if it happens to be on. The
+`<leader>u` prefix is "+UI / Theme".
 
 **Completion & snippets** (`nvim/lua/somya/plugins/nvim-cmp.lua`): nvim-cmp with
 LuaSnip as the snippet engine. `<Tab>`/`<S-Tab>` expand a snippet or jump between

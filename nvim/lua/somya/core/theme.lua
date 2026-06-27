@@ -13,12 +13,15 @@
 -- Two layers cooperate:
 --   1. A single global default colorscheme (M.default), loaded at startup.
 --   2. styler.nvim, which *overrides* the global scheme per filetype, window-
---      locally (see M.styler_themes). This is why `:colorscheme X` changes the
---      file explorer but NOT a .sv/.py buffer — that window is pinned by styler.
+--      locally (see M.styler_themes). When on, this is why `:colorscheme X`
+--      changes the file explorer but NOT a .sv/.py buffer — that window is
+--      pinned by styler.
 --
--- To browse freely (preview reaching every window), turn styler off first:
--- <leader>uc does this for you, or toggle with <leader>uy / :StylerToggle.
--- Once you find a winner, lock it in by editing M.default below.
+-- styler starts OFF (M.styler_enabled = false): on launch every window shows the
+-- global default colorscheme. Enable per-filetype themes on demand with
+-- <leader>uy / :StylerToggle. Because styler is already off, browsing schemes
+-- with a full-window preview just works; <leader>uc opens the picker (and would
+-- suspend styler first if it were on). Lock a winner in by editing M.default.
 
 local M = {}
 
@@ -38,22 +41,22 @@ M.styler_themes = {
   vhdl          = { colorscheme = "monokai-pro-spectrum" },
 
   -- Scripting / general purpose
-  python        = { colorscheme = "catppuccin-frappe" },
+  python        = { colorscheme = "tokyonight-storm" },
   sh            = { colorscheme = "tokyonight-storm" },
   bash          = { colorscheme = "tokyonight-storm" },
-  tcl           = { colorscheme = "tokyonight-moon" },
+  tcl           = { colorscheme = "tokyonight-storm" },
 
   -- Build / config
-  make          = { colorscheme = "tokyonight-moon" },
+  make          = { colorscheme = "tokyonight-storm" },
 
   -- Markdown — custom dark-Catppuccin scheme (colors/sd-catppuccin-md.lua) that
   -- keeps headings and code in distinct color families for technical docs.
   markdown      = { colorscheme = "sd-catppuccin-md" },
 
   -- Git
-  gitcommit     = { colorscheme = "catppuccin-latte" },
-  gitconfig     = { colorscheme = "catppuccin-latte" },
-  gitrebase     = { colorscheme = "catppuccin-latte" },
+  gitcommit     = { colorscheme = "tokyonight-storm" },
+  gitconfig     = { colorscheme = "tokyonight-storm" },
+  gitrebase     = { colorscheme = "tokyonight-storm" },
 }
 
 -- ── Per-colorscheme highlight overrides ─────────────────────────────────────
@@ -168,7 +171,11 @@ function M.bootstrap()
   M.wire_overrides()
 end
 
-M.styler_enabled = true
+-- styler starts OFF: on launch the global default colorscheme shows in every
+-- window (no per-filetype overrides). Turn per-filetype themes on with
+-- <leader>uy / :StylerToggle. Starting false means the FIRST toggle enables it
+-- (rather than trying to disable an already-off styler).
+M.styler_enabled = false
 
 -- Resume styler: (re)register its autocmds and re-pin every open window.
 function M.enable_styler()

@@ -13,8 +13,10 @@ return {
   config = function()
     -- The per-filetype theme table + enable/disable/browse logic all live in
     -- core/theme.lua so the colorscheme default and styler share one home.
+    -- NOTE: styler is NOT enabled here — it starts OFF so every window shows the
+    -- global default colorscheme on launch. Turn per-filetype themes on with
+    -- <leader>uy / :StylerToggle (enable_styler() re-pins all open windows).
     local theme = require("somya.core.theme")
-    theme.enable_styler()
 
     -- ── Theme-management commands + keymaps (<leader>u = +UI/Theme) ──────────
     -- styler pins a per-filetype colorscheme window-locally, so `:colorscheme X`
