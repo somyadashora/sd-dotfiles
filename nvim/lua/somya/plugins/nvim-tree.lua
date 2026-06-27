@@ -51,6 +51,16 @@ return {
         enable = true,
         update_root = true,
       },
+      -- Mirror the tree's open state across tabs: opening or switching to a new
+      -- tab auto-opens the explorer (no <leader>ee needed), and closing it in one
+      -- tab closes it everywhere so the state stays coherent. Pairs with the
+      -- <leader>TP / :TabProject scoped-tab flow.
+      tab = {
+        sync = {
+          open = true,
+          close = true,
+        },
+      },
       view = {
         width = 25,
         relativenumber = true,
