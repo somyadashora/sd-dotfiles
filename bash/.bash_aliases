@@ -22,6 +22,16 @@ abbrev-alias init-ai="$DOTFILES_DIR/nvim/scripts/init-ai"
 abbrev-alias prompt-tc='PROMPT_COMMAND="__tc_prompt_command"; echo "switched to TypeCraft prompt"'
 abbrev-alias prompt-default='PROMPT_COMMAND="__sd_prompt_command"; echo "switched to default prompt"'
 
+# nvim-bash: put THIS shell into vi editing mode with nvim as $EDITOR, and make
+# the readline cursor reflect the mode — a blinking line while inserting, a
+# steady block in command/normal mode. The cursor switch rides on readline's
+# show-mode-in-prompt strings (\1..\2 wrap the non-printing escape so prompt
+# width stays correct; \e[5 q = blinking bar, \e[2 q = steady block). The final
+# printf sets the line cursor right away since you land in insert mode. Plain
+# `alias` (not abbrev-alias) so the escape-laden body isn't expanded inline as
+# you type it. Run it per-shell; add it to .bash_rc if you want it everywhere.
+alias nvim-bash='export EDITOR=nvim; set -o vi; bind "set show-mode-in-prompt on"; bind "set vi-ins-mode-string \1\e[5 q\2"; bind "set vi-cmd-mode-string \1\e[2 q\2"; printf "\e[5 q"'
+
 alias bathelp='bat --plain --language=help'
 help() {
     "$@" --help 2>&1 | bathelp
