@@ -280,6 +280,20 @@ local sections = {
     },
   },
   {
+    title = "FIND & SEARCH  (telescope)",
+    entries = {
+      { "── leader mirrors native, widens to repo ──", "" },
+      { "*  →  <leader>*",  "word under cursor: buffer / repo (grep)" },
+      { "/  →  <leader>/",  "search: buffer / repo (live grep)" },
+      { "<leader>fb",        "fuzzy line search in current buffer" },
+      { "<leader>fs",        "live grep in cwd (repo)" },
+      { "── files ──", "" },
+      { "<leader>ff  /  fFi", "find files (cwd / + hidden & ignored)" },
+      { "<leader>fr",         "recent files (oldfiles)" },
+      { "<leader>fT",         "find TODOs" },
+    },
+  },
+  {
     title = "SEARCH & GLOBAL",
     entries = {
       { "*  /  #",           "search word under cursor fwd / back" },
