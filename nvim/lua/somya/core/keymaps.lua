@@ -90,6 +90,11 @@ keymap.set("n", "<leader>Tf", "<cmd>tabnew %<CR>", { desc = "Open current buffer
 -- explorer root and Telescope find/grep/buffers to that dir. nvim-tree re-roots
 -- via sync_root_with_cwd; Telescope pickers default their cwd to getcwd().
 vim.api.nvim_create_user_command("TabProject", function(opts)
+  -- Name the tab we're leaving by its cwd basename if it has no name yet, so the
+  -- original/first tab stops showing a bare "1" once a second (named) tab appears.
+  if not vim.t.name or vim.t.name == "" then
+    vim.t.name = vim.fn.fnamemodify(vim.fn.getcwd(), ":t")
+  end
   vim.cmd("tabnew")
   vim.cmd("tcd " .. vim.fn.fnameescape(opts.args))
   -- Name the tab after the project dir's basename so bufferline's right-side
