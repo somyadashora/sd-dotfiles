@@ -7,7 +7,7 @@ return {
   keys = {
     "<leader>ff", "<leader>fFi", "<leader>fr", "<leader>fs", "<leader>*",
     "<leader>B", "<leader>\"", "<leader>j", "<leader>`", "<leader>fT",
-    "<leader>/", "<leader>:", "<leader>?", "<leader>Q", "<leader>;",
+    "<leader>/", "<leader>fb", "<leader>:", "<leader>?", "<leader>Q", "<leader>;",
   },
   dependencies = {
     "nvim-lua/plenary.nvim",
@@ -139,7 +139,13 @@ return {
       require("telescope.builtin").marks(require("telescope.themes").get_ivy())
     end, { desc = "Find marks in marklist" })
     keymap.set("n", "<leader>fT", "<cmd>TodoTelescope<cr>", { desc = "Find Todo's" })
-    keymap.set("n", "<leader>/", "<cmd>Telescope current_buffer_fuzzy_find<cr>", { desc = "Find string fuzzily in current buffer" })
+    -- <leader>/ mirrors native / (buffer search) but widens scope to the repo
+    -- (live grep), just as <leader>* mirrors * (grep word under cursor in repo).
+    keymap.set("n", "<leader>/", function()
+      require("telescope.builtin").live_grep(require("telescope.themes").get_ivy())
+    end, { desc = "Find string in cwd (live grep)" })
+    -- Fuzzy line search within the current buffer (was <leader>/).
+    keymap.set("n", "<leader>fb", "<cmd>Telescope current_buffer_fuzzy_find<cr>", { desc = "Find string fuzzily in current buffer" })
     keymap.set("n", "<leader>:", "<cmd>Telescope command_history<cr>", { desc = "Find in command history" })
     keymap.set("n", "<leader>?", "<cmd>Telescope help_tags<cr>", { desc = "Find help tags" })
     keymap.set("n", "<leader>Q", "<cmd>Telescope quickfix<cr>", { desc = "Open quickfix list in fzf picker" })
