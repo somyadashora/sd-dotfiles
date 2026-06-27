@@ -34,7 +34,7 @@ return {
       { "<leader>c", group = "Cursor" }, -- smear-cursor presets/colors
       { "<leader>e", group = "Explorer" }, -- nvim-tree
       { "<leader>f", group = "Find" }, -- telescope
-      { "<leader>h", group = "Harpoon" }, -- working-set file jumps
+      { "<leader>h", group = "Git hunks" }, -- gitsigns stage/reset/preview/blame
       { "<leader>l", group = "Lint & LazyGit" },
       { "<leader>m", group = "Multi-cursor" }, -- vim-visual-multi
       { "<leader>n", group = "Minimap & search" },

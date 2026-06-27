@@ -1,8 +1,8 @@
 return {
   -- aerial.nvim: a symbol outline (modules, interfaces, functions, tasks, classes,
   -- structs, enums) for navigating large unstructured files by *structure* instead
-  -- of scrolling. Complements the fuzzy finder (find any file) and Harpoon (pinned
-  -- working set) with "jump around inside one big file by its skeleton".
+  -- of scrolling. Complements the fuzzy finder (find any file) with "jump around
+  -- inside one big file by its skeleton".
   --
   -- backends (treesitter, lsp, markdown, asciidoc, man): treesitter first, so the
   -- outline works immediately off the SV grammar even with NO language server
