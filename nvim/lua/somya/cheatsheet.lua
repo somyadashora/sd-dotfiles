@@ -291,12 +291,46 @@ local sections = {
     },
   },
   {
-    title = "INSERT MODE",
+    title = "INSERT — EXIT",
     entries = {
-      { "<C-w>  /  <C-u>",  "delete back one word / to line start" },
-      { "<C-r>{reg}",        "paste from register (e.g. <C-r>0 for yank)" },
-      { "<C-o>{cmd}",        "run one normal cmd then return to insert" },
-      { "<C-a>",             "insert text of last insert" },
+      { "<Esc>  /  <C-[>",  "back to normal mode (identical)" },
+      { "<C-c>",             "exit insert, skip abbrev + InsertLeave" },
+    },
+  },
+  {
+    title = "INSERT — DELETE",
+    entries = {
+      { "<C-h>",  "delete char before cursor (backspace)" },
+      { "<C-w>",  "delete word before cursor" },
+      { "<C-u>",  "delete to line start before cursor" },
+    },
+  },
+  {
+    title = "INSERT — MOVE & INDENT",
+    entries = {
+      { "<Up>/<Down>/<Left>/<Right>",  "move cursor by char / line" },
+      { "<C-g>j  /  <C-g>k", "line down / up, to insert-start column" },
+      { "<C-t>",  "indent line one shiftwidth" },
+      { "<C-d>",  "outdent line one shiftwidth" },
+    },
+  },
+  {
+    title = "INSERT — COPY & PASTE",
+    entries = {
+      { "<C-r>{reg}",  "paste register (e.g. <C-r>0, <C-r>+)" },
+      { "<C-r>=",       "expression register — eval math/logic" },
+      { "<C-y>",        "copy char directly above cursor" },
+      { "<C-e>",        "copy char directly below cursor" },
+    },
+  },
+  {
+    title = "INSERT — CMD & COMPLETION",
+    entries = {
+      { "<C-o>{cmd}",      "run one normal cmd, return to insert" },
+      { "<C-n>  /  <C-p>", "keyword completion: down / up" },
+      { "<C-x>",            "completion submode (<C-x><C-f> path, <C-o> omni)" },
+      { "<C-v>{char}",     "insert next key literally" },
+      { "<C-a>",            "re-insert text of last insert session" },
     },
   },
   {
