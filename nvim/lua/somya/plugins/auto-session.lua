@@ -33,6 +33,32 @@ return {
       auto_save = false,     -- exit-save is driven by our VimLeavePre hook (init)
       auto_restore = false,  -- never auto-open a session at launch
       suppressed_dirs = { "~/", "~/Dev/", "~/Downloads", "~/Documents", "~/Desktop/" },
+      -- Keep empty/unnamed-buffer tabs: the default (true) closes every window
+      -- whose buffer isn't a readable file before saving, so a blank tab's only
+      -- window is closed and the tab is lost. We strip NvimTree windows ourselves
+      -- via pre_save_cmds, so we don't need this — turn it off to preserve tabs.
+      close_unsupported_windows = false,
+      -- :mksession does NOT persist tab-local vars, so the per-tab `name` (the
+      -- bufferline tab label — "Notz", project basenames) and `is_notes_tab` flag
+      -- are lost on restore. Re-emit them into the companion <session>x.vim, which
+      -- the mksession footer sources after all tabs are recreated.
+      save_extra_cmds = {
+        function()
+          local cmds = {}
+          for _, tab in ipairs(vim.api.nvim_list_tabpages()) do
+            local tabnr = vim.api.nvim_tabpage_get_number(tab)
+            local ok_n, name = pcall(vim.api.nvim_tabpage_get_var, tab, "name")
+            if ok_n and type(name) == "string" and name ~= "" then
+              cmds[#cmds + 1] = ("call settabvar(%d, 'name', '%s')"):format(tabnr, (name:gsub("'", "''")))
+            end
+            local ok_z, is_notes = pcall(vim.api.nvim_tabpage_get_var, tab, "is_notes_tab")
+            if ok_z and is_notes then
+              cmds[#cmds + 1] = ("call settabvar(%d, 'is_notes_tab', v:true)"):format(tabnr)
+            end
+          end
+          return cmds
+        end,
+      },
       -- nvim-tree + session restore clash: nvim-tree's sync_root_with_cwd /
       -- update_focused_file autocmds (in the "NvimTree" augroup) re-init the
       -- explorer on every dir change, and the session source fires a storm of
