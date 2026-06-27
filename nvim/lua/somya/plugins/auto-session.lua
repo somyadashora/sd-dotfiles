@@ -33,17 +33,30 @@ return {
       auto_save = false,     -- exit-save is driven by our VimLeavePre hook (init)
       auto_restore = false,  -- never auto-open a session at launch
       suppressed_dirs = { "~/", "~/Dev/", "~/Downloads", "~/Documents", "~/Desktop/" },
-      -- nvim-tree + session restore clash: a saved NvimTree window force-loads
-      -- nvim-tree mid-restore, and its sync_root_with_cwd / update_focused_file
-      -- autocmds then fire on the restore's own :tcd storm, thrashing the explorer
-      -- (E367, "disabling auto save"). So close every tab's tree BEFORE saving —
-      -- the session then holds no NvimTree windows and nvim-tree stays lazy during
-      -- restore — and reopen the tree AFTER restore (tab.sync.open re-pins the
-      -- rest as you switch tabs).
+      -- nvim-tree + session restore clash: nvim-tree's sync_root_with_cwd /
+      -- update_focused_file autocmds (in the "NvimTree" augroup) re-init the
+      -- explorer on every dir change, and the session source fires a storm of
+      -- :tcd/DirChanged/BufEnter, thrashing the explorer -> E367 ("disabling auto
+      -- save"). nvim-tree is often already loaded when you restore (tree open), so
+      -- closing trees before save isn't enough — the live autocmds still fire.
+      -- Fix in three parts:
+      --   pre_save    — close every tab's tree so the session holds no NvimTree
+      --                 windows (clean session, nothing to recreate).
+      --   pre_restore — clear nvim-tree's autocmd group so NONE of its handlers
+      --                 fire while the session is being sourced.
+      --   post_restore— re-register those autocmds (autocmd.global()) and reopen
+      --                 the tree; tab.sync.open re-pins the rest on tab switches.
       pre_save_cmds = {
         function()
           if package.loaded["nvim-tree"] then
             pcall(vim.cmd, "tabdo NvimTreeClose")
+          end
+        end,
+      },
+      pre_restore_cmds = {
+        function()
+          if package.loaded["nvim-tree"] then
+            pcall(vim.api.nvim_clear_autocmds, { group = "NvimTree" })
           end
         end,
       },
@@ -52,6 +65,7 @@ return {
           vim.schedule(function()
             pcall(function()
               require("lazy").load({ plugins = { "nvim-tree.lua" } })
+              require("nvim-tree.autocmd").global() -- re-register what pre_restore cleared
               require("nvim-tree.api").tree.open()
             end)
           end)
