@@ -51,14 +51,22 @@ return {
         enable = true,
         update_root = true,
       },
-      -- Mirror the tree's open state across tabs: opening or switching to a new
-      -- tab auto-opens the explorer (no <leader>ee needed), and closing it in one
-      -- tab closes it everywhere so the state stays coherent. Pairs with the
-      -- <leader>TP / :TabProject scoped-tab flow.
+      -- tab.sync is OFF on purpose (both open and close).
+      --
+      -- It mirrors the tree's open/closed state across ALL tabs. That fought our
+      -- two scoped-tab flows badly:
+      --   * close=true cascades a tree-close into every tab; for a no-file project
+      --     tab whose only window is the tree, that closes the tab's last window
+      --     and DESTROYS the tab — how <leader>wr restores were losing tabs.
+      --   * open=true, during a session rebuild, races the per-tab tree opens
+      --     (core/session_tabs.reconcile) and leaves some tabs treeless / fragile.
+      -- We get the same "explorer is already visible in a new/restored project
+      -- tab" behavior without sync: :TabProject opens the tree when it creates the
+      -- tab, and reconcile() opens one in every tab it rebuilds.
       tab = {
         sync = {
-          open = true,
-          close = true,
+          open = false,
+          close = false,
         },
       },
       view = {
