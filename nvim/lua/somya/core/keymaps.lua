@@ -22,6 +22,15 @@ end
 
 keymap.set("n", "<leader>nh", ":nohl<CR>", { desc = "Clear search highlights"})
 
+-- Toggle line wrap (off by default — see core/options.lua). Window-local so it
+-- only affects the current buffer's view. Lives under the <leader>u "UI / Theme"
+-- group. With wrap off, scroll horizontally with zl/zh (one col), zL/zH (half
+-- screen), zs/ze (cursor to left/right edge).
+keymap.set("n", "<leader>uw", function()
+  vim.wo.wrap = not vim.wo.wrap
+  vim.notify("Wrap: " .. (vim.wo.wrap and "on" or "off"), vim.log.levels.INFO)
+end, { desc = "Toggle line wrap" })
+
 -- Linter control
 keymap.set("n", "<leader>ld", ":lua vim.diagnostic.enable(false)<CR>", { desc = "disable lint messages" })
 keymap.set("n", "<leader>le", ":lua vim.diagnostic.enable(true)<CR>", { desc = "enable lint messages" })

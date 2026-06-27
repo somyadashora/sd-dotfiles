@@ -14,6 +14,11 @@ opt.autoindent = true -- copy indent from current line when starting new one
 opt.wrap = false
 opt.scrolloff = 5
 opt.sidescrolloff = 36
+
+-- Let the cursor go anywhere in normal mode — past end-of-line and into the
+-- "virtual" space inside tabs / beyond short lines — instead of snapping to real
+-- characters. Makes free-form navigation and block edits much nicer.
+opt.virtualedit = "all"
 -- spell check
 opt.spelllang = 'en_us'
 opt.spell = false
