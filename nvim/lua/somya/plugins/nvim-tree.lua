@@ -42,6 +42,19 @@ return {
     vim.g.loaded_netrwPlugin = 1
 
     nvimtree.setup({
+      -- Keep every default in-tree mapping, but make `o` open-and-stay: it loads
+      -- the file into a buffer and jumps the cursor straight back to the tree, so
+      -- you can run down the list pressing `o` to fan several files into separate
+      -- buffers without leaving the explorer. `<CR>` still opens AND jumps to the
+      -- file; `<Tab>` still previews (open-file.lua returns to the tree when
+      -- api.node.open.edit is passed { focus = true }).
+      on_attach = function(bufnr)
+        local api = require("nvim-tree.api")
+        api.config.mappings.default_on_attach(bufnr)
+        vim.keymap.set("n", "o", function()
+          api.node.open.edit(api.tree.get_node_under_cursor(), { focus = true })
+        end, { desc = "nvim-tree: open (stay in tree)", buffer = bufnr, noremap = true, silent = true, nowait = true })
+      end,
       -- Follow the tab-local working directory: :tcd (and switching into a tab
       -- with a different local dir) fires DirChanged, which re-roots the tree.
       -- Pairs with the <leader>TP / :TabProject scoped-tab flow in core/keymaps.
@@ -142,7 +155,8 @@ return {
         {
           title = "OPEN / NAVIGATE",
           entries = {
-            { "<CR>  /  o",     "open file or toggle dir" },
+            { "<CR>",           "open file & jump to it (toggle dir)" },
+            { "o",              "open file, stay in tree (fan into buffers)" },
             { "<C-v>",          "open in vertical split" },
             { "<C-x>",          "open in horizontal split" },
             { "<C-t>",          "open in new tab" },
