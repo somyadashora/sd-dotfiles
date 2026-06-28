@@ -43,16 +43,25 @@ return {
 
     nvimtree.setup({
       -- Keep every default in-tree mapping, but make `o` open-and-stay: it loads
-      -- the file into a buffer and jumps the cursor straight back to the tree, so
+      -- the file into a buffer and hops the cursor straight back to the tree, so
       -- you can run down the list pressing `o` to fan several files into separate
       -- buffers without leaving the explorer. `<CR>` still opens AND jumps to the
-      -- file; `<Tab>` still previews (open-file.lua returns to the tree when
-      -- api.node.open.edit is passed { focus = true }).
+      -- file; `<Tab>` still previews.
+      --
+      -- We do NOT rely on api.node.open.edit's `focus` option — its meaning is
+      -- inconsistent across nvim-tree versions and didn't reliably return focus
+      -- here. Instead we remember the tree window, open the file (which moves the
+      -- cursor onto it), then explicitly jump back to the tree window ourselves.
       on_attach = function(bufnr)
         local api = require("nvim-tree.api")
         api.config.mappings.default_on_attach(bufnr)
         vim.keymap.set("n", "o", function()
-          api.node.open.edit(api.tree.get_node_under_cursor(), { focus = true })
+          local tree_win = vim.api.nvim_get_current_win()
+          api.node.open.edit(api.tree.get_node_under_cursor())
+          if vim.api.nvim_win_is_valid(tree_win)
+            and vim.api.nvim_get_current_win() ~= tree_win then
+            vim.api.nvim_set_current_win(tree_win)
+          end
         end, { desc = "nvim-tree: open (stay in tree)", buffer = bufnr, noremap = true, silent = true, nowait = true })
       end,
       -- Follow the tab-local working directory: :tcd (and switching into a tab
