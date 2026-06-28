@@ -40,8 +40,9 @@ onboarding cheat-card, and there's a full keymap cheatsheet a `<leader>fH` away.
 | `bash/`           | aliases & two switchable prompt styles                                |
 | `git/`            | git aliases + [delta](https://github.com/dandavison/delta) pager      |
 | `ai/skills/`      | portable AI-agent skills (RTL coding/style contracts, code review)    |
-| `installers/`     | tool installers for Linux & Termux                                    |
+| `installers/`     | tool installers for Linux, Termux & Windows                           |
 | `install.sh`      | symlinks everything into your home directory                          |
+| `install.ps1`     | Windows: junctions/copies `nvim/` into `%LOCALAPPDATA%\nvim`          |
 
 ## Requirements
 
@@ -70,6 +71,29 @@ nvim/           → ~/.config/nvim
 tmux/.tmux.conf → ~/.tmux.conf
 tmux/scripts/   → ~/.config/tmux/scripts
 ```
+
+### Windows (Neovim only)
+
+```powershell
+git clone <this-repo> $env:USERPROFILE\sd-dotfiles
+cd $env:USERPROFILE\sd-dotfiles
+.\install.ps1                              # junction nvim\ -> %LOCALAPPDATA%\nvim
+.\install.ps1 -Copy                        # …or copy the files instead of linking
+.\installers\install-windows-tools.ps1     # CLI tools (nvim, rg, fd, lazygit, …) via Scoop
+```
+
+`install.ps1` is the Windows counterpart to `install.sh` for the Neovim config.
+It creates a directory junction (no admin rights / Developer Mode needed), backs
+up any existing real config to `*.backup`, and is idempotent. tmux/bash aren't
+applicable on Windows.
+
+`install-windows-tools.ps1` mirrors `install-linux-tools.sh`: a no-admin,
+user-local install via [Scoop](https://scoop.sh) (bootstrapped if missing). It
+pulls neovim, git, lazygit, fzf, ripgrep, fd, bat, delta, tree-sitter, a C
+compiler (gcc), and the Meslo Nerd Font, plus a best-effort GitHub-release fetch
+of Verible (and slang-server, if a Windows build exists). `-Force` updates
+everything; `-SkipFonts` / `-SkipCompiler` skip those. Open a new terminal
+afterward so `~\scoop\shims` is on PATH.
 
 ---
 
