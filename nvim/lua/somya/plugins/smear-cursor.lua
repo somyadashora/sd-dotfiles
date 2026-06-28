@@ -209,18 +209,32 @@ return {
       vim.notify(cursor_colors[current_color_idx].name, vim.log.levels.INFO, { title = "cursor colour" })
     end, { desc = "Cursor: cycle colour" })
 
-    -- Toggle cursor blink (manual timer — guicursor blink is overridden by smear)
+    -- Toggle cursor blink. The REAL cursor blink is driven by 'guicursor'
+    -- (blinkwaitN-blinkoffN-blinkonN, set in core/options.lua) — NOT by smear,
+    -- despite the old assumption. On terminals that honour guicursor blink, the
+    -- cursor keeps blinking no matter what smear's overlay timer does. So flip
+    -- both: rewrite guicursor to blinkon0 (no native blink) AND stop the manual
+    -- timer; reverse to re-enable. saved_gc holds the blinking form while off,
+    -- so we restore exactly what was there (incl. smear's own guicursor bits).
+    local saved_gc = nil
     vim.keymap.set("n", "<leader>cb", function()
-      blink_on = not blink_on
       blink_gen = blink_gen + 1  -- invalidate any running cycle
-      if blink_on then
+      if saved_gc then
+        -- re-enable blink
+        vim.opt.guicursor = saved_gc
+        saved_gc = nil
+        blink_on = true
         blink_visible = true
         local gen = blink_gen
         vim.defer_fn(function() blink_cycle(gen) end, BLINK_WAIT)
       else
+        -- disable blink: kill native guicursor blink + the manual timer
+        saved_gc = vim.o.guicursor
+        vim.opt.guicursor = saved_gc:gsub("blinkwait%d+%-blinkoff%d+%-blinkon%d+", "blinkon0")
+        blink_on = false
         show_cursor()
       end
-      vim.notify(blink_on and "on" or "off", vim.log.levels.INFO, { title = "cursor blink" })
+      vim.notify(saved_gc and "off" or "on", vim.log.levels.INFO, { title = "cursor blink" })
     end, { desc = "Cursor: toggle blink" })
   end,
 }
