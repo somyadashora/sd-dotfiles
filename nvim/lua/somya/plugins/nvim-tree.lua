@@ -105,6 +105,27 @@ return {
       },
     })
 
+    -- nvim-tree records "open files in THIS window" in a single GLOBAL
+    -- (lib.target_winid), not per-tab, and its create-a-new-window check scans
+    -- nvim_list_wins() across ALL tabs. So a tab whose only window is the tree
+    -- has no usable window of its own and falls back to that global winid —
+    -- which points at the last tab you opened a file in. Result: pressing <CR>
+    -- on a file in tab A opens it over in tab B. Fix: whenever we enter a tab,
+    -- drop a stale cross-tab target. 0 makes nvim-tree split a fresh window in
+    -- the CURRENT tab; if the current tab already has a real (non-tree) window,
+    -- get_target_winid() picks that one regardless, so 0 is always safe here.
+    vim.api.nvim_create_autocmd({ "TabEnter", "TabNewEntered" }, {
+      callback = function()
+        local ok, lib = pcall(require, "nvim-tree.lib")
+        if not ok then return end
+        local id = lib.target_winid
+        if id and id ~= 0 and vim.api.nvim_win_is_valid(id)
+          and vim.api.nvim_win_get_tabpage(id) ~= vim.api.nvim_get_current_tabpage() then
+          lib.target_winid = 0
+        end
+      end,
+    })
+
     -- set keymaps
     local keymap = vim.keymap -- for conciseness
 
