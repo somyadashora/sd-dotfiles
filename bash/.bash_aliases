@@ -37,6 +37,19 @@ help() {
     "$@" --help 2>&1 | bathelp
 }
 
+# nvim-reg: print the contents of an nvim register from the shell. Registers
+# persist in the shada file when nvim exits, so this shows them from your last
+# session. -u NONE skips your config so plugin/startup noise stays out of the
+# output; the $(...)+printf gives exactly one trailing newline. Examples:
+#   nvim-reg        # the unnamed register "  (last yank/delete)
+#   nvim-reg 0      # the yank register
+#   nvim-reg a      # named register a
+nvim-reg() {
+    local reg="${1:-\"}" val
+    val=$(nvim --headless -u NONE -c "echo getreg('$reg')" -c 'q' 2>&1)
+    printf '%s\n' "$val"
+}
+
 batdiff() {
     git diff --name-only --relative --diff-filter=d -z | xargs -0 bat --diff
 }
