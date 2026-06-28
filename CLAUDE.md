@@ -124,9 +124,10 @@ on first use (`ensure_repo`: `mkdir -p` + `git init` + write `notes.md` if absen
 so no manual setup. All maps live under the `<leader>Z` ("+Notes") prefix. The
 headline pair is a jump-to-notes-tab / jump-back: `<leader>Zz` opens (or switches
 to) a dedicated **notes tab** — a new tab tagged with a tab-local `vim.t.is_notes_tab`
-flag plus a tab-local `name` var set to **"Notz"** — bufferline's right-side
-tabpage indicator renders that `name` var in place of the tab number, so the notes
-tab shows "Notz" there (Neovim tabs have no native name)), `tcd`-scoped to the
+flag plus a tab-local `name` var set to the vault's base dir name (**"sd-notes"**,
+via `fnamemodify(home, ":t")` — same convention as `:TabProject` tabs) — bufferline's
+right-side tabpage indicator renders that `name` var in place of the tab number, so
+the notes tab shows "sd-notes" there (Neovim tabs have no native name)), `tcd`-scoped to the
 vault, opening `notes.md`; `<leader>Zr` returns to the tab you
 came from (remembered tabpage handle). The rest are telekasten actions — `Zf` find,
 `Zs` search/grep, `Zn` new, `Zd` today's daily, `Zw` this week's weekly, `Zl`/`Zk`

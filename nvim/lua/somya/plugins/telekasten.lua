@@ -10,9 +10,10 @@
 --   <leader>Zz  jump to a dedicated notes TAB (open notes.md, scoped via :tcd)
 --   <leader>Zr  return to whatever tab you jumped from
 -- The notes tab is identified by a tab-local flag (vim.t.is_notes_tab) and
--- labeled "Notz" via the tab-local `name` var, which bufferline's right-side
--- tabpage indicator renders in place of the tab number (Neovim tabs have no
--- native name of their own).
+-- labeled with the vault's base dir name ("sd-notes") via the tab-local `name`
+-- var, which bufferline's right-side tabpage indicator renders in place of the
+-- tab number (Neovim tabs have no native name of their own) — same convention
+-- as :TabProject tabs.
 -- The rest are telekasten actions (find/search/links/daily/backlinks/panel) plus
 -- the calendar (calendar-vim) and a <leader>Z? help popup.
 
@@ -63,8 +64,9 @@ local function goto_notes()
     vim.cmd("tabnew")
     vim.t.is_notes_tab = true
     -- bufferline's tabpage indicator (right side) shows the tab-local `name` var
-    -- if set, else the tab number — so this labels the notes tab "Notz" there.
-    vim.t.name = "Notz"
+    -- if set, else the tab number. Label it with the vault's base dir name
+    -- ("sd-notes") — same convention as :TabProject tabs (fnamemodify cwd :t).
+    vim.t.name = vim.fn.fnamemodify(home, ":t")
     vim.cmd("tcd " .. vim.fn.fnameescape(home)) -- scope explorer/pickers to the vault
     vim.cmd("edit " .. vim.fn.fnameescape(notes_file))
   end
