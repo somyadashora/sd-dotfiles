@@ -113,6 +113,34 @@ function M.reconcile_pending()
   M.reconcile(layout)
 end
 
+-- Re-enable nvim-tree git integration (turned off in reconcile for the build) and
+-- repopulate it OFF the restore critical path: nvim-tree only loads a repo's git
+-- project during a full tree *explore* (Explorer:_load -> git.load_project), and a
+-- plain reload won't do it — so load each tab's project explicitly, then reload
+-- each tab's tree (without permanently switching tabs) to apply the status icons.
+local function refresh_tree_git(tree_cfg)
+  tree_cfg.g.git.enable = true
+  local ok_git, git = pcall(require, "nvim-tree.git")
+  local ok_api, api = pcall(require, "nvim-tree.api")
+  if not (ok_git and ok_api) then return end
+
+  -- Load the git project for each tab's (tab-local) cwd; populates the shared
+  -- _projects_by_toplevel that reload then reads from.
+  for _, tp in ipairs(vim.api.nvim_list_tabpages()) do
+    local nr = vim.api.nvim_tabpage_get_number(tp)
+    pcall(git.load_project, vim.fn.getcwd(-1, nr))
+  end
+  -- Apply the freshly-loaded status to every open tree, running reload in each
+  -- tree's own window/tab context (nvim_win_call) so no flicker / tab churn.
+  for _, tp in ipairs(vim.api.nvim_list_tabpages()) do
+    for _, w in ipairs(vim.api.nvim_tabpage_list_wins(tp)) do
+      if vim.bo[vim.api.nvim_win_get_buf(w)].filetype == "NvimTree" then
+        pcall(vim.api.nvim_win_call, w, function() pcall(api.tree.reload) end)
+      end
+    end
+  end
+end
+
 -- Rebuild the tab layout from scratch to exactly match the saved one.
 --
 -- We deliberately do NOT try to reuse / correlate whatever :mksession restored:
@@ -128,6 +156,22 @@ function M.reconcile(layout)
   if not (layout and layout.tabs and #layout.tabs > 0) then return end
 
   local api = package.loaded["nvim-tree"] and require("nvim-tree.api") or nil
+
+  -- nvim-tree runs `git status` SYNCHRONOUSLY for every tree it opens — GitRunner
+  -- blocks the UI loop in a vim.wait() spin until git returns or git.timeout (400ms)
+  -- elapses. Opening a tree in each of N tabs below fires N such jobs back-to-back
+  -- during the already-heavy restore (buffers loading, gitsigns attaching, theme
+  -- reload), so they starve, blow past 400ms, and after 5 timeouts nvim-tree warns
+  -- "git jobs have timed out … disabling git integration" — and <leader>wr feels
+  -- slow. Fix: build every tree with git OFF (instant), then re-enable it and
+  -- repopulate status off the critical path (refresh_tree_git, scheduled below).
+  -- The schedule is queued NOW (before the sync build) so git is restored even if
+  -- the build errors out; it runs on the next loop tick, after the build returns.
+  local tree_cfg = package.loaded["nvim-tree"] and require("nvim-tree.config") or nil
+  if tree_cfg and tree_cfg.g.git.enable then
+    tree_cfg.g.git.enable = false
+    vim.schedule(function() refresh_tree_git(tree_cfg) end)
+  end
 
   -- Collapse to a single tab, but DON'T reuse it to build the first saved tab:
   -- the leftover restore/launch tab carries odd state (a stale NvimTree buffer
