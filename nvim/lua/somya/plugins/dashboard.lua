@@ -207,7 +207,9 @@ return {
         end
         local stats = lazy.stats()
         local ms = math.floor((stats.startuptime or 0) * 100 + 0.5) / 100
-        footer.val = string.format("⚡ %d/%d plugins loaded in %sms", stats.loaded, stats.count, ms)
+        -- version + build id (somya.version derives it from git; see :SDVersion)
+        local ver = require("somya.version").summary()
+        footer.val = string.format("⚡ %d/%d plugins loaded in %sms   ·   %s", stats.loaded, stats.count, ms, ver)
         datenode.val = boxed(datetime()) -- refresh now that startup has settled
         pcall(vim.cmd, "AlphaRedraw")
       end,
