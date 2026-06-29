@@ -48,6 +48,7 @@ return {
       local accent = box_palette[ai]
       vim.api.nvim_set_hl(0, "SdNvimBox", { fg = "#11111b", bg = accent, bold = true })
       vim.api.nvim_set_hl(0, "SdNvimSub", { fg = accent, italic = true })
+      vim.api.nvim_set_hl(0, "SdNvimVer", { fg = accent, bold = true })
       vim.api.nvim_set_hl(0, "SdNvimFooter", { fg = accent, italic = true })
 
       -- whole-window background
@@ -121,6 +122,14 @@ return {
       opts = { position = "center", hl = "SdNvimSub" },
     }
 
+    -- Version + build id, right under the tagline (somya.version derives it from
+    -- git; see :SDVersion). Computed once here — git state doesn't change mid-session.
+    local versionnode = {
+      type = "text",
+      val = require("somya.version").summary(),
+      opts = { position = "center", hl = "SdNvimVer" },
+    }
+
     -- Table-form hl ({{group, 0, -1}}) so alpha offsets the highlight by the
     -- centering pad and the box hugs only the text — a string hl would paint
     -- from the left window edge instead.
@@ -183,6 +192,7 @@ return {
         header,
         { type = "padding", val = 1 },
         subheader,
+        versionnode,
         { type = "padding", val = 1 },
         datenode,
         infonode,
@@ -207,9 +217,7 @@ return {
         end
         local stats = lazy.stats()
         local ms = math.floor((stats.startuptime or 0) * 100 + 0.5) / 100
-        -- version + build id (somya.version derives it from git; see :SDVersion)
-        local ver = require("somya.version").summary()
-        footer.val = string.format("⚡ %d/%d plugins loaded in %sms   ·   %s", stats.loaded, stats.count, ms, ver)
+        footer.val = string.format("⚡ %d/%d plugins loaded in %sms", stats.loaded, stats.count, ms)
         datenode.val = boxed(datetime()) -- refresh now that startup has settled
         pcall(vim.cmd, "AlphaRedraw")
       end,
