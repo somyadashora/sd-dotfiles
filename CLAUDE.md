@@ -26,6 +26,15 @@ bash installers/install-termux-tools.sh  # tools for Termux (Android)
 Entry point: `nvim/init.lua` → `somya.core` + `somya.lazy`
 
 - `nvim/lua/somya/core/` — options, keymaps (leader = `<Space>`)
+- `nvim/lua/somya/core/abbreviations.lua` — insert-mode `:iabbrev`s for notes +
+  SV. Three groups, each shaped so they never expand against you: global **prose
+  typo fixes** (`teh→the`, …; safe because triggers are misspellings), global
+  **`x`-prefixed conveniences** (`xdate`/`xtime`/`xnow` via `<expr>`,
+  `xtodo`/`xfix`/`xnote` markers, `xsig`/`xmail`; the `x` shape rarely collides),
+  and **SV keyword typo fixes** (`lgoic→logic`, …) kept **buffer-local** to
+  `.sv`/`.svh` via a `FileType systemverilog` autocmd so they can't fire in
+  prose. Structural SV constructs stay in the LuaSnip sets — this file only
+  covers inline keywords + typos.
 - `nvim/lua/somya/plugins/dashboard.lua` — alpha-nvim start screen ("SD-NVIM",
   *nvim for Chip Design*) shown on `nvim` with no file args. Buttons run real
   actions (find/grep/explorer/`:Cheatsheet`/`:QfHelp`/Lazy) and display the
