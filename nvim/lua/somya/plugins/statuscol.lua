@@ -47,6 +47,7 @@ return {
       ft_ignore = {
         "alpha", "dashboard", "NvimTree", "neo-tree", "toggleterm", "lazy",
         "mason", "TelescopePrompt", "help", "qf", "trouble", "Outline", "aerial",
+        "BookmarksTree",
       },
       segments = {
         -- 1. fold column (ufo) on the far left

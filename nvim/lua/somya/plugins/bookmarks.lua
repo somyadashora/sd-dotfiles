@@ -23,6 +23,15 @@
 local MAUVE = "#cba6f7"   -- catppuccin Mauve — the repo's neon purple
 local LINE_BG = "#2a1d3d" -- dark mauve line background (repo toggleterm "purple" bg)
 
+-- Tree side-panel palette (catppuccin, mauve-tinted so it reads as a distinct
+-- "bookmarks panel" — a touch lighter than the dark editor, not just black).
+local PANEL_BG   = "#262234" -- lifted, faintly-purple panel background
+local PANEL_CL   = "#2f2a40" -- cursorline within the panel (a shade lighter)
+local ACTIVE_BAR = "#372e50" -- background bar behind the ACTIVE list row
+local LIST_NAME  = "#b4befe" -- catppuccin Lavender — list / folder names
+local ORDER_NUM  = "#7f849c" -- catppuccin Overlay1 — muted bookmark order prefix
+local NAME_TEXT  = "#cdd6f4" -- catppuccin Text — bookmark name / note text
+
 -- Help popup (reuses the cheatsheet float renderer, like telekasten's <leader>Z?).
 local function bookmarks_help()
   require("somya.cheatsheet").open({
@@ -92,6 +101,16 @@ return {
           line_bg = LINE_BG,
         },
       },
+      -- Tree view: color the ACTIVE list row mauve-bold on a subtle bar so the
+      -- current list pops. This is the plugin's own highlight hook (deep-merged,
+      -- so the tree keymaps/icon defaults are preserved); it re-applies each time
+      -- the tree opens. The rest of the panel styling is done window-locally in
+      -- the FileType autocmd below.
+      treeview = {
+        highlights = {
+          active_list = { fg = MAUVE, bg = ACTIVE_BAR, bold = true },
+        },
+      },
     })
 
     -- Re-apply our highlight groups. The plugin defines the sign / line hls once
@@ -103,6 +122,16 @@ return {
       vim.api.nvim_set_hl(0, "BookmarksNvimSign", { fg = MAUVE })
       vim.api.nvim_set_hl(0, "BookmarksNvimLine", { bg = LINE_BG })
       vim.api.nvim_set_hl(0, "BookmarksListIcon", { fg = MAUVE, bold = true })
+      -- Tree side-panel groups (winhighlight targets + content matches below).
+      vim.api.nvim_set_hl(0, "BookmarksPanel",    { bg = PANEL_BG })
+      vim.api.nvim_set_hl(0, "BookmarksPanelEob", { fg = PANEL_BG, bg = PANEL_BG }) -- hide ~ tildes
+      vim.api.nvim_set_hl(0, "BookmarksPanelCL",  { bg = PANEL_CL })
+      vim.api.nvim_set_hl(0, "BookmarksListName", { fg = LIST_NAME, bold = true })
+      vim.api.nvim_set_hl(0, "BookmarksOrder",    { fg = ORDER_NUM })
+      vim.api.nvim_set_hl(0, "BookmarksName",     { fg = NAME_TEXT })
+      -- Mirror the plugin's active-list hl so it survives a ColorScheme wipe
+      -- between tree opens (the plugin also re-applies it on each open).
+      vim.api.nvim_set_hl(0, "BookmarksTreeActiveList", { fg = MAUVE, bg = ACTIVE_BAR, bold = true })
     end
     apply_hl()
     vim.api.nvim_create_autocmd("ColorScheme", {
@@ -110,15 +139,67 @@ return {
       callback = apply_hl,
     })
 
-    -- Tree view: paint every list icon (fold markers ▸/▾ + the active-list icon
-    -- 󰮔) neon purple. The tree exposes no highlight group for these, so match them
-    -- in the BookmarksTree buffer. The active list's own line keeps its special
-    -- highlight — it's drawn as an extmark that wins over these window matches.
-    vim.api.nvim_create_autocmd("FileType", {
-      pattern = "BookmarksTree",
+    -- Tree view styling. The plugin ships no gutter cleanup, background, or
+    -- content highlighting, so we do it window-locally in the BookmarksTree
+    -- filetype (a fresh buffer+window each open, so matches don't leak or stack):
+    --   • drop the gutter — statuscol is told to ignore this ft (see
+    --     plugins/statuscol.lua), and we hard-off signcolumn/fold/number here too;
+    --   • lift the background to a mauve-tinted panel via winhighlight (contained
+    --     to this window — NormalNC keeps it lit when focus is in the code);
+    --   • color the content by row type. Patterns use \zs so they're disjoint:
+    --     the icons, a non-active list NAME (negative-lookahead skips the active
+    --     row so the plugin's mauve active-list hl shows through), the bookmark
+    --     order number, and the bookmark name/note text.
+    -- Hook BufWinEnter (not FileType): the plugin sets the buffer's filetype
+    -- BEFORE it's shown in a window, so at FileType time the current window is
+    -- still the code window — styling would land there. BufWinEnter fires when the
+    -- tree buffer actually enters its window (during the plugin's win_set_buf), so
+    -- the current window IS the tree. Guard on filetype since the pattern is "*".
+    vim.api.nvim_create_autocmd("BufWinEnter", {
+      pattern = "*",
       group = vim.api.nvim_create_augroup("SdBookmarksTree", { clear = true }),
       callback = function()
+        if vim.bo.filetype ~= "BookmarksTree" then return end
+        local w = vim.api.nvim_get_current_win()
+        vim.wo[w].signcolumn = "no"
+        vim.wo[w].foldcolumn = "0"
+        vim.wo[w].number = false
+        vim.wo[w].relativenumber = false
+        vim.wo[w].numberwidth = 1
+        vim.wo[w].wrap = false
+        vim.wo[w].cursorline = true
+        vim.wo[w].winhighlight = table.concat({
+          "Normal:BookmarksPanel",
+          "NormalNC:BookmarksPanel",
+          "EndOfBuffer:BookmarksPanelEob",
+          "CursorLine:BookmarksPanelCL",
+          "SignColumn:BookmarksPanel",
+        }, ",")
         pcall(vim.fn.matchadd, "BookmarksListIcon", "[▸▾󰮔]")
+        pcall(vim.fn.matchadd, "BookmarksListName", "[▾▸] \\%(󰮔\\)\\@!\\zs.*")
+        pcall(vim.fn.matchadd, "BookmarksOrder", "^\\s*\\zs\\d\\+: ")
+        pcall(vim.fn.matchadd, "BookmarksName", "^\\s*\\d\\+: \\zs.*")
+      end,
+    })
+
+    -- Fix :qa being blocked by a modified "[No Name]" buffer. The plugin's popups
+    -- (BookmarksInfo, and BookmarksDesc while open) are created as NORMAL, unnamed
+    -- buffers, filled with text (→ modified), and Info never sets buftype=nofile or
+    -- bufhidden=wipe — so after you view it, a modified [No Name] buffer lingers and
+    -- :qa errors (E162). Neutralize the plugin's popups: an unlisted + unnamed
+    -- markdown scratch buffer is always one of these (real .md files are listed and
+    -- named, so telekasten / render-markdown are untouched) — make it a wipe-on-hide
+    -- nofile buffer so it can't block quit and cleans itself up.
+    vim.api.nvim_create_autocmd("FileType", {
+      pattern = "markdown",
+      group = vim.api.nvim_create_augroup("SdBookmarksPopupFix", { clear = true }),
+      callback = function(ev)
+        if vim.bo[ev.buf].buflisted or vim.api.nvim_buf_get_name(ev.buf) ~= "" then
+          return -- a real markdown file, leave it alone
+        end
+        vim.bo[ev.buf].buftype = "nofile"
+        vim.bo[ev.buf].bufhidden = "wipe"
+        vim.bo[ev.buf].swapfile = false
       end,
     })
 

@@ -170,9 +170,17 @@ over code, `m?` help popup (reuses the cheatsheet float renderer). (The multi-cu
 plugin vim-visual-multi moved to `<leader>M` in the same swap.) The gutter mark, its full-line background,
 and the tree's list icons are all catppuccin **Mauve** (`#cba6f7` — the repo's neon
 purple) so a bookmark never blends with diagnostic/git/todo signs; these hls
-re-apply on `ColorScheme` (styler reloads schemes per filetype) and the tree icons
-are painted via a `matchadd` in the `BookmarksTree` filetype (the plugin exposes no
-group for them). `mv` toggles the sign/line-bg/inline-desc visuals by swapping the
+re-apply on `ColorScheme` (styler reloads schemes per filetype). The **tree
+side-panel** (`mt`) is styled window-locally on `BufWinEnter` (not `FileType` — the
+plugin sets the ft before the buffer is windowed, so `FileType`'s current window is
+still the code buffer): its gutter is dropped (`BookmarksTree` added to statuscol's
+`ft_ignore`, plus signcolumn/fold/number off), it gets a mauve-tinted lifted
+background via `winhighlight` (contained — `NormalNC` keeps it lit from the code
+window, and it can't leak since the tree buffer is wipe-on-close), and content is
+colored by row type via disjoint `\zs` `matchadd` patterns (mauve icons, lavender
+list names, muted order numbers, bright bookmark text; a negative-lookahead skips
+the active row so the plugin's own **active-list** hl — `treeview.highlights.active_list`,
+set to mauve-bold on a bar — shows through). `mv` toggles the sign/line-bg/inline-desc visuals by swapping the
 sign module's refresh fn (the plugin redraws signs on Win/Buf/InsertLeave, so a
 one-shot clean won't stick) — the DB is untouched, so bookmarks/lists persist while
 hidden. To keep
