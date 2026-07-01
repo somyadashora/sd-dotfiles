@@ -83,6 +83,7 @@ install_packages() {
     git \
     fd \
     tree-sitter \
+    sqlite \
     lua-language-server \
     clang \
     make \

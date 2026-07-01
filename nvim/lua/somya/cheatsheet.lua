@@ -20,6 +20,20 @@ local sections = {
     },
   },
   {
+    title = "BOOKMARKS  (bookmarks.nvim — persistent, SQLite; help: <leader>M?)",
+    entries = {
+      { "<leader>Mm",  "mark current line / rename bookmark" },
+      { "<leader>Mo",  "go to a bookmark in the active list (picker)" },
+      { "<leader>Md",  "add / edit description on bookmark" },
+      { "<leader>Mc",  "command palette — every bookmark action" },
+      { "<leader>Mv",  "toggle bookmark signs over code (show / hide)" },
+      { "<leader>Mt",  "toggle tree view of all lists / bookmarks" },
+      { "<leader>Ml  /  Mn", "select active list / new list" },
+      { "<leader>Ms",  "grep across bookmarked files" },
+      { "<leader>M]  /  M[", "next / prev bookmark" },
+    },
+  },
+  {
     title = "JUMPLIST",
     entries = {
       { "<C-o>  /  <C-i>",  "jump back / forward through jumplist" },

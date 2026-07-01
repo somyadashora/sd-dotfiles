@@ -155,6 +155,33 @@ source for editing. Lazy-loaded on `ft = markdown`, depends on treesitter's
 (`enabled = true`) for every markdown buffer; `<leader>um` toggles rendering
 (under the `<leader>u` "+UI / Theme" group). Pairs with the telekasten vault.
 
+**Bookmarks** (`nvim/lua/somya/plugins/bookmarks.lua`): bookmarks.nvim
+(LintaoAmons) — **persistent**, SQLite-backed bookmarks that survive across
+sessions, carry names/descriptions, group into named lists, and are browsable via
+Telescope (`picker_backend = "telescope"`), a tree view, or grep. A richer
+complement to the ephemeral `'a`-style marks from marks.nvim. **All maps live under
+`<leader>M` ("+Bookmarks")** — deliberately **off** the bare-`m` prefix that
+marks.nvim owns (its own recommended `mm/mo/ma/md` would collide), so the two never
+conflict: `Mm` mark/rename, `Mo` goto (picker), `Md` describe, `Mc` command palette
+(exposes every action — the fallback if a command name drifts between versions),
+`Mt` tree, `Ml`/`Mn` select/new list, `Ms` grep bookmarked files, `Mi` info,
+`M]`/`M[` next/prev, `Mv` toggle the bookmark visuals over code, `M?` help popup
+(reuses the cheatsheet float renderer). The gutter mark, its full-line background,
+and the tree's list icons are all catppuccin **Mauve** (`#cba6f7` — the repo's neon
+purple) so a bookmark never blends with diagnostic/git/todo signs; these hls
+re-apply on `ColorScheme` (styler reloads schemes per filetype) and the tree icons
+are painted via a `matchadd` in the `BookmarksTree` filetype (the plugin exposes no
+group for them). `Mv` toggles the sign/line-bg/inline-desc visuals by swapping the
+sign module's refresh fn (the plugin redraws signs on Win/Buf/InsertLeave, so a
+one-shot clean won't stick) — the DB is untouched, so bookmarks/lists persist while
+hidden. To keep
+bookmarks.nvim the single "bookmark" concept, **marks.nvim's own overlapping
+numbered-bookmark feature (`m0`-`m9`, `m}`/`m{`, `dm=`, annotate) is disabled** in
+`marks.lua` via its `mappings` table (regular letter marks stay). The SQLite DB sits
+per-machine at `stdpath("data")/bookmarks.sqlite.db` (never pushed — same philosophy
+as the telekasten vault); back it up before a major-version upgrade (spec pins
+`^4.0.0`). Requires `kkharji/sqlite.lua` + the system `libsqlite3` at runtime.
+
 **SystemVerilog LSP**: two servers are configured — `verible` (Mason-installed) and
 `slang-server` (`~/.local/bin/slang-server`). Only one should be active at a time;
 switch with `:UseVerible` / `:UseSlang`.

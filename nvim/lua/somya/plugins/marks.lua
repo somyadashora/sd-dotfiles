@@ -1,8 +1,30 @@
+-- marks.nvim's OWN numbered-bookmark feature (m0-m9, m}/m{, dm=, annotate)
+-- overlaps with bookmarks.nvim (see plugins/bookmarks.lua), which is now the
+-- single "bookmark" concept — persistent, named, list-organized, under <leader>M.
+-- Disable every bookmark-group mapping here so the two don't collide conceptually;
+-- regular letter marks (mx, m,, m;, m], m[, dm*) and `builtin_marks` stay.
+local function disable_bookmark_mappings()
+  local m = {
+    delete_bookmark = false, -- dm=
+    next_bookmark = false,   -- m}
+    prev_bookmark = false,   -- m{
+    annotate = false,
+  }
+  for i = 0, 9 do
+    m["set_bookmark" .. i] = false    -- m0-m9
+    m["delete_bookmark" .. i] = false -- dm0-dm9
+    m["next_bookmark" .. i] = false
+    m["prev_bookmark" .. i] = false
+  end
+  return m
+end
+
 return {
     "chentoast/marks.nvim",
     event = "VeryLazy",
     opts = {
       default_mappings = true,
+      mappings = disable_bookmark_mappings(),
       -- Trimmed: dropped [ ] ^ . so they don't crowd the 2-slot left sign
       -- column (shared with diagnostics/TODO; git has its own column via
       -- statuscol). The marks still work for jumping (`[, `], etc), they just
@@ -24,11 +46,6 @@ return {
     -- m[              Move to previous mark
     -- m:              Preview mark. This will prompt you for a specific mark to
     --                 preview; press <cr> to preview the next mark.
-                    
-    -- m[0-9]          Add a bookmark from bookmark group[0-9].
-    -- dm[0-9]         Delete all bookmarks from bookmark group[0-9].
-    -- m}              Move to the next bookmark having the same type as the bookmark under
-    --                 the cursor. Works across buffers.
-    -- m{              Move to the previous bookmark having the same type as the bookmark under
-    --                 the cursor. Works across buffers.
-    -- dm=             Delete the bookmark under the cursor.
+    --
+    -- (marks.nvim's m0-m9 / m} / m{ / dm= bookmark GROUPS are disabled above —
+    -- persistent bookmarks now live in bookmarks.nvim under <leader>M.)
