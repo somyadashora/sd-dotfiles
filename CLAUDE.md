@@ -180,7 +180,10 @@ window, and it can't leak since the tree buffer is wipe-on-close), and content i
 colored by row type via disjoint `\zs` `matchadd` patterns (mauve icons, lavender
 list names, muted order numbers, bright bookmark text; a negative-lookahead skips
 the active row so the plugin's own **active-list** hl — `treeview.highlights.active_list`,
-set to mauve-bold on a bar — shows through). `mv` toggles the sign/line-bg/inline-desc visuals by swapping the
+set to mauve-bold on a bar — shows through). The tree also gets a custom **`K`** key
+(via `treeview.keymap`, deep-merged so the defaults stay) that shows the bookmark's
+**description** in a markdown hover float — the built-in `i` only lists metadata, and
+descriptions (added with `md`) aren't otherwise visible in the tree. `mv` toggles the sign/line-bg/inline-desc visuals by swapping the
 sign module's refresh fn (the plugin redraws signs on Win/Buf/InsertLeave, so a
 one-shot clean won't stick) — the DB is untouched, so bookmarks/lists persist while
 hidden. To keep

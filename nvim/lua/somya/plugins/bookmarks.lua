@@ -54,6 +54,8 @@ local function bookmarks_help()
         { "<leader>m[",  "go to previous bookmark" },
         { "── inside the tree view ──", "" },
         { "o",           "toggle fold / go to bookmark" },
+        { "K",           "show this bookmark's description (hover)" },
+        { "i  /  P",     "node info (metadata) / preview file" },
         { "a  /  D  /  r", "new list / delete node / rename node" },
         { "g  /  ?",      "go to bookmark location / help panel" },
         { "── storage (per-machine, never pushed) ──", "" },
@@ -65,6 +67,28 @@ local function bookmarks_help()
     max_width = 82,
     key_col = 16,
     sep_width = 78,
+  })
+end
+
+-- Tree action: show the description of the bookmark under the cursor as a "hover".
+-- The tree's built-in `i` (show_info) only lists metadata (id/path/dates); the
+-- description you add with `<leader>md` isn't shown anywhere in the tree. Custom
+-- tree actions receive the full node, so render node.description (markdown) in a
+-- floating preview that closes on cursor move. On a list row / description-less
+-- bookmark, just say so.
+local function show_bookmark_desc(node)
+  local desc = node and node.description
+  if not desc or desc:gsub("%s", "") == "" then
+    vim.notify("No description on this bookmark — add one with <leader>md on its line",
+      vim.log.levels.INFO, { title = "Bookmarks" })
+    return
+  end
+  vim.lsp.util.open_floating_preview(vim.split(desc, "\n", { plain = true }), "markdown", {
+    border = "rounded",
+    focusable = true,
+    max_width = math.floor(vim.o.columns * 0.6),
+    max_height = math.floor(vim.o.lines * 0.6),
+    title = " " .. ((node.name and node.name ~= "") and node.name or "bookmark") .. " — description ",
   })
 end
 
@@ -109,6 +133,11 @@ return {
       treeview = {
         highlights = {
           active_list = { fg = MAUVE, bg = ACTIVE_BAR, bold = true },
+        },
+        -- Add `K` (hover) to show the bookmark's description — deep-merged, so all
+        -- the default tree keys are kept. The built-in `i` only shows metadata.
+        keymap = {
+          ["K"] = { action = show_bookmark_desc, desc = "Show this bookmark's description" },
         },
       },
     })
