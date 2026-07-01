@@ -20,12 +20,37 @@ return {
     local actions = require("telescope.actions")
     local action_state = require("telescope.actions.state")
 
+    -- Never open a picked file into a NON-file window. If the picker was launched
+    -- from a sidebar (aerial, BookmarksTree, NvimTree, quickfix, a float, …), those
+    -- windows have a non-empty 'buftype' (or are floating), so opening there would
+    -- clobber the outline/tree. `file_window` returns a real editor window instead:
+    -- prefer the given one, else any normal window, else make a vsplit so a sidebar
+    -- is never replaced. Used by get_selection_window (single open) below and by
+    -- the multi-select handler (which edits directly). This filetype-agnostic check
+    -- covers current and future side panels automatically.
+    local function usable_win(win)
+      if not win or not vim.api.nvim_win_is_valid(win) then return false end
+      if vim.api.nvim_win_get_config(win).relative ~= "" then return false end -- floating
+      return vim.bo[vim.api.nvim_win_get_buf(win)].buftype == ""
+    end
+    local function file_window(preferred)
+      if usable_win(preferred) then return preferred end
+      for _, win in ipairs(vim.api.nvim_list_wins()) do
+        if usable_win(win) then return win end
+      end
+      vim.cmd("vsplit") -- only sidebars/floats are open — make an editor window
+      return vim.api.nvim_get_current_win()
+    end
+
     -- Open ALL Tab-marked entries on <CR>; fall back to default for a single entry
     local function select_one_or_multi(prompt_bufnr)
       local picker = action_state.get_current_picker(prompt_bufnr)
       local multi = picker:get_multi_selection()
       if not vim.tbl_isempty(multi) then
         actions.close(prompt_bufnr)
+        -- close() restores focus to the launch window; make sure it's an editor
+        -- window (not the sidebar we opened the picker from) before editing.
+        vim.api.nvim_set_current_win(file_window(vim.api.nvim_get_current_win()))
         for _, entry in ipairs(multi) do
           local fname = entry.path or entry.filename
           if fname then
@@ -60,6 +85,10 @@ return {
 
     telescope.setup({
       defaults = {
+        -- Route single-file opens away from sidebars/floats (see file_window).
+        get_selection_window = function(picker, _)
+          return file_window(picker and picker.original_win_id)
+        end,
         dynamic_preview_title = true,
         layout_strategy = "horizontal",
         layout_config = {
