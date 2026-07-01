@@ -146,6 +146,15 @@ today/redisplay/close), `Zp` panel — plus `Z?`, a help popup that reuses the
 cheatsheet float renderer (`somya.cheatsheet` now `return`s `{ open, open_grid }`
 so other modules can render help with the same look).
 
+**Markdown rendering** (`nvim/lua/somya/plugins/render-markdown.lua`):
+render-markdown.nvim renders Markdown in-buffer as virtual text (heading pills,
+bullet glyphs, code-block backgrounds, aligned tables, checkboxes, callouts) —
+the file itself is never modified, and the cursor's line un-renders to raw
+source for editing. Lazy-loaded on `ft = markdown`, depends on treesitter's
+`markdown`/`markdown_inline` parsers + nvim-web-devicons. Starts **on**
+(`enabled = true`) for every markdown buffer; `<leader>um` toggles rendering
+(under the `<leader>u` "+UI / Theme" group). Pairs with the telekasten vault.
+
 **SystemVerilog LSP**: two servers are configured — `verible` (Mason-installed) and
 `slang-server` (`~/.local/bin/slang-server`). Only one should be active at a time;
 switch with `:UseVerible` / `:UseSlang`.
