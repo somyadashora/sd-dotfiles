@@ -21,70 +21,70 @@ for _, key in ipairs(arrow_keys) do
 end
 
 -- Insert-mode STICKY cursor movement. Press <C-g> ONCE, then <C-h>/<C-j>/<C-k>/
--- <C-l> repeat freely to move left/down/up/right — you stay in insert mode the
--- whole time and never re-press <C-g> (so 5-left is <C-g><C-h><C-h><C-h><C-h>
--- <C-h>, or <C-g>5<C-h> with a count). Any OTHER key exits the sub-mode and is
--- handled normally: it's replayed (mode "m", so it still remaps), so the
--- keystroke isn't lost — a letter resumes typing, <Esc> drops to normal, <Tab>
--- still expands cmp/snippets. Movement uses the Ctrl-hjkl chord (not bare hjkl)
--- so you keep Ctrl held down while tapping the direction.
+-- <C-l> move left/down/up/right and REPEAT freely — you stay in insert mode and
+-- never re-press <C-g>. The moment you type any other character (or leave insert
+-- mode) the sub-mode ends and that key is handled normally.
 --
 -- The arrow keys are disabled above and Vim has no native Ctrl-hjkl movement in
 -- insert mode, so this fills that gap. <C-g> is a good host: bare <C-g> only
 -- prints the file name and has no completion sub-mode (no timeout ambiguity like
 -- <C-x>), and it's a clean control code — no Alt/Esc-prefix, no tmux M-hjkl clash
--- (Alt+hjkl navigates panes, see tmux/.tmux.conf). Implemented as a getcharstr()
--- loop (the which-key / operator-pending pattern) so "everything except hjkl
--- exits" is expressible; movement is direct cursor math, pcall-guarded for
--- multibyte safety and clamped to line ends (insert mode's one-past-EOL allowed).
-local function insert_sticky_move()
-  local function move(dir, n)
-    for _ = 1, n do
-      local pos = vim.api.nvim_win_get_cursor(0) -- {row (1-idx), col (0-idx byte)}
-      local row, col = pos[1], pos[2]
-      if dir == "h" then
-        col = math.max(col - 1, 0)
-      elseif dir == "l" then
-        col = math.min(col + 1, #vim.api.nvim_get_current_line()) -- allow 1 past EOL
-      else -- j / k: clamp col to the destination line's length
-        local nlines = vim.api.nvim_buf_line_count(0)
-        row = dir == "j" and math.min(row + 1, nlines) or math.max(row - 1, 1)
-        local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1] or ""
-        col = math.min(col, #line)
-      end
-      pcall(vim.api.nvim_win_set_cursor, 0, { row, col })
-    end
-  end
-
-  -- Ctrl-hjkl chords keyed by their raw control bytes (<C-h>=0x08, <C-j>=0x0a,
-  -- <C-k>=0x0b, <C-l>=0x0c), which is exactly what getcharstr() returns for them.
-  local dirs = {
-    [vim.keycode("<C-h>")] = "h",
-    [vim.keycode("<C-j>")] = "j",
-    [vim.keycode("<C-k>")] = "k",
-    [vim.keycode("<C-l>")] = "l",
-  }
-  local hint = { { "-- MOVE  <C-h/j/k/l> move · digits count · any other key exits --", "ModeMsg" } }
-  local count = ""
-  while true do
-    vim.api.nvim_echo(hint, false, {})
-    vim.cmd("redraw")
-    local ok, ch = pcall(vim.fn.getcharstr)
-    if not ok then break end -- <C-c> / interrupt
-    if dirs[ch] then
-      move(dirs[ch], math.max(tonumber(count) or 1, 1))
-      count = ""
-    elseif ch:match("%d") and not (count == "" and ch == "0") then
-      count = count .. ch -- accumulate a count prefix (a leading 0 falls through → exits)
-    else
-      vim.api.nvim_echo({ { "" } }, false, {}) -- clear the hint
-      vim.api.nvim_feedkeys(ch, "m", false) -- replay the exit key so it's handled normally
-      return
-    end
-  end
-  vim.api.nvim_echo({ { "" } }, false, {}) -- clear the hint on interrupt too
+-- (Alt+hjkl navigates panes, see tmux/.tmux.conf).
+--
+-- Implemented with TRANSIENT buffer-local maps, NOT a getcharstr() loop: looping
+-- on getcharstr() inside an insert-mode mapping never returns until you exit, so
+-- Neovim can't draw the insert cursor at its real column during the wait — it
+-- parks at col 0 / the command line (the "cursor jumped to the bottom" bug). Real
+-- maps dispatch normally, so the cursor tracks live. A vim.on_key watcher tears
+-- the maps down on the first non-movement key (restoring <C-j>/<C-k> for cmp and
+-- <C-h> for backspace); an autocmd covers leaving insert mode / the buffer. RHS
+-- is the built-in arrow (noremap), so the <Nop> arrow maps above don't eat these.
+local sticky = {
+  active = false,
+  buf = nil,
+  ns = vim.api.nvim_create_namespace("insert_sticky_move"),
+  aug = vim.api.nvim_create_augroup("InsertStickyMove", { clear = true }),
+}
+local sticky_rhs = { ["<C-h>"] = "<Left>", ["<C-j>"] = "<Down>", ["<C-k>"] = "<Up>", ["<C-l>"] = "<Right>" }
+-- Raw bytes for the keys that KEEP the sub-mode alive (the four moves + <C-g>).
+local sticky_keep = {}
+for _, k in ipairs({ "<C-h>", "<C-j>", "<C-k>", "<C-l>", "<C-g>" }) do
+  sticky_keep[vim.keycode(k)] = true
 end
-keymap.set("i", "<C-g>", insert_sticky_move, { desc = "Insert-mode sticky hjkl movement" })
+
+local function sticky_stop()
+  if not sticky.active then return end
+  sticky.active = false
+  vim.on_key(nil, sticky.ns) -- remove the watcher
+  vim.api.nvim_clear_autocmds({ group = sticky.aug })
+  for lhs in pairs(sticky_rhs) do
+    pcall(vim.keymap.del, "i", lhs, { buffer = sticky.buf })
+  end
+  sticky.buf = nil
+end
+
+local function sticky_start()
+  if sticky.active then return end
+  sticky.active = true
+  sticky.buf = vim.api.nvim_get_current_buf()
+  for lhs, rhs in pairs(sticky_rhs) do
+    keymap.set("i", lhs, rhs, { buffer = sticky.buf, desc = "Sticky move " .. rhs:sub(2, -2):lower() })
+  end
+  -- End on the first user-typed key that isn't a move chord. Keys emitted BY our
+  -- own maps arrive with typed == "" and are ignored. on_key is a fast context
+  -- (deleting maps / clearing the watcher there isn't allowed), so defer teardown.
+  vim.on_key(function(_, typed)
+    if typed and typed ~= "" and not sticky_keep[typed] then
+      vim.schedule(sticky_stop)
+    end
+  end, sticky.ns)
+  vim.api.nvim_create_autocmd({ "InsertLeave", "BufLeave" }, {
+    group = sticky.aug,
+    buffer = sticky.buf,
+    callback = sticky_stop,
+  })
+end
+keymap.set("i", "<C-g>", sticky_start, { desc = "Insert-mode sticky hjkl movement" })
 
 keymap.set("n", "<leader>nh", ":nohl<CR>", { desc = "Clear search highlights"})
 
