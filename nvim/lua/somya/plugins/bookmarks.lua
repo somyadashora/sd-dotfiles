@@ -4,17 +4,17 @@
 -- SQLite-backed bookmarks that survive across sessions, carry names/descriptions,
 -- group into named lists, and are browsable via Telescope, a tree view, or grep.
 --
--- CONFLICT NOTE (why everything is under <leader>M): the plugin's own recommended
--- maps (mm/mo/ma/md) sit on the bare `m` prefix, which marks.nvim owns (mx, m,,
--- m], m[, dm*, …). So every binding here lives under <leader>M ("+Bookmarks")
--- instead — off the `m` prefix entirely, no collision. marks.nvim's OWN
--- overlapping numbered-bookmark feature (m0-m9, m}/m{, dm=) is disabled in
--- marks.lua so bookmarks.nvim is the single "bookmark" concept.
+-- CONFLICT NOTE (why <leader>m and not bare m): the plugin's own recommended maps
+-- (mm/mo/ma/md) sit on the BARE `m` prefix, which marks.nvim owns (mx, m,, m], m[,
+-- dm*, …). Every binding here lives under <leader>m ("+Bookmarks") — that's
+-- Space-then-m, a different namespace from the bare `m`, so the two never collide.
+-- marks.nvim's OWN overlapping numbered-bookmark feature (m0-m9, m}/m{, dm=) is
+-- disabled in marks.lua so bookmarks.nvim is the single "bookmark" concept.
 --
 -- LOOK: the gutter mark, its full-line background, and the tree's list icons are
 -- all catppuccin Mauve (#cba6f7 — the repo's "neon purple", also used by lualine /
 -- toggleterm / dashboard) so a bookmark never gets confused with a diagnostic or
--- git sign. <leader>Mv toggles all of that over the code without touching the DB.
+-- git sign. <leader>mv toggles all of that over the code without touching the DB.
 --
 -- Storage: a per-machine SQLite DB at stdpath("data")/bookmarks.sqlite.db (never
 -- pushed) — same per-machine philosophy as the telekasten vault. Needs sqlite.lua
@@ -27,22 +27,22 @@ local LINE_BG = "#2a1d3d" -- dark mauve line background (repo toggleterm "purple
 local function bookmarks_help()
   require("somya.cheatsheet").open({
     {
-      title = "BOOKMARKS  (<leader>M — bookmarks.nvim, persistent/SQLite)",
+      title = "BOOKMARKS  (<leader>m — bookmarks.nvim, persistent/SQLite)",
       entries = {
-        { "<leader>Mm",  "mark current line / rename bookmark (n,v)" },
-        { "<leader>Mo",  "go to a bookmark in the active list (picker)" },
-        { "<leader>Md",  "add / edit description on bookmark under cursor" },
-        { "<leader>Mc",  "command palette — every bookmark action" },
-        { "<leader>Mv",  "toggle bookmark signs over code (show / hide)" },
+        { "<leader>mm",  "mark current line / rename bookmark (n,v)" },
+        { "<leader>mo",  "go to a bookmark in the active list (picker)" },
+        { "<leader>md",  "add / edit description on bookmark under cursor" },
+        { "<leader>mc",  "command palette — every bookmark action" },
+        { "<leader>mv",  "toggle bookmark signs over code (show / hide)" },
         { "── lists & views ──", "" },
-        { "<leader>Mt",  "toggle tree view (open / close from anywhere)" },
-        { "<leader>Ml",  "select the active list" },
-        { "<leader>Mn",  "create a new list" },
-        { "<leader>Ms",  "grep across bookmarked files" },
-        { "<leader>Mi",  "plugin status / DB info" },
+        { "<leader>mt",  "toggle tree view (open / close from anywhere)" },
+        { "<leader>ml",  "select the active list" },
+        { "<leader>mn",  "create a new list" },
+        { "<leader>ms",  "grep across bookmarked files" },
+        { "<leader>mi",  "plugin status / DB info" },
         { "── navigate ──", "" },
-        { "<leader>M]",  "go to next bookmark" },
-        { "<leader>M[",  "go to previous bookmark" },
+        { "<leader>m]",  "go to next bookmark" },
+        { "<leader>m[",  "go to previous bookmark" },
         { "── inside the tree view ──", "" },
         { "o",           "toggle fold / go to bookmark" },
         { "a  /  D  /  r", "new list / delete node / rename node" },
@@ -72,9 +72,9 @@ return {
     "BookmarksInfo", "BookmarksGotoNext", "BookmarksGotoPrev",
   },
   keys = {
-    "<leader>Mm", "<leader>Mo", "<leader>Md", "<leader>Mc", "<leader>Mv",
-    "<leader>Mt", "<leader>Ml", "<leader>Mn", "<leader>Ms", "<leader>Mi",
-    "<leader>M]", "<leader>M[", "<leader>M?",
+    "<leader>mm", "<leader>mo", "<leader>md", "<leader>mc", "<leader>mv",
+    "<leader>mt", "<leader>ml", "<leader>mn", "<leader>ms", "<leader>mi",
+    "<leader>m]", "<leader>m[", "<leader>m?",
   },
   config = function()
     require("bookmarks").setup({
@@ -175,19 +175,19 @@ return {
       vim.keymap.set(visual and { "n", "v" } or "n", lhs, rhs, { desc = desc })
     end
 
-    map("<leader>Mm", "<cmd>BookmarksMark<cr>",     "Bookmarks: mark / rename line", true)
-    map("<leader>Mo", "<cmd>BookmarksGoto<cr>",     "Bookmarks: go to bookmark", true)
-    map("<leader>Md", "<cmd>BookmarksDesc<cr>",     "Bookmarks: add description", true)
-    map("<leader>Mc", "<cmd>BookmarksCommands<cr>", "Bookmarks: command palette")
-    map("<leader>Mv", toggle_visibility,            "Bookmarks: toggle sign visibility")
-    map("<leader>Mt", toggle_tree,                  "Bookmarks: toggle tree view")
-    map("<leader>Ml", "<cmd>BookmarksLists<cr>",    "Bookmarks: select active list")
-    map("<leader>Mn", "<cmd>BookmarksNewList<cr>",  "Bookmarks: new list")
-    map("<leader>Ms", "<cmd>BookmarksGrep<cr>",     "Bookmarks: grep bookmarked files")
-    map("<leader>Mi", "<cmd>BookmarksInfo<cr>",     "Bookmarks: info / status")
-    map("<leader>M]", "<cmd>BookmarksGotoNext<cr>", "Bookmarks: next bookmark")
-    map("<leader>M[", "<cmd>BookmarksGotoPrev<cr>", "Bookmarks: prev bookmark")
+    map("<leader>mm", "<cmd>BookmarksMark<cr>",     "Bookmarks: mark / rename line", true)
+    map("<leader>mo", "<cmd>BookmarksGoto<cr>",     "Bookmarks: go to bookmark", true)
+    map("<leader>md", "<cmd>BookmarksDesc<cr>",     "Bookmarks: add description", true)
+    map("<leader>mc", "<cmd>BookmarksCommands<cr>", "Bookmarks: command palette")
+    map("<leader>mv", toggle_visibility,            "Bookmarks: toggle sign visibility")
+    map("<leader>mt", toggle_tree,                  "Bookmarks: toggle tree view")
+    map("<leader>ml", "<cmd>BookmarksLists<cr>",    "Bookmarks: select active list")
+    map("<leader>mn", "<cmd>BookmarksNewList<cr>",  "Bookmarks: new list")
+    map("<leader>ms", "<cmd>BookmarksGrep<cr>",     "Bookmarks: grep bookmarked files")
+    map("<leader>mi", "<cmd>BookmarksInfo<cr>",     "Bookmarks: info / status")
+    map("<leader>m]", "<cmd>BookmarksGotoNext<cr>", "Bookmarks: next bookmark")
+    map("<leader>m[", "<cmd>BookmarksGotoPrev<cr>", "Bookmarks: prev bookmark")
 
-    map("<leader>M?", bookmarks_help, "Bookmarks: help popup")
+    map("<leader>m?", bookmarks_help, "Bookmarks: help popup")
   end,
 }

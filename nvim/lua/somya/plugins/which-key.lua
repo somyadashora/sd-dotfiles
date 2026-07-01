@@ -36,8 +36,8 @@ return {
       { "<leader>f", group = "Find" }, -- telescope
       { "<leader>h", group = "Git hunks" }, -- gitsigns stage/reset/preview/blame
       { "<leader>l", group = "Lint & LazyGit" },
-      { "<leader>M", group = "Bookmarks" }, -- bookmarks.nvim (persistent, off bare `m`)
-      { "<leader>m", group = "Multi-cursor" }, -- vim-visual-multi
+      { "<leader>M", group = "Multi-cursor" }, -- vim-visual-multi
+      { "<leader>m", group = "Bookmarks" }, -- bookmarks.nvim (Space-m; bare `m` is marks.nvim)
       { "<leader>n", group = "Minimap & search" },
       { "<leader>o", group = "Outline" }, -- aerial symbol outline
       { "<leader>q", group = "Quickfix" },

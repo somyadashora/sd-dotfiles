@@ -39,14 +39,18 @@ return {
 			--     },
 		})
 
-		-- General format keybinding (works with visual selection or whole file)
-		vim.keymap.set({ "n", "v" }, "<leader>mf", function()
+		-- General format keybinding (works with visual selection or whole file).
+		-- Picks the formatter for the current filetype (prettier/stylua/black/…,
+		-- verible for SV), falling back to the LSP formatter if none is configured.
+		-- Pairs with <leader>vf below, which always forces Verible. (Lives under the
+		-- <leader>v "LSP / Code" group — uppercase F to sit beside lowercase vf.)
+		vim.keymap.set({ "n", "v" }, "<leader>vF", function()
 			conform.format({
 				lsp_fallback = true,
 				async = false,
 				timeout_ms = 1000,
 			})
-		end, { desc = "Format file or range (in visual mode)" })
+		end, { desc = "Format file/range (auto formatter, LSP fallback)" })
 
 		-- Dedicated Verible format and align keybinding
 		vim.keymap.set({ "n", "v" }, "<leader>vf", function()

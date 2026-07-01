@@ -299,7 +299,7 @@ keymap.set("n", "<leader>qx", function()
   vim.fn.setqflist({}, "r") -- empty the current list (keeps its slot in the stack)
 end, { desc = "Clear quickfix list" })
 -- Format every FILE referenced in the quickfix list (once per file), then save.
--- This is the qf-wide counterpart to <leader>vf / <leader>mf (single buffer).
+-- This is the qf-wide counterpart to <leader>vf / <leader>vF (single buffer).
 -- Generic per-entry/per-file commands stay manual via :cdo / :cfdo.
 keymap.set("n", "<leader>qF", function()
   if vim.tbl_isempty(vim.fn.getqflist()) then

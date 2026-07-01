@@ -1,7 +1,7 @@
 -- ══════════════════════════════════════════════════════════════════════════════
 -- PLUGIN: vim-visual-multi  (mg979/vim-visual-multi)
 -- Multiple cursors for Neovim — think VS Code Ctrl+D, but with Vim superpowers.
--- Quick help: <leader>mh    Full docs: :help visual-multi
+-- Quick help: <leader>Mh    Full docs: :help visual-multi
 -- ══════════════════════════════════════════════════════════════════════════════
 --
 -- ── CORE CONCEPT ─────────────────────────────────────────────────────────────
@@ -34,7 +34,7 @@
 --   5. Type the new name → it appears at all cursors simultaneously.
 --   6. Press <Esc> to finish. VM exits automatically.
 --
---   TIP: Press <leader>ma instead of repeating <C-n> to select ALL occurrences
+--   TIP: Press <leader>Ma instead of repeating <C-n> to select ALL occurrences
 --        in the file in one shot, then edit.
 --
 -- ── WORKFLOW 2: add a cursor on every line in a range ────────────────────────
@@ -125,7 +125,7 @@
 --   • <C-n> on a word with no more matches still exits gracefully.
 --
 --   • For full docs run:  :help visual-multi
---     For an interactive tutorial press  <leader>mt  — opens in a new tab.
+--     For an interactive tutorial press  <leader>Mt  — opens in a new tab.
 --     (Or from your shell: nvim -Nu ~/.local/share/nvim/lazy/vim-visual-multi/tutorialrc)
 --
 -- ══════════════════════════════════════════════════════════════════════════════
@@ -150,7 +150,7 @@ return {
       ["Find Under"]         = "<C-n>",
       ["Find Subword Under"] = "<C-n>",
       -- select-all occurrences of current word
-      ["Select All"]         = "<leader>ma",
+      ["Select All"]         = "<leader>Ma",
       -- add cursors with mouse (if supported)
       ["Mouse Cursor"]       = "<C-LeftMouse>",
       ["Mouse Word"]         = "<C-RightMouse>",
@@ -167,7 +167,7 @@ return {
     set_vm_hl()
     vim.api.nvim_create_autocmd("ColorScheme", { callback = set_vm_hl })
 
-    -- ── leader shortcut: <leader>mh → help popup ─────────────────────────
+    -- ── leader shortcut: <leader>Mh → help popup ─────────────────────────
     local function open_help()
       local K = 22 -- key column width
 
@@ -179,7 +179,7 @@ return {
             { "<C-n>  (visual)",    "add cursors on visual selection" },
             { "<C-Up> / <C-Down>",  "add cursor above / below" },
             { "<S-Left/Right>",     "extend selection char by char" },
-            { "<leader>ma",         "select ALL occurrences of word" },
+            { "<leader>Ma",         "select ALL occurrences of word" },
             { "<C-LeftMouse>",      "add cursor with mouse click" },
           },
         },
@@ -225,9 +225,9 @@ return {
           title = "MISC",
           entries = {
             { "<Esc>",              "exit VM / clear all cursors" },
-            { "<leader>mh",         "this help popup" },
+            { "<leader>Mh",         "this help popup" },
             { ":help visual-multi", "full built-in documentation" },
-            { "<leader>mt",         "open interactive tutorial (new tab)" },
+            { "<leader>Mt",         "open interactive tutorial (new tab)" },
           },
         },
       }
@@ -277,15 +277,15 @@ return {
         vim.api.nvim_buf_add_highlight(buf, ns, "Title", lnum - 1, 0, -1)
       end
 
-      for _, key in ipairs({ "q", "<Esc>", "<leader>mh" }) do
+      for _, key in ipairs({ "q", "<Esc>", "<leader>Mh" }) do
         vim.keymap.set("n", key, "<cmd>close<CR>", { buffer = buf, silent = true, nowait = true })
       end
     end
 
-    vim.keymap.set("n", "<leader>mh", open_help, { desc = "vim-visual-multi shortcuts help" })
+    vim.keymap.set("n", "<leader>Mh", open_help, { desc = "vim-visual-multi shortcuts help" })
 
-    -- ── <leader>mt → open the VM interactive tutorial in a new tab ───────
-    vim.keymap.set("n", "<leader>mt", function()
+    -- ── <leader>Mt → open the VM interactive tutorial in a new tab ───────
+    vim.keymap.set("n", "<leader>Mt", function()
       local tutorialrc = vim.fn.stdpath("data") .. "/lazy/vim-visual-multi/tutorialrc"
       if vim.fn.filereadable(tutorialrc) == 0 then
         vim.notify(
@@ -306,7 +306,7 @@ return {
       callback = function()
         vim.g.vm_active = true
         require("lualine").refresh()
-        vim.notify("VM  <C-n> next · q skip · Q remove · Tab mode · <leader>mh help", vim.log.levels.INFO, { title = "vim-visual-multi" })
+        vim.notify("VM  <C-n> next · q skip · Q remove · Tab mode · <leader>Mh help", vim.log.levels.INFO, { title = "vim-visual-multi" })
       end,
     })
 

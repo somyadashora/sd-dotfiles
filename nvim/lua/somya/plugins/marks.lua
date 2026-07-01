@@ -1,6 +1,6 @@
 -- marks.nvim's OWN numbered-bookmark feature (m0-m9, m}/m{, dm=, annotate)
 -- overlaps with bookmarks.nvim (see plugins/bookmarks.lua), which is now the
--- single "bookmark" concept — persistent, named, list-organized, under <leader>M.
+-- single "bookmark" concept — persistent, named, list-organized, under <leader>m.
 -- Disable every bookmark-group mapping here so the two don't collide conceptually;
 -- regular letter marks (mx, m,, m;, m], m[, dm*) and `builtin_marks` stay.
 local function disable_bookmark_mappings()
@@ -48,4 +48,4 @@ return {
     --                 preview; press <cr> to preview the next mark.
     --
     -- (marks.nvim's m0-m9 / m} / m{ / dm= bookmark GROUPS are disabled above —
-    -- persistent bookmarks now live in bookmarks.nvim under <leader>M.)
+    -- persistent bookmarks now live in bookmarks.nvim under <leader>m.)

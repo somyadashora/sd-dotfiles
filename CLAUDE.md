@@ -160,18 +160,19 @@ source for editing. Lazy-loaded on `ft = markdown`, depends on treesitter's
 sessions, carry names/descriptions, group into named lists, and are browsable via
 Telescope (`picker_backend = "telescope"`), a tree view, or grep. A richer
 complement to the ephemeral `'a`-style marks from marks.nvim. **All maps live under
-`<leader>M` ("+Bookmarks")** — deliberately **off** the bare-`m` prefix that
-marks.nvim owns (its own recommended `mm/mo/ma/md` would collide), so the two never
-conflict: `Mm` mark/rename, `Mo` goto (picker), `Md` describe, `Mc` command palette
-(exposes every action — the fallback if a command name drifts between versions),
-`Mt` tree, `Ml`/`Mn` select/new list, `Ms` grep bookmarked files, `Mi` info,
-`M]`/`M[` next/prev, `Mv` toggle the bookmark visuals over code, `M?` help popup
-(reuses the cheatsheet float renderer). The gutter mark, its full-line background,
+`<leader>m` ("+Bookmarks")** — that's Space-then-m, a different namespace from the
+bare `m` prefix marks.nvim owns (whose recommended `mm/mo/ma/md` would collide with
+bare marks), so the two never conflict: `mm` mark/rename, `mo` goto (picker), `md`
+describe, `mc` command palette (exposes every action — the fallback if a command
+name drifts between versions), `mt` tree, `ml`/`mn` select/new list, `ms` grep
+bookmarked files, `mi` info, `m]`/`m[` next/prev, `mv` toggle the bookmark visuals
+over code, `m?` help popup (reuses the cheatsheet float renderer). (The multi-cursor
+plugin vim-visual-multi moved to `<leader>M` in the same swap.) The gutter mark, its full-line background,
 and the tree's list icons are all catppuccin **Mauve** (`#cba6f7` — the repo's neon
 purple) so a bookmark never blends with diagnostic/git/todo signs; these hls
 re-apply on `ColorScheme` (styler reloads schemes per filetype) and the tree icons
 are painted via a `matchadd` in the `BookmarksTree` filetype (the plugin exposes no
-group for them). `Mv` toggles the sign/line-bg/inline-desc visuals by swapping the
+group for them). `mv` toggles the sign/line-bg/inline-desc visuals by swapping the
 sign module's refresh fn (the plugin redraws signs on Win/Buf/InsertLeave, so a
 one-shot clean won't stick) — the DB is untouched, so bookmarks/lists persist while
 hidden. To keep
