@@ -39,3 +39,19 @@ vim.api.nvim_create_autocmd("TextYankPost", {
     end
   end,
 })
+
+-- Align comment/text auto-wrap with the first virt-column ruler, for ALL files.
+--
+-- We set `opt.textwidth` globally in core/options.lua, but many bundled
+-- ftplugins clobber it per-buffer (verilog/systemverilog -> 78, gitcommit -> 72,
+-- ...). A FileType autocmd runs after those ftplugins (they register during
+-- startup, so we're later in registration order and win), so re-assert our
+-- width on every buffer. `vim.g.sd_text_width` is the single knob (options.lua).
+vim.api.nvim_create_autocmd("FileType", {
+  group = vim.api.nvim_create_augroup("SDTextWidth", { clear = true }),
+  pattern = "*",
+  desc = "Force textwidth = g:sd_text_width on every filetype",
+  callback = function()
+    vim.bo.textwidth = vim.g.sd_text_width
+  end,
+})

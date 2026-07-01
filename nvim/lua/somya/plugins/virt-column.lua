@@ -25,9 +25,14 @@ return {
         set_virtcol_hl()
         vim.api.nvim_create_autocmd("ColorScheme", { callback = set_virtcol_hl })
 
+        -- Rulers are driven by the shared text width (core/options.lua): the
+        -- FIRST ruler sits exactly where comments/text auto-wrap, and the two
+        -- secondary rulers trail at +20 / +21. Change g:sd_text_width to move
+        -- both the wrap point and this primary ruler together.
+        local tw = vim.g.sd_text_width or 100
         require("virt-column").setup({
             char = { "┆", "⸽", "┆" },
-            virtcolumn = "100,120,121",
+            virtcolumn = string.format("%d,%d,%d", tw, tw + 20, tw + 21),
             highlight = "VirtColumn",
         })
     end,

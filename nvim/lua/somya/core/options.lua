@@ -12,6 +12,14 @@ opt.expandtab = true -- expand tab to spaces
 opt.autoindent = true -- copy indent from current line when starting new one
 
 opt.wrap = false
+
+-- Single source of truth for the text width: comment/text auto-wrap (textwidth,
+-- forced per-buffer in core/autocmds.lua) AND the first virt-column ruler
+-- (plugins/virt-column.lua) both read this, so changing it here moves both.
+-- The secondary rulers are derived from it (+20 / +21) so they track along.
+vim.g.sd_text_width = 100
+opt.textwidth = vim.g.sd_text_width -- base default; per-filetype override in autocmds.lua
+
 opt.scrolloff = 5
 opt.sidescrolloff = 36
 
