@@ -23,10 +23,11 @@ opt.textwidth = vim.g.sd_text_width -- base default; per-filetype override in au
 opt.scrolloff = 5
 opt.sidescrolloff = 36
 
--- Let the cursor go anywhere in normal mode — past end-of-line and into the
--- "virtual" space inside tabs / beyond short lines — instead of snapping to real
--- characters. Makes free-form navigation and block edits much nicer.
-opt.virtualedit = "all"
+-- Let the cursor go anywhere — past end-of-line and into the "virtual" space
+-- inside tabs / beyond short lines — instead of snapping to real characters.
+-- Nice for free-form navigation and block edits, but off by default (it can
+-- feel odd for normal editing). Toggle it on with <leader>uv (see keymaps.lua).
+opt.virtualedit = ""
 -- spell check
 opt.spelllang = 'en_us'
 opt.spell = false

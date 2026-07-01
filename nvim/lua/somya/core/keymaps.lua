@@ -31,6 +31,15 @@ keymap.set("n", "<leader>uw", function()
   vim.notify("Wrap: " .. (vim.wo.wrap and "on" or "off"), vim.log.levels.INFO)
 end, { desc = "Toggle line wrap" })
 
+-- Toggle virtualedit=all (off by default — see core/options.lua). Lets the
+-- cursor roam past line ends / into tabs for free-form navigation and block
+-- edits. Under the <leader>u "UI / Theme" group.
+keymap.set("n", "<leader>uv", function()
+  local on = vim.o.virtualedit == "all"
+  vim.o.virtualedit = on and "" or "all"
+  vim.notify("Virtualedit: " .. (on and "off" or "on"), vim.log.levels.INFO)
+end, { desc = "Toggle virtualedit (free cursor)" })
+
 -- Linter control
 keymap.set("n", "<leader>ld", ":lua vim.diagnostic.enable(false)<CR>", { desc = "disable lint messages" })
 keymap.set("n", "<leader>le", ":lua vim.diagnostic.enable(true)<CR>", { desc = "enable lint messages" })
