@@ -59,6 +59,10 @@ return {
       -- `.md`/`.adoc`/man pages get an outline even with no parser installed.
       backends = { "treesitter", "lsp", "markdown", "asciidoc", "man" },
       autojump = true, -- moving the cursor in the outline follows it in the source
+      -- After jumping to a symbol, land it on the TOP line of the window (zt)
+      -- instead of aerial's default centering (zz). zv first opens any folds so
+      -- the target is actually visible.
+      post_jump_cmd = "normal! zvzt",
       filter_kind = {
         ["_"] = default_kinds,    -- all other filetypes: aerial's default
         systemverilog = sv_kinds, -- + Namespace so generate blocks appear
