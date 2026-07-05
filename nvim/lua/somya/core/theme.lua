@@ -36,9 +36,9 @@ M.default = "sd-monokai-catppuccin"
 -- ── styler.nvim: per-filetype window-local colorschemes ─────────────────────
 M.styler_themes = {
   -- Hardware description languages
-  systemverilog = { colorscheme = "monokai-pro-spectrum" },
-  verilog       = { colorscheme = "monokai-pro-spectrum" },
-  vhdl          = { colorscheme = "monokai-pro-spectrum" },
+  systemverilog = { colorscheme = "sd-monokai-catppuccin" },
+  verilog       = { colorscheme = "sd-monokai-catppuccin" },
+  vhdl          = { colorscheme = "sd-monokai-catppuccin" },
 
   -- Scripting / general purpose
   python        = { colorscheme = "tokyonight-storm" },
