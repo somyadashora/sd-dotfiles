@@ -60,6 +60,10 @@ batdiff() {
 # watchthis CMD...: launch CMD and watch it from the start (monitors are armed
 # with the exact pid, so no discovery guesswork); Ctrl-C still kills CMD.
 watchlast() { "$DOTFILES_DIR/tmux/scripts/tmux-watch" "$@"; }
+# watchsys: open the system-wide tmux monitor window (htop + RAM hogs +
+# bottleneck vitals: load vs cores, PSI stall %, swap/iowait, D-state procs)
+# — same as prefix+M. Answers "how much RAM is used / what's slowing us down".
+watchsys() { "$DOTFILES_DIR/tmux/scripts/tmux-sysmon" "$@"; }
 watchthis() {
     [ $# -gt 0 ] || { echo "usage: watchthis <command...>" >&2; return 1; }
     "$@" &
