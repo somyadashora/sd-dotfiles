@@ -54,10 +54,18 @@
     ds   = diff --staged             # Show staged changes
     dw   = diff --word-diff          # Show word-level differences
 
+    # ── Worktree ────────────────────────────────────────────
+    wt   = worktree list             # List git worktrees
+    wta  = worktree add              # Add worktree: git wta <path> [<branch>]
+    wtb  = worktree add -b           # New branch in new worktree: git wtb <branch> <path>
+    wtr  = worktree remove           # Remove a worktree: git wtr <path> (--force if dirty)
+    wtp  = worktree prune            # Clean up stale worktree metadata
+    # New worktree + branch at ../<repo>-<branch> in one shot: git wtn <branch>
+    wtn  = "!f() { b=\"$1\"; [ -n \"$b\" ] || { echo 'usage: git wtn <branch>' >&2; exit 1; }; r=$(basename \"$(git rev-parse --show-toplevel)\"); n=$(printf '%s' \"$b\" | tr '/' '-'); git worktree add -b \"$b\" \"../$r-$n\"; }; f"
+
     # ── Misc / Handy ────────────────────────────────────────
     bl   = blame                     # Show who last modified each line
     bs   = bisect                    # Binary search for bug-introducing commit
     gr   = grep -n                   # Search for text in files
     sh   = show                      # Show commit details
-    wt   = worktree list             # List git worktrees
     sub  = submodule update --init --recursive  # Update all submodules
