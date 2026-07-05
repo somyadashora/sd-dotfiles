@@ -43,5 +43,10 @@ create_symlink "$DOTFILES_DIR/tmux/.tmux.conf" "$HOME/.tmux.conf"
 mkdir -p "$HOME/.config/tmux"
 create_symlink "$DOTFILES_DIR/tmux/scripts" "$HOME/.config/tmux/scripts"
 
+# Lazygit configuration (only the config file — lazygit writes state.yml
+# next to it, which must stay local and out of the repo)
+mkdir -p "$HOME/.config/lazygit"
+create_symlink "$DOTFILES_DIR/lazygit/config.yml" "$HOME/.config/lazygit/config.yml"
+
 echo "Dotfiles installation complete!"
 echo "You may need to restart your shell or reload your configuration."

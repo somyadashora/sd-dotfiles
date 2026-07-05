@@ -8,9 +8,10 @@ Personal dotfiles for Neovim, tmux, bash, and git — focused on VLSI/SystemVeri
 `install.sh` creates the necessary symlinks:
 
 ```
-nvim/           → ~/.config/nvim
-tmux/.tmux.conf → ~/.tmux.conf
-tmux/scripts/   → ~/.config/tmux/scripts
+nvim/               → ~/.config/nvim
+tmux/.tmux.conf     → ~/.tmux.conf
+tmux/scripts/       → ~/.config/tmux/scripts
+lazygit/config.yml  → ~/.config/lazygit/config.yml
 ```
 
 ## Installation
@@ -279,6 +280,10 @@ sees it as the next argument. Use separate sequential `#[fg=...]#[bg=...]` tags 
   (switch with `prompt-default` / `prompt-tc`)
 - `git/git-aliases.gitconfig` — git aliases; include with `[include] path = ...`
   in `~/.gitconfig`
+- `lazygit/config.yml` — lazygit theme (catppuccin mocha, mauve accent — matches
+  the nvim accent) + density settings (command log hidden, narrower side panel,
+  Nerd Font icons). Font size itself is terminal-owned; lazygit can't set it.
+  The nvim `<leader>lg` float opens at full editor size (plugins/lazygit.lua).
 
 ## Useful aliases (from `.bash_aliases`)
 

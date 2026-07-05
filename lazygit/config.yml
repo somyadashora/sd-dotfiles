@@ -1,0 +1,59 @@
+# lazygit configuration — symlinked to ~/.config/lazygit/config.yml by install.sh.
+# Docs: https://github.com/jesseduffield/lazygit/blob/master/docs/Config.md
+#
+# Theme: catppuccin mocha, mauve accent — same palette/accent as the nvim config
+# (bookmarks gutter, dashboard pills), so lazygit looks like part of the editor.
+#
+# NOTE on "font size": lazygit is a terminal program — it renders in whatever
+# font/size the terminal (or tmux window) uses and CANNOT change it. To see more
+# content the settings below maximize information density instead: the command
+# log and tip are hidden, the side panel is narrower (more room for diffs), and
+# the focused panel auto-expands. Inside nvim, <leader>lg opens the float at
+# (almost) full editor size (see plugins/lazygit.lua). If you want literally
+# smaller text, reduce the terminal font: most terminals bind Ctrl+- / Ctrl+0.
+
+gui:
+  # Nerd Font icons for files/branches/commits (repo assumes a Nerd Font — see
+  # prompt-check). "3" = current Nerd Fonts glyph set.
+  nerdFontsVersion: "3"
+
+  # ── density: show more of what matters ────────────────────────────────────
+  showRandomTip: false
+  showCommandLog: false      # hide the command-log panel → right side is all diff
+  sidePanelWidth: 0.25       # default 0.3333 — narrower list, wider diff/main view
+  expandFocusedSidePanel: true # focused side panel grows, others shrink
+
+  border: rounded
+
+  # ── catppuccin mocha, mauve accent ─────────────────────────────────────────
+  theme:
+    activeBorderColor:
+      - "#cba6f7" # mauve
+      - bold
+    inactiveBorderColor:
+      - "#a6adc8" # subtext0
+    optionsTextColor:
+      - "#89b4fa" # blue
+    selectedLineBgColor:
+      - "#313244" # surface0
+    inactiveViewSelectedLineBgColor:
+      - "#45475a" # surface1
+    cherryPickedCommitBgColor:
+      - "#45475a" # surface1
+    cherryPickedCommitFgColor:
+      - "#cba6f7" # mauve
+    markedBaseCommitBgColor:
+      - "#f9e2af" # yellow
+    markedBaseCommitFgColor:
+      - "#89b4fa" # blue
+    unstagedChangesColor:
+      - "#f38ba8" # red
+    defaultFgColor:
+      - "#cdd6f4" # text
+    searchingActiveBorderColor:
+      - "#f9e2af" # yellow
+      - bold
+
+  # Commit authors in the commits panel — lavender for everyone.
+  authorColors:
+    "*": "#b4befe"
