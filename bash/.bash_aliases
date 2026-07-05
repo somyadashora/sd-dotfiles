@@ -54,6 +54,20 @@ batdiff() {
     git diff --name-only --relative --diff-filter=d -z | xargs -0 bat --diff
 }
 
+# watchlast: open the tmux watch window (htop + ps --forest + vitals) for the
+# command running in / last fired from this pane — same as prefix+W. Also takes
+# a pid or process name, or -g for the newest user process machine-wide.
+# watchthis CMD...: launch CMD and watch it from the start (monitors are armed
+# with the exact pid, so no discovery guesswork); Ctrl-C still kills CMD.
+watchlast() { "$DOTFILES_DIR/tmux/scripts/tmux-watch" "$@"; }
+watchthis() {
+    [ $# -gt 0 ] || { echo "usage: watchthis <command...>" >&2; return 1; }
+    "$@" &
+    local pid=$!
+    "$DOTFILES_DIR/tmux/scripts/tmux-watch" "$pid"
+    wait "$pid"
+}
+
 prompt-check() {
   printf '\nNerd Font glyph test\n'
   printf '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'

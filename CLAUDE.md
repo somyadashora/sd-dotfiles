@@ -263,6 +263,7 @@ Config: `tmux/.tmux.conf`. Prefix: `Ctrl+Space`.
 | `tmux-open-file`    | open file under cursor in nvim (bound to `prefix+gf`) |
 | `tmux-paste`        | paste tmux buffer without trailing newline            |
 | `tmux-getdotfiles`  | pull latest dotfiles in a popup                       |
+| `tmux-watch`        | watch window for the command running in / last fired from the current pane (`prefix+W`; shell: `watchlast`, `watchthis CMD`): htop scoped to the job's process tree + `ps -f --forest` (watchtty format) + a vitals pane that announces when the job exits. Targets the pane tty's foreground process, falling back to the newest non-shell child of the pane's shell (prompt helpers are skipped), `-g` for newest user process machine-wide |
 
 **Plugins**: catppuccin/tmux (theme), sainnhe/tmux-fzf, tmux-plugins/tmux-yank, tmux-plugins/tpm.
 

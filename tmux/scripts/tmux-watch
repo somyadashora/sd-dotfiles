@@ -1,0 +1,174 @@
+#!/usr/bin/env bash
+# tmux-watch -- open a monitor window for "the command I just fired".
+#
+# Creates (or replaces) a tmux window named watch:<proc> with three panes:
+#
+#   +--------------------------+---------------------------+
+#   | htop -p <pid+children>   | watch -d -n 1             |
+#   | (fallback: top -p)       |   ps -f --forest ...      |
+#   |                          | (same format as watchtty) |
+#   +--------------------------+---------------------------+
+#   | vitals: state/threads/RSS/io/cwd/fds -- refreshed 2s, |
+#   | pane announces when the process exits                 |
+#   +-------------------------------------------------------+
+#
+# Target discovery (in order):
+#   explicit <pid> or <name> argument            -> that process
+#   --pane-pid <pid> (from the prefix+W binding) -> newest child of that
+#                                                   pane's shell, i.e. the
+#                                                   command last fired there
+#   inside tmux with no args (watchlast alias)   -> same, for current pane
+#   -g / --global                                -> newest non-shell process
+#                                                   owned by $USER (for jobs
+#                                                   fired outside tmux or
+#                                                   daemonized)
+#
+# The tree pane uses the pane's TTY when known (ps -f --forest --tty, exactly
+# the watchtty alias) so newly spawned children always show; for explicit-pid
+# targets it re-computes the descendant list on every refresh instead.
+# Killing the watch window never touches the watched job.
+#
+# Usage:
+#   tmux-watch                    # watch last command fired in this pane
+#   tmux-watch 12345              # watch this pid
+#   tmux-watch vcs                # newest process of $USER named vcs
+#   tmux-watch -g                 # newest user process machine-wide
+set -u
+
+SELF="$(readlink -f "$0")"
+
+die() {
+  tmux display-message "tmux-watch: $*" 2>/dev/null
+  echo "tmux-watch: $*" >&2
+  exit 1
+}
+
+# ── internal mode: --tree-pids PID → "pid,child,grandchild,…" ───────────────
+# (used by the tree/htop panes; recomputed per refresh in the tree pane)
+tree_pids() {
+  local queue="$1" all="$1" kids
+  while [ -n "$queue" ]; do
+    kids=$(ps -o pid= --ppid "${queue// /,}" 2>/dev/null | tr -s ' \n' ' ')
+    kids="${kids# }"; kids="${kids% }"
+    queue="$kids"
+    [ -n "$kids" ] && all="$all $kids"
+  done
+  echo "${all// /,}"
+}
+
+# ── internal mode: --vitals PID → the bottom pane's refresh loop ────────────
+vitals() {
+  local pid=$1 name
+  name=$(ps -o comm= -p "$pid" 2>/dev/null || echo "?")
+  while kill -0 "$pid" 2>/dev/null; do
+    local out
+    out="── $name (pid $pid) ──────────────────────────────────
+$(ps -o etime=,pcpu=,pmem=,stat= -p "$pid" 2>/dev/null \
+    | awk '{printf "elapsed %s   cpu %s%%   mem %s%%   stat %s\n", $1, $2, $3, $4}')
+$(grep -E '^(State|Threads|VmRSS|VmPeak)' "/proc/$pid/status" 2>/dev/null \
+    | awk '{printf "%-8s %s %s\n", $1, $2, $3}')
+$(awk '/^(read_bytes|write_bytes)/ {printf "%-12s %.1f MB\n", $1, $2/1048576}' \
+    "/proc/$pid/io" 2>/dev/null)
+cwd:     $(readlink "/proc/$pid/cwd" 2>/dev/null || echo '?')
+fds:     $(ls "/proc/$pid/fd" 2>/dev/null | wc -l) open
+tree:    $(tree_pids "$pid" | awk -F, '{print NF}') process(es)"
+    clear
+    printf '%s\n' "$out"
+    sleep 2
+  done
+  printf '\n── %s (pid %s) EXITED ──\n' "$name" "$pid"
+  read -r -p "press Enter to close this pane"
+}
+
+case "${1:-}" in
+  --tree-pids) tree_pids "$2"; exit 0 ;;
+  --vitals)    vitals "$2";    exit 0 ;;
+esac
+
+# ── argument parsing (main mode) ────────────────────────────────────────────
+pane_pid="" pane_tty="" global=0 arg=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --pane-pid) pane_pid="$2"; shift 2 ;;
+    --pane-tty) pane_tty="$2"; shift 2 ;;
+    -g|--global) global=1; shift ;;
+    -h|--help) sed -n '2,37p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) arg="$1"; shift ;;
+  esac
+done
+
+[ -n "${TMUX:-}" ] || [ -n "$pane_pid" ] || die "run inside tmux"
+
+# ── find the target pid ─────────────────────────────────────────────────────
+target=""
+if [ -n "$arg" ]; then
+  case "$arg" in
+    ''|*[!0-9]*) # a name: newest matching process of ours
+      target=$(pgrep -n -u "$USER" -x "$arg" || pgrep -n -u "$USER" "$arg") \
+        || die "no process of $USER matches '$arg'" ;;
+    *) target="$arg"
+       kill -0 "$target" 2>/dev/null || die "pid $target is not running" ;;
+  esac
+elif [ "$global" = 1 ]; then
+  # newest user process that isn't shell/tmux/monitoring noise
+  target=$(ps -u "$USER" --sort=-start_time -o pid=,comm= \
+    | awk '$2 !~ /^(bash|zsh|sh|tmux|ps|awk|sshd|tmux-watch|sleep 0)$/ {print $1; exit}')
+  [ -n "$target" ] || die "no candidate process found"
+else
+  if [ -z "$pane_pid" ]; then
+    pane_pid=$(tmux display -p '#{pane_pid}')
+    pane_tty=$(tmux display -p '#{pane_tty}')
+  fi
+  # 1) The FOREGROUND job on the pane's tty (stat contains '+'), i.e. whatever
+  #    is occupying the pane right now — the primary prefix+W case. First match
+  #    by start time = the pipeline's root (make, not its tee). The pane shell
+  #    itself is excluded (it's the '+' process when only a prompt is showing).
+  if [ -n "$pane_tty" ]; then
+    target=$(ps -t "${pane_tty#/dev/}" -o pid=,stat= --sort=start_time 2>/dev/null \
+      | awk -v sh="$pane_pid" '$2 ~ /\+/ && $1 != sh { print $1; exit }')
+  fi
+  # 2) Backgrounded job: newest child of the pane shell. Skip bare shells —
+  #    prompt helpers (e.g. the async git-status refresh in .bash_prompt) fork
+  #    bash children that would otherwise win — and skip ourselves ($$; via the
+  #    watchlast alias this script IS the shell's newest child).
+  if [ -z "$target" ]; then
+    target=$(ps --ppid "$pane_pid" -o pid=,comm= --sort=start_time 2>/dev/null \
+      | awk -v self="$$" '$1 != self && $2 !~ /^(bash|zsh|sh|ps)$/ { p=$1 } END { print p }')
+  fi
+  [ -n "$target" ] || die "nothing running in this pane (job finished? try: tmux-watch -g)"
+fi
+
+name=$(ps -o comm= -p "$target" 2>/dev/null | tr -d ' ') || true
+[ -n "$name" ] || die "pid $target vanished"
+
+# ── build the three pane commands ───────────────────────────────────────────
+pids=$(tree_pids "$target")
+
+if command -v htop >/dev/null 2>&1; then
+  cmd_cpu="htop -p $pids"
+else
+  cmd_cpu="top -p $(echo "$pids" | cut -d, -f1-20)" # top caps at 20 pids
+fi
+
+# Tree pane in the familiar watchtty format. With a known tty, scope by tty
+# (new children always appear); otherwise re-resolve the descendant list on
+# every refresh via our own --tree-pids mode.
+if [ -n "$pane_tty" ]; then
+  cmd_tree="watch -d -n 1 \"ps -f --forest --tty ${pane_tty#/dev/}\""
+else
+  cmd_tree="watch -d -n 1 \"ps -f --forest -p \\\$('$SELF' --tree-pids $target)\""
+fi
+
+cmd_vitals="'$SELF' --vitals $target"
+
+# ── create / replace the watch window ───────────────────────────────────────
+sess=$(tmux display -p '#{session_name}')
+tmux list-windows -t "$sess" -F '#{window_id} #{window_name}' 2>/dev/null \
+  | awk '$2 ~ /^watch:/ {print $1}' \
+  | xargs -r -n1 tmux kill-window -t
+
+# Address panes by ID (not index) so this works with any pane-base-index.
+p0=$(tmux new-window -t "$sess" -P -F '#{pane_id}' -n "watch:$name" "$cmd_cpu")
+tmux split-window -t "$p0" -v -l '30%' "$cmd_vitals"
+tmux split-window -t "$p0" -h "$cmd_tree"
+tmux select-pane -t "$p0"
