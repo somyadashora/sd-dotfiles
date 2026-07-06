@@ -50,9 +50,7 @@ return {
         "BookmarksTree",
       },
       segments = {
-        -- 1. fold column (ufo) on the far left
-        { text = { builtin.foldfunc }, click = "v:lua.ScFa" },
-        -- 2. LEFT of number: all signs EXCEPT git (marks, diagnostics, TODO …).
+        -- 1. LEFT of number: all signs EXCEPT git (marks, diagnostics, TODO …).
         --    statuscol matches LEGACY signs (marks, todo-comments) by `name`
         --    and EXTMARK signs (diagnostics) by `namespace`, so we need both
         --    catch-alls here. git is de-duped out by the dedicated segment below.
@@ -60,11 +58,14 @@ return {
           sign = { name = { ".*" }, namespace = { ".*" }, maxwidth = 2, colwidth = 2, auto = false, wrap = true },
           click = "v:lua.ScSa",
         },
-        -- 3a. normal number column (respects number/relativenumber) — default.
+        -- 2a. normal number column (respects number/relativenumber) — default.
         { text = { builtin.lnumfunc, " " }, condition = { one_col, one_col }, click = "v:lua.ScLa" },
-        -- 3b. two-column mode: absolute column + hybrid column side by side.
+        -- 2b. two-column mode: absolute column + hybrid column side by side.
         { text = { abs_lnum, " " }, condition = { two_col, two_col }, click = "v:lua.ScLa" },
         { text = { hyb_lnum, " " }, condition = { two_col, two_col }, click = "v:lua.ScLa" },
+        -- 3. fold column (ufo) between the number and the git signs, plus a
+        --    space so the fold arrow and a git sign never touch
+        { text = { builtin.foldfunc, " " }, click = "v:lua.ScFa" },
         -- 4. RIGHT of number: dedicated git-signs column, always reserved so the
         --    code text never shifts when a change sign appears/disappears.
         {
