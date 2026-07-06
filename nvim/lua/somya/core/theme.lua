@@ -82,6 +82,19 @@ M.overrides_common = {
   Search        = { bg = "#e8d4a8", fg = "#1e1e2e" },
   IncSearch     = { bg = "#f0a07a", fg = "#1e1e2e", bold = true },
   CurSearch     = { bg = "#f0a07a", fg = "#1e1e2e", bold = true },
+  -- vim-sneak (plugins/sneak.lua): matches for f/F/t/T and s/S reuse the
+  -- Search colors above so sneak targets read like search hits; label-mode
+  -- letters pop in catppuccin mauve (the repo accent — bookmarks, lazygit).
+  -- Sneak only defines its own defaults when these groups don't exist, and
+  -- since it's lazy-loaded on the first motion, ours are always in place first.
+  Sneak         = { bg = "#e8d4a8", fg = "#1e1e2e" },
+  SneakCurrent  = { bg = "#f0a07a", fg = "#1e1e2e", bold = true },
+  SneakLabel    = { bg = "#cba6f7", fg = "#11111b", bold = true },
+  -- Mask hides the 2nd char of each label target: fg = bg = the label mauve.
+  -- Sneak derives this from SneakLabel only inside its own init; pin it so it
+  -- can never render as an unstyled/mismatched cell.
+  SneakLabelMask = { bg = "#cba6f7", fg = "#cba6f7" },
+  SneakScope    = { bg = "#45475a" }, -- catppuccin surface1: label-mode scope band
   -- Trouble windows aren't pinned by styler, so they use the global scheme —
   -- but most schemes link TroubleNormal to the (muted) NormalFloat, making the
   -- window look dim. Re-link to Normal so Trouble matches the editor on every

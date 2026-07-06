@@ -202,6 +202,11 @@ sneak comes along, with mode-specific keys matching sneak's defaults to dodge
 nvim-surround: visual backward is `Z` (visual `S` stays surround), operator-
 pending is `z`/`Z` (`ds`/`cs`/`ys` untouched). Native `s` ≡ `cl`. All maps are
 lazy.nvim `keys` triggers, so behavior is identical before/after plugin load.
+The highlight groups live in `core/theme.lua`'s `M.overrides_common` (sneak's
+own colors are `highlight default`, so ours always win): Sneak/SneakCurrent
+reuse the Search/CurSearch catppuccin family (muted yellow / peach), and
+SneakLabel (+LabelMask) is catppuccin mauve `#cba6f7` — the repo accent —
+applied to every scheme + styler namespace like the search overrides.
 
 **SystemVerilog LSP**: two servers are configured — `verible` (Mason-installed) and
 `slang-server` (`~/.local/bin/slang-server`). Only one should be active at a time;
