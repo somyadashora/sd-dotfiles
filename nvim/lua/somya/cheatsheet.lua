@@ -158,6 +158,17 @@ local sections = {
     },
   },
   {
+    title = "SNEAK  (vim-sneak — motions cross lines)",
+    entries = {
+      { "f{c}  /  F{c}",  "to char, forward / back — multi-line" },
+      { "t{c}  /  T{c}",  "till char, forward / back — multi-line" },
+      { "s{ab}  /  S{ab}", "2-char sneak, forward / back" },
+      { ";  /  ,",         "repeat last f/t/s, next / prev (crosses lines)" },
+      { "Z{ab}",           "(visual) 2-char sneak back — S stays surround" },
+      { "z / Z {ab}",      "(operator) 2-char sneak  →  dzab" },
+    },
+  },
+  {
     title = "SURROUND  (nvim-surround)",
     entries = {
       { "ys{motion}{c}",  "add surround  →  ysiw(  ysiw\"" },

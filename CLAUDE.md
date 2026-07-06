@@ -195,6 +195,14 @@ per-machine at `stdpath("data")/bookmarks.sqlite.db` (never pushed — same phil
 as the telekasten vault); back it up before a major-version upgrade (spec pins
 `^4.0.0`). Requires `kkharji/sqlite.lua` + the system `libsqlite3` at runtime.
 
+**Motions** (`nvim/lua/somya/plugins/sneak.lua`): vim-sneak. `f/F/t/T` are
+remapped to `<Plug>Sneak_f`/… (n/x/o) so they — and `;`/`,` repeats — work
+across lines instead of stopping at the current one. The 2-char `s{ab}`/`S{ab}`
+sneak comes along, with mode-specific keys matching sneak's defaults to dodge
+nvim-surround: visual backward is `Z` (visual `S` stays surround), operator-
+pending is `z`/`Z` (`ds`/`cs`/`ys` untouched). Native `s` ≡ `cl`. All maps are
+lazy.nvim `keys` triggers, so behavior is identical before/after plugin load.
+
 **SystemVerilog LSP**: two servers are configured — `verible` (Mason-installed) and
 `slang-server` (`~/.local/bin/slang-server`). Only one should be active at a time;
 switch with `:UseVerible` / `:UseSlang`.
