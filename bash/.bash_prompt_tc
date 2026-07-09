@@ -17,7 +17,9 @@ if [[ $- == *i* ]]; then
 # Catppuccin Mocha — near-black pill style: the pills are the DARKEST mocha
 # tones (crust/mantle, darker than the usual terminal bg), and the text uses
 # the pastel accents dimmed ~70% toward base so nothing glows. Color is a
-# whisper: dim mauve user, dim green dir, dim pink/sky git, gray time.
+# whisper: dim mauve user, dim blue host, dim green dir, gray time; the git
+# segment mirrors the default prompt — dim teal base when dirty (mid-work is
+# the normal state, keep it quiet), dim pink when clean, per-flag colors.
 #
 # NOTE: every comment MUST have a space before # — bash parses VAR='val'#word
 #       as setting VAR to 'val'# and then running `word` as a command.
@@ -27,11 +29,14 @@ __tc_bg_s1='\[\e[48;2;24;24;37m\]'         # mantle #181825 — dir + git pills
 
 __tc_fg_s0='\[\e[38;2;17;17;27m\]'         # crust  — arrow/cap fg
 __tc_fg_s1='\[\e[38;2;24;24;37m\]'         # mantle — arrow/cap fg
-__tc_fg_mauve='\[\e[38;2;151;125;187m\]'   # dim mauve #977dbb — user text
-__tc_fg_green='\[\e[38;2;125;168;126m\]'   # dim green #7da87e — dir text + ok ❯
+__tc_fg_mauve='\[\e[38;2;151;125;187m\]'   # dim mauve #977dbb — user text + v behind
+__tc_fg_blue='\[\e[38;2;105;135;189m\]'    # dim blue  #6987bd — host text
+__tc_fg_green='\[\e[38;2;125;168;126m\]'   # dim green #7da87e — dir + staged + ok ❯
 __tc_fg_pink='\[\e[38;2;180;145;176m\]'    # dim pink  #b491b0 — git clean text
-__tc_fg_sky='\[\e[38;2;105;163;178m\]'     # dim sky   #69a3b2 — git dirty text
-__tc_fg_red='\[\e[38;2;179;106;132m\]'     # dim red   #b36a84 — error ❯
+__tc_fg_teal='\[\e[38;2;113;167;163m\]'    # dim teal  #71a7a3 — git dirty base
+__tc_fg_sky='\[\e[38;2;105;163;178m\]'     # dim sky   #69a3b2 — ^ ahead flag
+__tc_fg_peach='\[\e[38;2;184;134;108m\]'   # dim peach #b8866c — ? untracked flag
+__tc_fg_red='\[\e[38;2;179;106;132m\]'     # dim red   #b36a84 — * modified + err ❯
 __tc_fg_gray='\[\e[38;2;127;132;156m\]'    # overlay1  #7f849c — time text
 
 __tc_R='\[\e[0m\]'        # reset all
@@ -49,6 +54,26 @@ __tc_CAP_L=$''
 __tc_USR=$''
 __tc_DIR=$''
 __tc_CLK=$''
+
+# Give every status flag its own color, mirroring the default prompt's scheme
+# in dim mocha: + staged green, * modified red, ? untracked peach, ^N ahead
+# sky, vN behind mauve (digits inherit their arrow's color). Result in
+# __tc_flags_colored; the caller restores its base color afterwards.
+__tc_colorize_flags() {
+  __tc_flags_colored=""
+  local flags=$1 i ch cur=""
+  for ((i = 0; i < ${#flags}; i++)); do
+    ch=${flags:i:1}
+    case "$ch" in
+      '+') cur=$__tc_fg_green ;;
+      '*') cur=$__tc_fg_red ;;
+      '?') cur=$__tc_fg_peach ;;
+      '^') cur=$__tc_fg_sky ;;
+      'v') cur=$__tc_fg_mauve ;;
+    esac
+    __tc_flags_colored+="${cur}${ch}"
+  done
+}
 
 __tc_build_ps1() {
   local last_status=${1:-0}
@@ -72,7 +97,7 @@ __tc_build_ps1() {
     flags="$__sd_git_status_flags"
     has_git=1
     if [[ -n "$flags" && "$flags" != $'\xe2\x80\xa6' && "$flags" != "..." ]]; then
-      git_fg="$__tc_fg_sky"
+      git_fg="$__tc_fg_teal"
     else
       git_fg="$__tc_fg_pink"
     fi
@@ -88,8 +113,9 @@ __tc_build_ps1() {
   local cs_host="${CODESPACE_NAME%-*}"
   [[ -z "$cs_host" ]] && cs_host="${HOSTNAME%%.*}"
 
-  # Rounded left cap + Seg 1: user icon + user@host [dim mauve on crust]
-  local p="${__tc_R}${__tc_fg_s0}${__tc_CAP_L}${__tc_bg_s0}${__tc_fg_mauve}${__tc_B}${__tc_USR}  \\u@${cs_host} "
+  # Rounded left cap + Seg 1: user icon + user@host [mauve user · gray @ ·
+  # blue host, all on the crust pill]
+  local p="${__tc_R}${__tc_fg_s0}${__tc_CAP_L}${__tc_bg_s0}${__tc_fg_mauve}${__tc_B}${__tc_USR}  \\u${__tc_fg_gray}@${__tc_fg_blue}${cs_host} "
 
   # Inner arrow (crust → mantle) + Seg 2: folder icon + path [dim green]
   p+="${__tc_bg_s1}${__tc_fg_s0}${__tc_ARR}${__tc_fg_green}${__tc_B} ${__tc_DIR}  ${path} "
@@ -108,10 +134,18 @@ __tc_build_ps1() {
   # Rounded left cap + time [gray on crust — \A is bash's HH:MM]
   local line2="${__tc_fg_s0}${__tc_CAP_L}${__tc_bg_s0}${__tc_fg_gray}${__tc_B}${__tc_CLK}  \\A "
   if (( has_git )); then
-    # Inner arrow (crust → mantle) + git seg; accent in the text:
-    # dim pink = clean, dim sky = dirty.
+    # Inner arrow (crust → mantle) + git seg; base accent in the text (dim
+    # pink = clean, dim teal = dirty/pending) with per-flag colors after the
+    # branch name, restoring the base color for the trailing pad.
     local git_label="${__tc_GIT} ${branch}"
-    [[ -n "$flags" ]] && git_label+="  ${flags}"
+    if [[ -n "$flags" ]]; then
+      if [[ "$flags" == $'\xe2\x80\xa6' || "$flags" == "..." ]]; then
+        git_label+="  ${flags}"
+      else
+        __tc_colorize_flags "$flags"
+        git_label+="  ${__tc_flags_colored}${git_fg}"
+      fi
+    fi
     line2+="${__tc_bg_s1}${__tc_fg_s0}${__tc_ARR}${git_fg}${__tc_B} ${git_label} "
     line2+="${__tc_R}${__tc_fg_s1}${__tc_CAP_R}${__tc_R} "
   else
