@@ -32,6 +32,11 @@ source "$DOTFILES_DIR/bash/.bash_aliases"
 source "$DOTFILES_DIR/bash/.bash_prompt"
 source "$DOTFILES_DIR/bash/.bash_prompt_tc"
 
+# Startup prompt + color scheme for new shells (silenced; prompt-sd/prompt-tc
+# only exist in interactive shells — the prompt files guard on $-). Change the
+# scheme here, or per-shell with `prompt-sd <scheme>` / `prompt-tc <scheme>`.
+[[ $- == *i* ]] && prompt-sd kanagawa >/dev/null
+
 
 
 
