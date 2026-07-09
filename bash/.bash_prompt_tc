@@ -3,8 +3,14 @@ if [[ $- == *i* ]]; then
 # ──────────────────────────────────────────────────────────────────────────────
 #  TypeCraft-inspired powerline prompt  (Catppuccin Mocha · Nerd Fonts required)
 #
-#  Switch to this prompt:   prompt-tc
-#  Switch back to default:  prompt-default
+#  Switch to this prompt:   prompt-tc [scheme]   (prompt-tc -h lists schemes)
+#  Switch back to default:  prompt-sd [scheme]
+#
+#  Color schemes mirror the nvim colorschemes: default (dimmed catppuccin),
+#  catppuccin, monokai-pro, tokyonight, material, kanagawa, cyberdream —
+#  `prompt-tc -h` lists them with one-line descriptions.
+#  prompt-tc is a FUNCTION (defined at the bottom) so it can take the scheme
+#  argument — the .bash_aliases entry was removed in its favor.
 #
 #  Visual structure — two lines: identity, then time + git state. Each line is
 #  one dark rounded CAPSULE (rounded caps U+E0B6/U+E0B4 at both ends, sharp
@@ -14,30 +20,150 @@ if [[ $- == *i* ]]; then
 #    Line 2 is just the time capsule + ❯ when outside a git repo.
 # ──────────────────────────────────────────────────────────────────────────────
 
-# Catppuccin Mocha — near-black pill style: the pills are the DARKEST mocha
-# tones (crust/mantle, darker than the usual terminal bg), and the text uses
-# the pastel accents dimmed ~70% toward base so nothing glows. Color is a
-# whisper: dim mauve user, dim blue host, dim green dir, gray time; the git
-# segment mirrors the default prompt — dim teal base when dirty (mid-work is
-# the normal state, keep it quiet), dim pink when clean, per-flag colors.
+# Color roles (names come from the catppuccin-flavored default; other schemes
+# fill the same roles with their own hues):
+#   bg_s0/fg_s0  first pill  (user + time)      bg_s1/fg_s1  second pill (dir + git)
+#   mauve  user text + v behind      blue   host text
+#   green  dir + staged + ok ❯       pink   git clean text
+#   teal   git dirty base            sky    ^ ahead flag
+#   peach  ? untracked flag          red    * modified + err ❯
+#   gray   time text + the @ in user@host
 #
 # NOTE: every comment MUST have a space before # — bash parses VAR='val'#word
 #       as setting VAR to 'val'# and then running `word` as a command.
 
-__tc_bg_s0='\[\e[48;2;17;17;27m\]'         # crust  #11111b — user + time pills
-__tc_bg_s1='\[\e[48;2;24;24;37m\]'         # mantle #181825 — dir + git pills
+# Select a color scheme; returns 1 (leaving colors untouched) on unknown names.
+__tc_set_scheme() {
+  case "$1" in
+    default)
+      # Near-black mocha pills (crust/mantle) + pastel accents dimmed ~70%
+      # toward base so nothing glows. Color is a whisper.
+      __tc_bg_s0='\[\e[48;2;17;17;27m\]'         # crust  #11111b
+      __tc_bg_s1='\[\e[48;2;24;24;37m\]'         # mantle #181825
+      __tc_fg_s0='\[\e[38;2;17;17;27m\]'
+      __tc_fg_s1='\[\e[38;2;24;24;37m\]'
+      __tc_fg_mauve='\[\e[38;2;151;125;187m\]'   # dim mauve #977dbb
+      __tc_fg_blue='\[\e[38;2;105;135;189m\]'    # dim blue  #6987bd
+      __tc_fg_green='\[\e[38;2;125;168;126m\]'   # dim green #7da87e
+      __tc_fg_pink='\[\e[38;2;180;145;176m\]'    # dim pink  #b491b0
+      __tc_fg_teal='\[\e[38;2;113;167;163m\]'    # dim teal  #71a7a3
+      __tc_fg_sky='\[\e[38;2;105;163;178m\]'     # dim sky   #69a3b2
+      __tc_fg_peach='\[\e[38;2;184;134;108m\]'   # dim peach #b8866c
+      __tc_fg_red='\[\e[38;2;179;106;132m\]'     # dim red   #b36a84
+      __tc_fg_gray='\[\e[38;2;127;132;156m\]'    # overlay1  #7f849c
+      ;;
+    catppuccin)
+      # Full catppuccin mocha, as in nvim's catppuccin colorscheme: surface
+      # pills with the undimmed pastel accents. Brighter than default.
+      __tc_bg_s0='\[\e[48;2;49;50;68m\]'         # surface0 #313244
+      __tc_bg_s1='\[\e[48;2;69;71;90m\]'         # surface1 #45475a
+      __tc_fg_s0='\[\e[38;2;49;50;68m\]'
+      __tc_fg_s1='\[\e[38;2;69;71;90m\]'
+      __tc_fg_mauve='\[\e[38;2;203;166;247m\]'   # mauve #cba6f7
+      __tc_fg_blue='\[\e[38;2;137;180;250m\]'    # blue  #89b4fa
+      __tc_fg_green='\[\e[38;2;166;227;161m\]'   # green #a6e3a1
+      __tc_fg_pink='\[\e[38;2;245;194;231m\]'    # pink  #f5c2e7
+      __tc_fg_teal='\[\e[38;2;148;226;213m\]'    # teal  #94e2d5
+      __tc_fg_sky='\[\e[38;2;137;220;235m\]'     # sky   #89dceb
+      __tc_fg_peach='\[\e[38;2;250;179;135m\]'   # peach #fab387
+      __tc_fg_red='\[\e[38;2;243;139;168m\]'     # red   #f38ba8
+      __tc_fg_gray='\[\e[38;2;166;173;200m\]'    # subtext0 #a6adc8
+      ;;
+    monokai-pro)
+      # Monokai Pro (classic filter), as in nvim's monokai-pro colorscheme:
+      # charcoal pills, purple/blue identity, yellow clean, orange untracked.
+      __tc_bg_s0='\[\e[48;2;34;31;34m\]'         # #221f22
+      __tc_bg_s1='\[\e[48;2;45;42;46m\]'         # #2d2a2e
+      __tc_fg_s0='\[\e[38;2;34;31;34m\]'
+      __tc_fg_s1='\[\e[38;2;45;42;46m\]'
+      __tc_fg_mauve='\[\e[38;2;171;157;242m\]'   # purple #ab9df2 — user + v behind
+      __tc_fg_blue='\[\e[38;2;120;220;232m\]'    # blue   #78dce8 — host
+      __tc_fg_green='\[\e[38;2;169;220;118m\]'   # green  #a9dc76 — dir/staged/ok ❯
+      __tc_fg_pink='\[\e[38;2;255;216;102m\]'    # yellow #ffd866 — git clean
+      __tc_fg_teal='\[\e[38;2;98;167;176m\]'     # dim blue #62a7b0 — git dirty base
+                                                 # (blue dimmed 70% toward bg, so
+                                                 # branch ≠ bright host blue)
+      __tc_fg_sky='\[\e[38;2;255;216;102m\]'     # yellow #ffd866 — ^ ahead
+      __tc_fg_peach='\[\e[38;2;252;152;103m\]'   # orange #fc9867 — ? untracked
+      __tc_fg_red='\[\e[38;2;255;97;136m\]'      # red    #ff6188 — * modified/err ❯
+      __tc_fg_gray='\[\e[38;2;147;146;147m\]'    # gray   #939293 — time + @
+      ;;
+    tokyonight)
+      # Tokyonight (storm/night), as in nvim's tokyonight colorscheme: navy
+      # pills, the classic blue/cyan family, comment-blue-gray dirty base.
+      __tc_bg_s0='\[\e[48;2;22;22;30m\]'         # bg_dark #16161e
+      __tc_bg_s1='\[\e[48;2;36;40;59m\]'         # storm bg #24283b
+      __tc_fg_s0='\[\e[38;2;22;22;30m\]'
+      __tc_fg_s1='\[\e[38;2;36;40;59m\]'
+      __tc_fg_mauve='\[\e[38;2;187;154;247m\]'   # purple #bb9af7 — user + v behind
+      __tc_fg_blue='\[\e[38;2;122;162;247m\]'    # blue   #7aa2f7 — host
+      __tc_fg_green='\[\e[38;2;158;206;106m\]'   # green  #9ece6a — dir/staged/ok ❯
+      __tc_fg_pink='\[\e[38;2;115;218;202m\]'    # teal   #73daca — git clean
+      __tc_fg_teal='\[\e[38;2;86;95;137m\]'      # comment #565f89 — git dirty base
+      __tc_fg_sky='\[\e[38;2;125;207;255m\]'     # cyan   #7dcfff — ^ ahead
+      __tc_fg_peach='\[\e[38;2;255;158;100m\]'   # orange #ff9e64 — ? untracked
+      __tc_fg_red='\[\e[38;2;247;118;142m\]'     # red    #f7768e — * modified/err ❯
+      __tc_fg_gray='\[\e[38;2;115;122;162m\]'    # fg_gutter-ish #737aa2 — time + @
+      ;;
+    material)
+      # Material (deep ocean), as in nvim's material colorscheme: blue-black
+      # pills, the material accent set, dimmed material-teal dirty base.
+      __tc_bg_s0='\[\e[48;2;9;11;16m\]'          # darker #090b10
+      __tc_bg_s1='\[\e[48;2;26;28;37m\]'         # panel  #1a1c25
+      __tc_fg_s0='\[\e[38;2;9;11;16m\]'
+      __tc_fg_s1='\[\e[38;2;26;28;37m\]'
+      __tc_fg_mauve='\[\e[38;2;199;146;234m\]'   # purple #c792ea — user + v behind
+      __tc_fg_blue='\[\e[38;2;130;170;255m\]'    # blue   #82aaff — host
+      __tc_fg_green='\[\e[38;2;195;232;141m\]'   # green  #c3e88d — dir/staged/ok ❯
+      __tc_fg_pink='\[\e[38;2;137;221;255m\]'    # cyan   #89ddff — git clean
+      __tc_fg_teal='\[\e[38;2;94;147;145m\]'     # dim teal #5e9391 — git dirty base
+      __tc_fg_sky='\[\e[38;2;137;221;255m\]'     # cyan   #89ddff — ^ ahead
+      __tc_fg_peach='\[\e[38;2;247;140;108m\]'   # orange #f78c6c — ? untracked
+      __tc_fg_red='\[\e[38;2;240;113;120m\]'     # red    #f07178 — * modified/err ❯
+      __tc_fg_gray='\[\e[38;2;113;124;180m\]'    # gray   #717cb4 — time + @
+      ;;
+    kanagawa)
+      # Kanagawa (wave), as in nvim's kanagawa colorscheme: sumi-ink pills,
+      # muted zen accents — the calmest of the bright schemes.
+      __tc_bg_s0='\[\e[48;2;22;22;29m\]'         # sumiInk0 #16161d
+      __tc_bg_s1='\[\e[48;2;42;42;55m\]'         # sumiInk4 #2a2a37
+      __tc_fg_s0='\[\e[38;2;22;22;29m\]'
+      __tc_fg_s1='\[\e[38;2;42;42;55m\]'
+      __tc_fg_mauve='\[\e[38;2;149;127;184m\]'   # oniViolet #957fb8 — user + v behind
+      __tc_fg_blue='\[\e[38;2;127;180;202m\]'    # springBlue #7fb4ca — host
+      __tc_fg_green='\[\e[38;2;152;187;108m\]'   # springGreen #98bb6c — dir/staged/ok
+      __tc_fg_pink='\[\e[38;2;230;195;132m\]'    # carpYellow #e6c384 — git clean
+      __tc_fg_teal='\[\e[38;2;122;168;159m\]'    # waveAqua2 #7aa89f — git dirty base
+      __tc_fg_sky='\[\e[38;2;126;156;216m\]'     # crystalBlue #7e9cd8 — ^ ahead
+      __tc_fg_peach='\[\e[38;2;255;160;102m\]'   # surimiOrange #ffa066 — ? untracked
+      __tc_fg_red='\[\e[38;2;255;93;98m\]'       # peachRed #ff5d62 — * modified/err ❯
+      __tc_fg_gray='\[\e[38;2;114;113;105m\]'    # fujiGray #727169 — time + @
+      ;;
+    cyberdream)
+      # Cyberdream, as in nvim's cyberdream colorscheme: neon accents on
+      # near-black — the loud one, for when you want the prompt to glow.
+      __tc_bg_s0='\[\e[48;2;22;24;26m\]'         # bg #16181a
+      __tc_bg_s1='\[\e[48;2;30;33;36m\]'         # bg_alt #1e2124
+      __tc_fg_s0='\[\e[38;2;22;24;26m\]'
+      __tc_fg_s1='\[\e[38;2;30;33;36m\]'
+      __tc_fg_mauve='\[\e[38;2;189;94;255m\]'    # purple #bd5eff — user + v behind
+      __tc_fg_blue='\[\e[38;2;94;161;255m\]'     # blue   #5ea1ff — host
+      __tc_fg_green='\[\e[38;2;94;255;108m\]'    # green  #5eff6c — dir/staged/ok ❯
+      __tc_fg_pink='\[\e[38;2;255;94;160m\]'     # pink   #ff5ea0 — git clean
+      __tc_fg_teal='\[\e[38;2;72;176;186m\]'     # dim cyan #48b0ba — git dirty base
+      __tc_fg_sky='\[\e[38;2;94;241;255m\]'      # cyan   #5ef1ff — ^ ahead
+      __tc_fg_peach='\[\e[38;2;255;189;94m\]'    # orange #ffbd5e — ? untracked
+      __tc_fg_red='\[\e[38;2;255;110;94m\]'      # red    #ff6e5e — * modified/err ❯
+      __tc_fg_gray='\[\e[38;2;123;132;150m\]'    # grey   #7b8496 — time + @
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+  __tc_scheme=$1
+}
 
-__tc_fg_s0='\[\e[38;2;17;17;27m\]'         # crust  — arrow/cap fg
-__tc_fg_s1='\[\e[38;2;24;24;37m\]'         # mantle — arrow/cap fg
-__tc_fg_mauve='\[\e[38;2;151;125;187m\]'   # dim mauve #977dbb — user text + v behind
-__tc_fg_blue='\[\e[38;2;105;135;189m\]'    # dim blue  #6987bd — host text
-__tc_fg_green='\[\e[38;2;125;168;126m\]'   # dim green #7da87e — dir + staged + ok ❯
-__tc_fg_pink='\[\e[38;2;180;145;176m\]'    # dim pink  #b491b0 — git clean text
-__tc_fg_teal='\[\e[38;2;113;167;163m\]'    # dim teal  #71a7a3 — git dirty base
-__tc_fg_sky='\[\e[38;2;105;163;178m\]'     # dim sky   #69a3b2 — ^ ahead flag
-__tc_fg_peach='\[\e[38;2;184;134;108m\]'   # dim peach #b8866c — ? untracked flag
-__tc_fg_red='\[\e[38;2;179;106;132m\]'     # dim red   #b36a84 — * modified + err ❯
-__tc_fg_gray='\[\e[38;2;127;132;156m\]'    # overlay1  #7f849c — time text
+__tc_set_scheme default
 
 __tc_R='\[\e[0m\]'        # reset all
 __tc_B='\[\e[1m\]'        # bold
@@ -159,6 +285,51 @@ __tc_build_ps1() {
 __tc_prompt_command() {
   local s=$?
   __tc_build_ps1 "$s"
+}
+
+# Scrub any stale prompt-tc alias/abbreviation from a long-lived shell: the
+# old .bash_aliases registered an abbrev-alias, and bash-abbrev-alias's
+# space-key expansion reads its _abbrev_aliases array — which re-sourcing
+# .bash_aliases does NOT clear. Without this, typing "prompt-tc " expands to
+# the old PROMPT_COMMAND string and swallows the scheme/-h argument.
+unalias prompt-tc 2>/dev/null
+unset '_abbrev_aliases[prompt-tc]' 2>/dev/null
+
+# Switch to this prompt, optionally picking a color scheme:
+#   prompt-tc                keep the current scheme (default on first use)
+#   prompt-tc <scheme>       switch scheme + prompt in one go
+#   prompt-tc -h             list available schemes
+# (A function, not an alias, so it can take the scheme argument. Declared with
+# the `function` keyword on purpose: with the old alias still active in a
+# long-lived shell, the `prompt-tc() {` form would alias-expand at parse time
+# and abort sourcing this whole file with a syntax error; after `function`,
+# the name is not in command position, so no expansion happens.)
+function prompt-tc {
+  case "${1:-}" in
+    -h|--help)
+      printf 'Usage: prompt-tc [scheme]\n\nSchemes:\n'
+      printf '  %-12s %s\n' \
+        "default"     "near-black pills · dimmed catppuccin-mocha pastels" \
+        "catppuccin"  "catppuccin mocha · surface pills, full pastel accents" \
+        "monokai-pro" "monokai pro classic · charcoal pills, monokai accents" \
+        "tokyonight"  "tokyonight storm · navy pills, blue/cyan family" \
+        "material"    "material deep-ocean · blue-black pills, material accents" \
+        "kanagawa"    "kanagawa wave · sumi-ink pills, muted zen accents" \
+        "cyberdream"  "cyberdream · neon accents on near-black (the loud one)"
+      printf '\nCurrent scheme: %s. prompt-sd switches back to the plain prompt.\n' \
+        "${__tc_scheme:-default}"
+      return 0
+      ;;
+    "") ;;
+    *)
+      if ! __tc_set_scheme "$1"; then
+        echo "prompt-tc: unknown scheme '$1' (see: prompt-tc -h)" >&2
+        return 1
+      fi
+      ;;
+  esac
+  PROMPT_COMMAND="__tc_prompt_command"
+  echo "switched to TypeCraft prompt (${__tc_scheme} scheme)"
 }
 
 fi

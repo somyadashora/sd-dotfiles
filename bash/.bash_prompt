@@ -223,6 +223,48 @@ if [[ $- == *i* ]]; then
     fi
   }
 
+  # Select a prompt color scheme; returns 1 (colors untouched) on unknown
+  # names. `default` uses 256-color codes for maximum terminal compatibility;
+  # the named schemes mirror the nvim colorschemes in truecolor (same palettes
+  # as prompt-tc, minus the pills — this prompt is plain text). Roles:
+  #   user host path · clean dirty (git base) · staged+ mod* untr? ahead^
+  #   behindv · ok/err prompt marker.
+  __sd_set_scheme() {
+    local rgb=""
+    case "$1" in
+      default)
+        __sd_c_user='\[\e[38;5;39m\]'   __sd_c_host='\[\e[38;5;75m\]'
+        __sd_c_path='\[\e[38;5;141m\]'  __sd_c_clean='\[\e[38;5;82m\]'
+        __sd_c_dirty='\[\e[38;5;73m\]'  __sd_c_staged='\[\e[38;5;76m\]'
+        __sd_c_mod='\[\e[38;5;196m\]'   __sd_c_untr='\[\e[38;5;215m\]'
+        __sd_c_ahead='\[\e[38;5;45m\]'  __sd_c_behind='\[\e[38;5;201m\]'
+        __sd_c_ok='\[\e[38;5;70m\]'     __sd_c_err='\[\e[38;5;196m\]'
+        ;;
+      # order: user host path clean dirty staged mod untr ahead behind
+      catppuccin)  rgb="203;166;247 137;180;250 166;227;161 245;194;231 148;226;213 166;227;161 243;139;168 250;179;135 137;220;235 203;166;247" ;;
+      monokai-pro) rgb="171;157;242 120;220;232 169;220;118 255;216;102 98;167;176 169;220;118 255;97;136 252;152;103 255;216;102 171;157;242" ;;
+      tokyonight)  rgb="187;154;247 122;162;247 158;206;106 115;218;202 86;95;137 158;206;106 247;118;142 255;158;100 125;207;255 187;154;247" ;;
+      material)    rgb="199;146;234 130;170;255 195;232;141 137;221;255 94;147;145 195;232;141 240;113;120 247;140;108 137;221;255 199;146;234" ;;
+      kanagawa)    rgb="149;127;184 127;180;202 152;187;108 230;195;132 122;168;159 152;187;108 255;93;98 255;160;102 126;156;216 149;127;184" ;;
+      cyberdream)  rgb="189;94;255 94;161;255 94;255;108 255;94;160 72;176;186 94;255;108 255;110;94 255;189;94 94;241;255 189;94;255" ;;
+      *)
+        return 1
+        ;;
+    esac
+    if [[ -n "$rgb" ]]; then
+      local a=($rgb)
+      __sd_c_user="\[\e[38;2;${a[0]}m\]"   __sd_c_host="\[\e[38;2;${a[1]}m\]"
+      __sd_c_path="\[\e[38;2;${a[2]}m\]"   __sd_c_clean="\[\e[38;2;${a[3]}m\]"
+      __sd_c_dirty="\[\e[38;2;${a[4]}m\]"  __sd_c_staged="\[\e[38;2;${a[5]}m\]"
+      __sd_c_mod="\[\e[38;2;${a[6]}m\]"    __sd_c_untr="\[\e[38;2;${a[7]}m\]"
+      __sd_c_ahead="\[\e[38;2;${a[8]}m\]"  __sd_c_behind="\[\e[38;2;${a[9]}m\]"
+      __sd_c_ok=$__sd_c_staged             __sd_c_err=$__sd_c_mod
+    fi
+    __sd_scheme=$1
+  }
+
+  __sd_set_scheme default
+
   __sd_git_colorize_flags() {
     # Give every status flag its own color, git/lazygit-style:
     #   + staged    green   (git: staged changes are green)
@@ -230,23 +272,21 @@ if [[ $- == *i* ]]; then
     #   ? untracked peach   (new-but-harmless; soft, not alarming)
     #   ^N ahead    cyan
     #   vN behind   magenta
-    # Digits after ^/v inherit that flag's color. Result in
-    # __sd_git_flags_colored; the caller restores its base color afterwards.
+    # Digits after ^/v inherit that flag's color. Colors come from the active
+    # scheme (__sd_set_scheme). Result in __sd_git_flags_colored; the caller
+    # restores its base color afterwards.
     __sd_git_flags_colored=""
 
     local flags=$1 i ch cur=""
-    local c_staged='\[\e[38;5;76m\]' c_mod='\[\e[38;5;196m\]'
-    local c_untr='\[\e[38;5;215m\]' c_ahead='\[\e[38;5;45m\]'
-    local c_behind='\[\e[38;5;201m\]'
 
     for ((i = 0; i < ${#flags}; i++)); do
       ch=${flags:i:1}
       case "$ch" in
-        '+') cur=$c_staged ;;
-        '*') cur=$c_mod ;;
-        '?') cur=$c_untr ;;
-        '^') cur=$c_ahead ;;
-        'v') cur=$c_behind ;;
+        '+') cur=$__sd_c_staged ;;
+        '*') cur=$__sd_c_mod ;;
+        '?') cur=$__sd_c_untr ;;
+        '^') cur=$__sd_c_ahead ;;
+        'v') cur=$__sd_c_behind ;;
       esac
       __sd_git_flags_colored+="${cur}${ch}"
     done
@@ -261,10 +301,11 @@ if [[ $- == *i* ]]; then
     __sd_git_head_name "$__sd_git_dir" || return
     __sd_git_status_flags_cached "$__sd_git_repo_root"
 
-    # Dirty base is a muted teal, not a warning color: a repo mid-work is the
+    # Dirty base is a muted tone, not a warning color: a repo mid-work is the
     # normal state, so it should sit quietly; the per-flag colors carry the
-    # detail and clean-green still pops when everything is committed.
-    local c_reset='\[\e[0m\]' c_clean='\[\e[38;5;82m\]' c_dirty='\[\e[38;5;73m\]'
+    # detail and the clean color still pops when everything is committed.
+    # Both come from the active scheme (__sd_set_scheme).
+    local c_reset='\[\e[0m\]' c_clean=$__sd_c_clean c_dirty=$__sd_c_dirty
     local branch=$__sd_git_head_value flags=$__sd_git_status_flags
 
     if [[ "$flags" == "…" ]]; then
@@ -364,8 +405,9 @@ if [[ $- == *i* ]]; then
     # fast git segment if the current directory is inside a repo.
     local last_status=${1:-0}
 
-    local c_reset='\[\e[0m\]' c_user='\[\e[38;5;39m\]' c_host='\[\e[38;5;75m\]' c_path='\[\e[38;5;141m\]'
-    local c_ok='\[\e[38;5;70m\]' c_err='\[\e[38;5;196m\]'
+    # Colors come from the active scheme (__sd_set_scheme).
+    local c_reset='\[\e[0m\]' c_user=$__sd_c_user c_host=$__sd_c_host c_path=$__sd_c_path
+    local c_ok=$__sd_c_ok c_err=$__sd_c_err
 
     local rc_segment=""
     if [[ $last_status -eq 0 ]]; then
@@ -401,4 +443,47 @@ if [[ $- == *i* ]]; then
       PROMPT_COMMAND="__sd_prompt_command"
       ;;
   esac
+
+  # Scrub every stale prompt-default artifact from a long-lived shell: the old
+  # .bash_aliases registered an abbrev-alias (bash-abbrev-alias's space-key
+  # expansion array survives re-sourcing and would swallow the scheme/-h
+  # argument), and an earlier revision defined a prompt-default FUNCTION. The
+  # command is now prompt-sd — a fresh name no old shell has ever aliased.
+  unalias prompt-default 2>/dev/null
+  unset '_abbrev_aliases[prompt-default]' 2>/dev/null
+  unset -f prompt-default 2>/dev/null
+
+  # Switch to this prompt, optionally picking a color scheme:
+  #   prompt-sd             keep the current scheme (default on first use)
+  #   prompt-sd <scheme>    switch scheme + prompt in one go
+  #   prompt-sd -h          list available schemes
+  # (Declared with the `function` keyword so a stray alias of the same name
+  # can't alias-expand at parse time and abort sourcing this file.)
+  function prompt-sd {
+    case "${1:-}" in
+      -h|--help)
+        printf 'Usage: prompt-sd [scheme]\n\nSchemes:\n'
+        printf '  %-12s %s\n' \
+          "default"     "256-color classic (blue user, purple path) — most portable" \
+          "catppuccin"  "catppuccin mocha pastels" \
+          "monokai-pro" "monokai pro classic accents" \
+          "tokyonight"  "tokyonight storm blue/cyan family" \
+          "material"    "material deep-ocean accents" \
+          "kanagawa"    "kanagawa wave muted zen accents" \
+          "cyberdream"  "cyberdream neon (the loud one)"
+        printf '\nCurrent scheme: %s. prompt-tc switches to the TypeCraft prompt.\n' \
+          "${__sd_scheme:-default}"
+        return 0
+        ;;
+      "") ;;
+      *)
+        if ! __sd_set_scheme "$1"; then
+          echo "prompt-sd: unknown scheme '$1' (see: prompt-sd -h)" >&2
+          return 1
+        fi
+        ;;
+    esac
+    PROMPT_COMMAND="__sd_prompt_command"
+    echo "switched to sd prompt (${__sd_scheme} scheme)"
+  }
 fi

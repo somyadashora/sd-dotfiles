@@ -305,8 +305,14 @@ sees it as the next argument. Use separate sequential `#[fg=...]#[bg=...]` tags 
 
 - `bash/.bash_aliases` — aliases including `tmux-cs` (print tmux cheatsheet),
   `git-cs` (print git aliases), `getdotfiles` (pull this repo)
-- `bash/.bash_prompt` / `.bash_prompt_tc` — two prompt styles
-  (switch with `prompt-default` / `prompt-tc`)
+- `bash/.bash_prompt` / `.bash_prompt_tc` — two prompt styles, switched with
+  the `prompt-sd` / `prompt-tc` shell functions. Both take an optional
+  color-scheme argument (`-h` lists them: default, catppuccin, monokai-pro,
+  tokyonight, material, kanagawa, cyberdream — palettes mirroring the nvim
+  colorschemes). They are functions, not aliases — bash-abbrev-alias's
+  space-key expansion would swallow arguments, and a function name that
+  collides with a live alias alias-expands at parse time (hence `function`
+  keyword + scrubbing of stale alias/abbrev/function names on source)
 - `git/git-aliases.gitconfig` — git aliases; include with `[include] path = ...`
   in `~/.gitconfig`
 - `lazygit/config.yml` — lazygit theme (catppuccin mocha, mauve accent — matches
