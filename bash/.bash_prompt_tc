@@ -1,46 +1,54 @@
 if [[ $- == *i* ]]; then
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  TypeCraft-inspired powerline prompt  (Catppuccin Macchiato · Nerd Fonts required)
+#  TypeCraft-inspired powerline prompt  (Catppuccin Mocha · Nerd Fonts required)
 #
 #  Switch to this prompt:   prompt-tc
 #  Switch back to default:  prompt-default
 #
-#  Visual structure (matches TypeCraft style):
-#    ▶ user ▶ ~/path ▶  branch flags
-#    ^— sharp opening arrow (U+E0B0)
-#                  ^— sharp inner arrows (U+E0B0)
-#                                        ^— rounded right cap (U+E0B4)
+#  Visual structure — two lines: identity, then time + git state. Each line is
+#  one dark rounded CAPSULE (rounded caps U+E0B6/U+E0B4 at both ends, sharp
+#  U+E0B0 only as inner separators), with icons + dim pastel text as the color:
+#    (  user@host ▶   ~/path )
+#    (  HH:MM ▶   branch flags )  ❯
+#    Line 2 is just the time capsule + ❯ when outside a git repo.
 # ──────────────────────────────────────────────────────────────────────────────
 
-# Catppuccin Macchiato — muted dark-pastel palette
+# Catppuccin Mocha — near-black pill style: the pills are the DARKEST mocha
+# tones (crust/mantle, darker than the usual terminal bg), and the text uses
+# the pastel accents dimmed ~70% toward base so nothing glows. Color is a
+# whisper: dim mauve user, dim green dir, dim pink/sky git, gray time.
 #
 # NOTE: every comment MUST have a space before # — bash parses VAR='val'#word
 #       as setting VAR to 'val'# and then running `word` as a command.
 
-__tc_bg_mauve='\[\e[48;2;198;160;246m\]'   # mauve  #c6a0f6 — user
-__tc_bg_sage='\[\e[48;2;166;218;149m\]'    # sage   #a6da95 — directory (pastel green)
-__tc_bg_pink='\[\e[48;2;245;189;230m\]'    # pink   #f5bde6 — git clean
-__tc_bg_sky='\[\e[48;2;145;215;227m\]'     # sky    #91d7e3 — git dirty
+__tc_bg_s0='\[\e[48;2;17;17;27m\]'         # crust  #11111b — user + time pills
+__tc_bg_s1='\[\e[48;2;24;24;37m\]'         # mantle #181825 — dir + git pills
 
-__tc_fg_base='\[\e[38;2;36;39;58m\]'       # base   #24273a — text on segments
-__tc_fg_mauve='\[\e[38;2;198;160;246m\]'   # mauve  — arrow/cap fg
-__tc_fg_sage='\[\e[38;2;166;218;149m\]'    # sage   — arrow/cap fg
-__tc_fg_pink='\[\e[38;2;245;189;230m\]'    # pink   — arrow/cap fg
-__tc_fg_sky='\[\e[38;2;145;215;227m\]'     # sky    — arrow/cap fg
-__tc_fg_green='\[\e[38;2;166;218;149m\]'   # green  — success ❯
-__tc_fg_red='\[\e[38;2;237;135;150m\]'     # red    — error ❯
+__tc_fg_s0='\[\e[38;2;17;17;27m\]'         # crust  — arrow/cap fg
+__tc_fg_s1='\[\e[38;2;24;24;37m\]'         # mantle — arrow/cap fg
+__tc_fg_mauve='\[\e[38;2;151;125;187m\]'   # dim mauve #977dbb — user text
+__tc_fg_green='\[\e[38;2;125;168;126m\]'   # dim green #7da87e — dir text + ok ❯
+__tc_fg_pink='\[\e[38;2;180;145;176m\]'    # dim pink  #b491b0 — git clean text
+__tc_fg_sky='\[\e[38;2;105;163;178m\]'     # dim sky   #69a3b2 — git dirty text
+__tc_fg_red='\[\e[38;2;179;106;132m\]'     # dim red   #b36a84 — error ❯
+__tc_fg_gray='\[\e[38;2;127;132;156m\]'    # overlay1  #7f849c — time text
 
 __tc_R='\[\e[0m\]'        # reset all
 __tc_B='\[\e[1m\]'        # bold
 
 # Nerd Font glyphs — stored via $'\uNNNN' so they survive file encoding
-#   U+E0B0  filled right arrow — opening + inner segment separator
-#   U+E0B4  rounded right cap  — closing (right end of last segment)
-#   U+E0A0  git branch icon
+#   U+E0B6  rounded left cap  — opens each line's capsule
+#   U+E0B0  filled right arrow — inner segment separator
+#   U+E0B4  rounded right cap  — closes the capsule
+#   U+E0A0  git branch icon · U+F007 user · U+F07B folder · U+F017 clock
 __tc_ARR=$''
 __tc_CAP_R=$''
 __tc_GIT=$''
+__tc_CAP_L=$''
+__tc_USR=$''
+__tc_DIR=$''
+__tc_CLK=$''
 
 __tc_build_ps1() {
   local last_status=${1:-0}
@@ -55,7 +63,8 @@ __tc_build_ps1() {
   fi
 
   # ── git ───────────────────────────────────────────────────────────────────
-  local has_git=0 branch="" flags="" git_bg="" git_fg=""
+  # The pill stays dark; clean/dirty shows in the TEXT color only.
+  local has_git=0 branch="" flags="" git_fg=""
   if declare -f __sd_git_find >/dev/null 2>&1 && __sd_git_find 2>/dev/null; then
     __sd_git_head_name "$__sd_git_dir" 2>/dev/null
     __sd_git_status_flags_cached "$__sd_git_repo_root" 2>/dev/null
@@ -63,38 +72,32 @@ __tc_build_ps1() {
     flags="$__sd_git_status_flags"
     has_git=1
     if [[ -n "$flags" && "$flags" != $'\xe2\x80\xa6' && "$flags" != "..." ]]; then
-      git_bg="$__tc_bg_sky"
       git_fg="$__tc_fg_sky"
     else
-      git_bg="$__tc_bg_pink"
       git_fg="$__tc_fg_pink"
     fi
   fi
 
-  # ── build line 1 ──────────────────────────────────────────────────────────
+  # ── line 1: user@host + directory ─────────────────────────────────────────
   #
-  #   ▶ user ▶ ~/path ▶  branch flags
-  #   ^        ^          ^            ^
-  #   opening  inner arr  inner arr    rounded right cap
+  #   (  user@host ▶   ~/path )
+  #   ^— rounded left cap      ^— rounded right cap
 
-  # Opening arrow (no bg → mauve) + Seg 1: username only [mauve, bold]
-  local p="${__tc_R}${__tc_fg_mauve}${__tc_ARR}${__tc_bg_mauve}${__tc_fg_base}${__tc_B}  \\u "
+  # Same host trick as .bash_prompt: strip codespaces' random name suffix;
+  # otherwise plain short hostname.
+  local cs_host="${CODESPACE_NAME%-*}"
+  [[ -z "$cs_host" ]] && cs_host="${HOSTNAME%%.*}"
 
-  # Inner arrow (mauve → sage) + Seg 2: directory [pastel green, bold]
-  p+="${__tc_bg_sage}${__tc_fg_mauve}${__tc_ARR}${__tc_fg_base}${__tc_B}  ${path} "
+  # Rounded left cap + Seg 1: user icon + user@host [dim mauve on crust]
+  local p="${__tc_R}${__tc_fg_s0}${__tc_CAP_L}${__tc_bg_s0}${__tc_fg_mauve}${__tc_B}${__tc_USR}  \\u@${cs_host} "
 
-  # Inner arrow + Seg 3: git [pink=clean · sky=dirty, bold] + rounded right cap
-  if (( has_git )); then
-    local git_label="${__tc_GIT} ${branch}"
-    [[ -n "$flags" ]] && git_label+="  ${flags}"
-    p+="${git_bg}${__tc_fg_sage}${__tc_ARR}${__tc_fg_base}${__tc_B}  ${git_label} "
-    p+="${__tc_R}${git_fg}${__tc_CAP_R}${__tc_R}"
-  else
-    # No git — rounded cap closes after directory
-    p+="${__tc_R}${__tc_fg_sage}${__tc_CAP_R}${__tc_R}"
-  fi
+  # Inner arrow (crust → mantle) + Seg 2: folder icon + path [dim green]
+  p+="${__tc_bg_s1}${__tc_fg_s0}${__tc_ARR}${__tc_fg_green}${__tc_B} ${__tc_DIR}  ${path} "
+  p+="${__tc_R}${__tc_fg_s1}${__tc_CAP_R}${__tc_R}"
 
-  # ── line 2: prompt character (bold) ───────────────────────────────────────
+  # ── line 2: time + git status + prompt character ──────────────────────────
+  #
+  #   (  HH:MM ▶   branch flags ) ❯     (time capsule + ❯ when not in git)
   local char
   if (( last_status == 0 )); then
     char="${__tc_fg_green}${__tc_B}❯${__tc_R} "
@@ -102,7 +105,21 @@ __tc_build_ps1() {
     char="${__tc_fg_red}${__tc_B}❯${__tc_R} "
   fi
 
-  PS1="${p}\n${char}"
+  # Rounded left cap + time [gray on crust — \A is bash's HH:MM]
+  local line2="${__tc_fg_s0}${__tc_CAP_L}${__tc_bg_s0}${__tc_fg_gray}${__tc_B}${__tc_CLK}  \\A "
+  if (( has_git )); then
+    # Inner arrow (crust → mantle) + git seg; accent in the text:
+    # dim pink = clean, dim sky = dirty.
+    local git_label="${__tc_GIT} ${branch}"
+    [[ -n "$flags" ]] && git_label+="  ${flags}"
+    line2+="${__tc_bg_s1}${__tc_fg_s0}${__tc_ARR}${git_fg}${__tc_B} ${git_label} "
+    line2+="${__tc_R}${__tc_fg_s1}${__tc_CAP_R}${__tc_R} "
+  else
+    line2+="${__tc_R}${__tc_fg_s0}${__tc_CAP_R}${__tc_R} "
+  fi
+  line2+="${char}"
+
+  PS1="${p}\n${line2}"
 }
 
 __tc_prompt_command() {
