@@ -208,6 +208,20 @@ reuse the Search/CurSearch catppuccin family (muted yellow / peach), and
 SneakLabel (+LabelMask) is catppuccin mauve `#cba6f7` — the repo accent —
 applied to every scheme + styler namespace like the search overrides.
 
+**Yank history** (`nvim/lua/somya/plugins/yanky.lua`): yanky.nvim — a
+persistent kill-ring so an overwritten unnamed register is never lost (chosen
+over yankbank-nvim for ring-cycling + the Telescope picker). `y` routes through
+`<Plug>(YankyYank)` (also keeps the cursor in place), `p/P/gp/gP` become
+ring-aware puts, and **immediately after a put** `[y`/`]y` swap the pasted text
+for the previous/next ring entry in place (yanky's default `<c-p>/<c-n>` cycle
+keys are avoided — `<C-n>` belongs to vim-visual-multi). `<leader>y` opens the
+ring in Telescope (`<CR>` put, `<c-x>` delete entry; custom mappings, since the
+extension's defaults bind `<c-k>` and would clobber this config's `<C-j>/<C-k>`
+menu nav). Ring persists via shada; system-clipboard copies sync into it.
+Yanky's `on_yank` flash is off (the `TextYankPost` autocmd in `core/autocmds.lua`
+already flashes) — only its `on_put` flash is kept. All maps are lazy `keys`
+triggers.
+
 **SystemVerilog LSP**: two servers are configured — `verible` (Mason-installed) and
 `slang-server` (`~/.local/bin/slang-server`). Only one should be active at a time;
 switch with `:UseVerible` / `:UseSlang`.

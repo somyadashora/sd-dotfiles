@@ -178,6 +178,17 @@ local sections = {
     },
   },
   {
+    title = "YANK RING  (yanky.nvim — history of yanks & deletes)",
+    entries = {
+      { "y  /  p  /  P",  "work as normal, but tracked in the ring (y keeps cursor put)" },
+      { "[y  /  ]y",       "right after a put: swap pasted text for prev / next entry" },
+      { "gp  /  gP",       "put, leaving cursor after the pasted text" },
+      { "<leader>y",       "telescope yank-history picker (<CR> put, <C-x> delete)" },
+      { "d / c / x",       "deletes enter the ring too — recover via <leader>y" },
+      { ":YankyClearHistory", "wipe the ring (persists via shada otherwise)" },
+    },
+  },
+  {
     title = "ALIGN  (align.nvim — visual select first)",
     entries = {
       { "<leader>Ac",   "align to 1-char (with preview)" },
