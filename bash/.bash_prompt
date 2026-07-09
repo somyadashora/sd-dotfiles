@@ -223,6 +223,35 @@ if [[ $- == *i* ]]; then
     fi
   }
 
+  __sd_git_colorize_flags() {
+    # Give every status flag its own color, git/lazygit-style:
+    #   + staged    green   (git: staged changes are green)
+    #   * modified  red     (git: unstaged changes are red)
+    #   ? untracked peach   (new-but-harmless; soft, not alarming)
+    #   ^N ahead    cyan
+    #   vN behind   magenta
+    # Digits after ^/v inherit that flag's color. Result in
+    # __sd_git_flags_colored; the caller restores its base color afterwards.
+    __sd_git_flags_colored=""
+
+    local flags=$1 i ch cur=""
+    local c_staged='\[\e[38;5;76m\]' c_mod='\[\e[38;5;196m\]'
+    local c_untr='\[\e[38;5;215m\]' c_ahead='\[\e[38;5;45m\]'
+    local c_behind='\[\e[38;5;201m\]'
+
+    for ((i = 0; i < ${#flags}; i++)); do
+      ch=${flags:i:1}
+      case "$ch" in
+        '+') cur=$c_staged ;;
+        '*') cur=$c_mod ;;
+        '?') cur=$c_untr ;;
+        '^') cur=$c_ahead ;;
+        'v') cur=$c_behind ;;
+      esac
+      __sd_git_flags_colored+="${cur}${ch}"
+    done
+  }
+
   __sd_git_prompt_segment() {
     # Compose only the git portion of PS1.  Branch name is live; dirty status is
     # cached so large repositories do not make every prompt sluggish.
@@ -232,7 +261,10 @@ if [[ $- == *i* ]]; then
     __sd_git_head_name "$__sd_git_dir" || return
     __sd_git_status_flags_cached "$__sd_git_repo_root"
 
-    local c_reset='\[\e[0m\]' c_clean='\[\e[38;5;82m\]' c_dirty='\[\e[38;5;214m\]'
+    # Dirty base is a muted teal, not a warning color: a repo mid-work is the
+    # normal state, so it should sit quietly; the per-flag colors carry the
+    # detail and clean-green still pops when everything is committed.
+    local c_reset='\[\e[0m\]' c_clean='\[\e[38;5;82m\]' c_dirty='\[\e[38;5;73m\]'
     local branch=$__sd_git_head_value flags=$__sd_git_status_flags
 
     if [[ "$flags" == "…" ]]; then
@@ -240,7 +272,11 @@ if [[ $- == *i* ]]; then
     elif [[ -z "$flags" ]]; then
       printf -v __sd_git_prompt_segment_value ' %s[%s|clean]%s' "$c_clean" "$branch" "$c_reset"
     else
-      printf -v __sd_git_prompt_segment_value ' %s[%s|%s]%s' "$c_dirty" "$branch" "$flags" "$c_reset"
+      # Dirty: base (brackets/branch/pipe) stays orange; each flag gets its own
+      # color, then the base color is restored for the closing bracket.
+      __sd_git_colorize_flags "$flags"
+      printf -v __sd_git_prompt_segment_value ' %s[%s|%s%s]%s' \
+        "$c_dirty" "$branch" "$__sd_git_flags_colored" "$c_dirty" "$c_reset"
     fi
   }
 
