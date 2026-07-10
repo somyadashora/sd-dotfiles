@@ -288,6 +288,9 @@ __tc_build_ps1() {
 
 __tc_prompt_command() {
   local s=$?
+  # Per-prompt history flush — see the twin comment in .bash_prompt's
+  # __sd_prompt_command (file-searching Ctrl+R needs it; up-arrow unaffected).
+  builtin history -a
   __tc_build_ps1 "$s"
 }
 

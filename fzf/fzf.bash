@@ -13,7 +13,8 @@
 # ============================================================================
 # SHELL KEYBINDINGS (installed by `fzf --bash` in .bash_rc):
 #   Ctrl+T   - pick file(s) under the current dir, paste onto command line
-#   Ctrl+R   - fuzzy-search shell history (Ctrl+R again toggles sort)
+#   Ctrl+R   - fuzzy-search shell history — ALL shells, live (searches the
+#              history file, flushed per prompt; Ctrl+R again toggles sort)
 #   Alt+C    - cd into a fuzzy-picked subdirectory
 #
 # INSIDE ANY PICKER:
@@ -73,8 +74,35 @@ elif command -v rg >/dev/null 2>&1; then
 fi
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 
-# Previews: bat for files (Ctrl+T), tree/ls for directories (Alt+C), the
-# full wrapped command for history (Ctrl+R, hidden until Ctrl+/).
+# Previews: bat for files (Ctrl+T), tree/ls for directories (Alt+C).
 export FZF_CTRL_T_OPTS="--preview 'bat --color=always --style=numbers --line-range=:500 {} 2>/dev/null || ls -la {}'"
 export FZF_ALT_C_OPTS="--preview 'tree -C -L 2 {} 2>/dev/null || ls -la {}'"
-export FZF_CTRL_R_OPTS="--preview 'echo {}' --preview-window down:3:hidden:wrap"
+
+# Ctrl+R — search the history FILE, not this shell's in-memory list.
+# The prompt functions flush every command with `history -a` as it runs
+# (see .bash_prompt/__sd_prompt_command), so this picker sees ALL shells'
+# commands instantly — while each shell's in-memory history (up-arrow,
+# !N) stays its own, never interleaved. Replaces the __fzf_history__
+# binding installed by `eval "$(fzf --bash)"` — this file is sourced
+# after that eval in .bash_rc, so our bind wins.
+__sd_fzf_history_file() {
+  local histfile=${HISTFILE:-$HOME/.bash_history} selected
+  local picker=(fzf)
+  # Same tmux popup as the other keybindings (FZF_TMUX_OPTS, word-split).
+  if [[ -n $TMUX ]] && command -v fzf-tmux >/dev/null 2>&1; then
+    picker=(fzf-tmux $FZF_TMUX_OPTS)
+  fi
+  selected=$(
+    tac "$histfile" 2>/dev/null |
+      grep -avE '^#[0-9]+$' |
+      awk '!seen[$0]++' |
+      "${picker[@]}" --scheme=history --no-multi --query "$READLINE_LINE" \
+        --prompt='history ❯ ' --bind=ctrl-r:toggle-sort \
+        --preview 'echo {}' --preview-window down:3:hidden:wrap
+  ) || return
+  READLINE_LINE=$selected
+  READLINE_POINT=${#READLINE_LINE}
+}
+if [[ $- == *i* ]] && command -v fzf >/dev/null 2>&1; then
+  bind -x '"\C-r": __sd_fzf_history_file'
+fi

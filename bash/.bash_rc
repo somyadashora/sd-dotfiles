@@ -29,8 +29,16 @@ unset _abbrev_alias_script
 # Pager
 export PAGER=delta
 
+# History: shells append to $HISTFILE (never truncate each other), and the
+# prompt functions run `history -a` per prompt, so every command is in the
+# file immediately — that's what the fzf Ctrl+R widget (fzf/fzf.bash)
+# searches, giving cross-shell search while up-arrow stays per-shell.
+# (Do NOT chain history -a onto PROMPT_COMMAND here: prompt-sd/prompt-tc
+# overwrite PROMPT_COMMAND wholesale, so it lives inside their functions.)
 shopt -s histappend
-PROMPT_COMMAND="history -a;$PROMPT_COMMAND"
+HISTSIZE=100000
+HISTFILESIZE=200000
+HISTCONTROL=ignoreboth
 
 source "$DOTFILES_DIR/bash/.bash_aliases"
 source "$DOTFILES_DIR/bash/.bash_prompt"

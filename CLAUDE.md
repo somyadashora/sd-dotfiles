@@ -318,7 +318,14 @@ sees it as the next argument. Use separate sequential `#[fg=...]#[bg=...]` tags 
   peach match-highlight, rounded borders/reverse layout matching the tmux
   popups, fd/rg-backed default command, bat/tree previews for `Ctrl+T`/`Alt+C`,
   tmux-popup pickers via `FZF_TMUX_OPTS`. Its `FZF CHEATSHEET` comment block is
-  printed by the `fzf-cs` alias (same sed-extraction pattern as `tmux-cs`)
+  printed by the `fzf-cs` alias (same sed-extraction pattern as `tmux-cs`).
+  **Ctrl+R is a custom widget** (`__sd_fzf_history_file`, bound after fzf's
+  eval so it wins): it searches the history FILE (newest-first, deduped),
+  not the in-memory list — paired with a per-prompt `history -a` inside
+  `__sd_prompt_command`/`__tc_prompt_command` (it must live *inside* them:
+  prompt-sd/prompt-tc overwrite PROMPT_COMMAND wholesale, so anything chained
+  in .bash_rc would be clobbered). Net effect: Ctrl+R finds every shell's
+  commands instantly, while up-arrow/`!N` stay per-shell, never interleaved
 - `rg/ripgreprc` — ripgrep defaults (rg has no default config location — only
   read because `.bash_rc` exports `RIPGREP_CONFIG_PATH` pointing here):
   `--smart-case`, an `sv` type (`rg -tsv` = SV/Verilog + `.f` filelists),

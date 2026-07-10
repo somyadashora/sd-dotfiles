@@ -429,8 +429,14 @@ if [[ $- == *i* ]]; then
   }
 
   __sd_prompt_command() {
-    # Chain any pre-existing PROMPT_COMMAND before rebuilding this prompt.
     local last_status=$?
+    # Flush this command to $HISTFILE now (histappend in .bash_rc) so other
+    # shells' Ctrl+R — the fzf widget in fzf/fzf.bash, which searches the
+    # FILE — sees it immediately. In-memory history stays per-shell, so
+    # up-arrow is never interleaved. Lives here (and in __tc_prompt_command)
+    # because prompt-sd/prompt-tc overwrite PROMPT_COMMAND wholesale — a
+    # flush chained in .bash_rc's PROMPT_COMMAND would be clobbered.
+    builtin history -a
     __sd_build_ps1 "$last_status"
   }
 
