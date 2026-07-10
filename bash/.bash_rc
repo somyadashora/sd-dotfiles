@@ -17,6 +17,10 @@ fi
 # fzf colors/layout/previews (catppuccin mocha, mauve accent) + cheatsheet
 source "$DOTFILES_DIR/fzf/fzf.bash"
 
+# ripgrep defaults (smart-case, -tsv type, catppuccin colors) — rg has no
+# default config location, it only reads this env var
+export RIPGREP_CONFIG_PATH="$DOTFILES_DIR/rg/ripgreprc"
+
 # bash-abbrev-alias (interactive only — bind calls warn in non-interactive shells)
 _abbrev_alias_script="${HOME}/.somyadashora/sd-tools/abbrev-alias/abbrev-alias.plugin.bash"
 [[ $- == *i* && -f "$_abbrev_alias_script" ]] && source "$_abbrev_alias_script"

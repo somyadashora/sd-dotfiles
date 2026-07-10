@@ -1,0 +1,32 @@
+# ripgrep configuration — read only when RIPGREP_CONFIG_PATH points here
+# (exported in bash/.bash_rc; there is no default config location).
+#
+# Format: one flag per line, # comments. These become defaults for EVERY
+# rg run, including rg inside tools (telescope live-grep, fzf fallback);
+# any single run can opt out with --no-config, and CLI flags always win.
+
+# Case-insensitive until the pattern contains a capital letter
+--smart-case
+
+# SystemVerilog/Verilog type: rg -tsv <pattern> searches only these.
+# rg's BUILT-IN sv type includes *.h (C headers) — clear it first so the
+# set is exactly ours: SV/Verilog sources + headers, *.vg gate netlists,
+# *.vp protected sources, .f filelists.
+--type-clear=sv
+--type-add=sv:*.{sv,svh,v,vh,vg,vp,f}
+
+# Truncate monster lines (generated netlists, minified files) instead of
+# flooding the terminal — still shows a preview of the match.
+--max-columns=200
+--max-columns-preview
+
+# Colors — catppuccin mocha, matching fzf/nvim: peach bold match (same as
+# the nvim Search / fzf hl highlight), mauve paths (repo accent), muted
+# overlay1 line numbers.
+--colors=match:none
+--colors=match:fg:0xfa,0xb3,0x87
+--colors=match:style:bold
+--colors=path:none
+--colors=path:fg:0xcb,0xa6,0xf7
+--colors=line:none
+--colors=line:fg:0x7f,0x84,0x9c

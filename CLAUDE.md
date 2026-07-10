@@ -319,6 +319,11 @@ sees it as the next argument. Use separate sequential `#[fg=...]#[bg=...]` tags 
   popups, fd/rg-backed default command, bat/tree previews for `Ctrl+T`/`Alt+C`,
   tmux-popup pickers via `FZF_TMUX_OPTS`. Its `FZF CHEATSHEET` comment block is
   printed by the `fzf-cs` alias (same sed-extraction pattern as `tmux-cs`)
+- `rg/ripgreprc` — ripgrep defaults (rg has no default config location — only
+  read because `.bash_rc` exports `RIPGREP_CONFIG_PATH` pointing here):
+  `--smart-case`, an `sv` type (`rg -tsv` = SV/Verilog + `.f` filelists),
+  long-line truncation, catppuccin colors (peach match / mauve path). Applies
+  to every rg run incl. inside tools; opt out per-run with `--no-config`
 - `git/git-aliases.gitconfig` — git aliases; include with `[include] path = ...`
   in `~/.gitconfig`
 - `lazygit/config.yml` — lazygit theme (catppuccin mocha, mauve accent — matches
