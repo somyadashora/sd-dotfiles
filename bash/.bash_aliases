@@ -29,19 +29,20 @@ abbrev-alias init-ai="$DOTFILES_DIR/nvim/scripts/init-ai"
 # material/kanagawa/cyberdream) — aliases here would shadow them, so neither
 # lives in this file anymore.
 
-# nvim-bash: put THIS shell into vi editing mode with nvim as $EDITOR, jump to
-# the TypeCraft prompt (scheme arg forwarded: `nvim-bash catppuccin`), and show
+# nvim-bash: put THIS shell into vi editing mode with nvim as $EDITOR and show
 # the current vi mode two ways — the readline cursor (\e[5 q blinking bar =
 # insert, \e[2 q steady block = normal) and a colored pill at the start of the
 # prompt's last line: green " I " while inserting, mauve/purple " N " in
-# normal mode, colored in the ACTIVE prompt scheme's accents (see
-# __nvim_bash_rebind). Both ride readline's show-mode-in-prompt strings — the
-# ONLY mechanism that live-updates as you hit Esc/i (PS1 is rebuilt once per
-# prompt, so PROMPT_COMMAND can't track mode changes). Undo with emacs-bash
-# below. Run per-shell; shells that never call nvim-bash are untouched. (Was a
-# plain alias; now a function — declared with the `function` keyword +
-# alias/abbrev scrub because the old alias may still be live in long-running
-# shells, same parse-time expansion trap as prompt-tc.)
+# normal mode. The prompt itself is left alone — the pill works on whichever
+# of prompt-sd / prompt-tc / prompt-minimal is active, colored in that
+# prompt's current scheme accents (see __nvim_bash_rebind). Both indicators
+# ride readline's show-mode-in-prompt strings — the ONLY mechanism that
+# live-updates as you hit Esc/i (PS1 is rebuilt once per prompt, so
+# PROMPT_COMMAND can't track mode changes). Undo with emacs-bash below. Run
+# per-shell; shells that never call nvim-bash are untouched. (Was a plain
+# alias; now a function — declared with the `function` keyword + alias/abbrev
+# scrub because the old alias may still be live in long-running shells, same
+# parse-time expansion trap as prompt-tc.)
 
 # __nvim_bash_accent: pull the SGR params ("38;2;R;G;B" or "38;5;N") out of a
 # prompt color variable (PS1-format, '\[\e[38;...m\]'); $2 is the fallback
@@ -57,18 +58,19 @@ __nvim_bash_accent() {
 }
 
 # __nvim_bash_rebind: (re)apply the vi mode-pill strings in the ACTIVE
-# prompt's scheme accents — prompt-tc's green/mauve/pill-dark roles, or
-# prompt-sd's staged/user roles (crust text) when that prompt owns
-# PROMPT_COMMAND — falling back to catppuccin mocha green/mauve/crust when
-# neither prompt file is loaded. \1..\2 wrap the non-printing escapes so
-# prompt width stays correct; both pills print the same width (4 cells) so the
-# prompt never shifts on mode change. prompt-sd/prompt-tc call this after
-# every scheme switch so the pill recolors live; the shopt guard makes that a
-# no-op in shells that never ran nvim-bash.
+# prompt's scheme accents — prompt-tc's green/mauve/pill-dark roles, or the
+# staged/user roles (crust text) when prompt-sd or prompt-minimal (which
+# shares the __sd_c_* palette) owns PROMPT_COMMAND — falling back to
+# catppuccin mocha green/mauve/crust when no prompt file is loaded. \1..\2
+# wrap the non-printing escapes so prompt width stays correct; both pills
+# print the same width (4 cells) so the prompt never shifts on mode change.
+# prompt-sd/prompt-tc/prompt-minimal call this after every scheme switch so
+# the pill recolors live; the shopt guard makes that a no-op in shells that
+# never ran nvim-bash.
 __nvim_bash_rebind() {
   shopt -qo vi || return 0
   local ins cmd dark='38;2;17;17;27'
-  if [[ ${PROMPT_COMMAND:-} == *__sd_prompt_command* ]]; then
+  if [[ ${PROMPT_COMMAND:-} == *__sd_prompt_command* || ${PROMPT_COMMAND:-} == *__mini_prompt_command* ]]; then
     ins=$(__nvim_bash_accent "${__sd_c_staged:-}" '38;2;166;227;161')
     cmd=$(__nvim_bash_accent "${__sd_c_user:-}" '38;2;203;166;247')
   else
@@ -81,15 +83,33 @@ __nvim_bash_rebind() {
   bind "set vi-cmd-mode-string \"\1\e[2 q\e[48${cmd#38}m\e[${dark}m\e[1m\2 N \1\e[0m\2 \""
 }
 
+# __nvim_bash_edit_cmdline: what vi-mode `v` runs instead of readline's stock
+# vi-edit-and-execute-command. Stock `v` launches ${VISUAL:-$EDITOR} — the
+# full lazy.nvim config, seconds of plugin loading for a one-line edit — and
+# executes the result the moment you :wq. This opens `nvim --clean` instead
+# (no user config / plugins / shada — starts in milliseconds, still has
+# syntax highlighting + sane defaults) and, unlike stock, puts the edited
+# text BACK ON THE PROMPT for review instead of running it immediately —
+# press Enter to execute. Override the editor with SD_NVIM_BASH_EDITOR
+# (word-split, e.g. 'nvim -u ~/nvim-mini.lua'). EDITOR/VISUAL stay untouched,
+# so git commit etc. still get the full nvim.
+# __nvim_bash_edit_cmdline() {
+#   local tmp
+#   tmp=$(mktemp "${TMPDIR:-/tmp}/bash-edit.XXXXXX") || return
+#   printf '%s\n' "$READLINE_LINE" > "$tmp"
+#   ${SD_NVIM_BASH_EDITOR:-nvim --clean} -c 'setf bash' "$tmp" </dev/tty >/dev/tty
+#   READLINE_LINE=$(<"$tmp")
+#   READLINE_POINT=${#READLINE_LINE}
+#   rm -f "$tmp"
+# }
+
 unalias nvim-bash 2>/dev/null
 unset '_abbrev_aliases[nvim-bash]' 2>/dev/null
 function nvim-bash {
   export EDITOR=nvim
   set -o vi
-  if declare -F prompt-tc >/dev/null 2>&1; then
-    prompt-tc "$@" || return    # sets the scheme + recolors the pill itself
-  fi
-  __nvim_bash_rebind            # covers shells without the prompt files
+  __nvim_bash_rebind            # pill in the active prompt's scheme accents
+  # bind -m vi-command -x '"v": __nvim_bash_edit_cmdline'
   printf '\e[5 q'               # land in insert: line cursor right away
   echo "vi editing mode on — I/N mode pill in prompt (emacs-bash to undo)"
 }

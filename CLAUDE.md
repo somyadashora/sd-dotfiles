@@ -306,17 +306,22 @@ sees it as the next argument. Use separate sequential `#[fg=...]#[bg=...]` tags 
 - `bash/.bash_aliases` — aliases including `tmux-cs` (print tmux cheatsheet),
   `git-cs` (print git aliases), `getdotfiles` (pull this repo). Also
   `nvim-bash` / `emacs-bash`: per-shell vi editing mode (nvim as `$EDITOR`,
-  jumps to prompt-tc, live I/N mode pill at the start of the prompt's last
-  line via readline's show-mode-in-prompt — the only mechanism that updates on
-  Esc/i mid-edit) and its undo. The pill recolors to the active prompt
-  scheme's green/mauve roles: `__nvim_bash_rebind` reads the `__tc_fg_*` /
-  `__sd_c_*` vars and both prompt-sd/prompt-tc call it after scheme switches
-  (a no-op unless the shell is in vi mode)
-- `bash/.bash_prompt` / `.bash_prompt_tc` — two prompt styles, switched with
-  the `prompt-sd` / `prompt-tc` shell functions. Both take an optional
-  color-scheme argument (`-h` lists them: default, catppuccin, monokai-pro,
-  tokyonight, material, kanagawa, cyberdream — palettes mirroring the nvim
-  colorschemes). They are functions, not aliases — bash-abbrev-alias's
+  live I/N mode pill at the start of the prompt's last line via readline's
+  show-mode-in-prompt — the only mechanism that updates on Esc/i mid-edit)
+  and its undo. The active prompt is left as-is: the pill works on all three
+  prompts, recolored to the active scheme's green/mauve roles —
+  `__nvim_bash_rebind` reads the `__tc_fg_*` / `__sd_c_*` vars and
+  prompt-sd/prompt-tc/prompt-minimal call it after scheme switches (a no-op
+  unless the shell is in vi mode)
+- `bash/.bash_prompt` / `.bash_prompt_tc` / `.bash_prompt_minimal` — three
+  prompt styles, switched with the `prompt-sd` / `prompt-tc` /
+  `prompt-minimal` shell functions. All take an optional color-scheme
+  argument (`-h` lists them: default, catppuccin, monokai-pro, tokyonight,
+  material, kanagawa, cyberdream — palettes mirroring the nvim colorschemes).
+  The minimal prompt (`user ~/path [branch|flags] ❯`, green/red ❯ by exit
+  status) borrows everything from `.bash_prompt` — the `__sd_c_*` palette
+  (schemes shared with prompt-sd), compact-path builder, and cached async git
+  segment — and supports the nvim-bash vi mode pill. They are functions, not aliases — bash-abbrev-alias's
   space-key expansion would swallow arguments, and a function name that
   collides with a live alias alias-expands at parse time (hence `function`
   keyword + scrubbing of stale alias/abbrev/function names on source)

@@ -43,6 +43,7 @@ HISTCONTROL=ignoreboth
 source "$DOTFILES_DIR/bash/.bash_aliases"
 source "$DOTFILES_DIR/bash/.bash_prompt"
 source "$DOTFILES_DIR/bash/.bash_prompt_tc"
+source "$DOTFILES_DIR/bash/.bash_prompt_minimal"
 
 # Startup prompt + color scheme for new shells (silenced; prompt-sd/prompt-tc
 # only exist in interactive shells — the prompt files guard on $-). Change the

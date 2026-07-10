@@ -1,0 +1,84 @@
+if [[ $- == *i* ]]; then
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  Minimal prompt — user, directory, git info, nothing else. One line:
+#      user ~/path [branch|flags] ❯
+#  ❯ is green after a successful command, red after a failed one.
+#
+#  Switch to it:   prompt-minimal [scheme]   (prompt-minimal -h)
+#
+#  This file BORROWS everything from .bash_prompt (sourced before it in
+#  .bash_rc): the __sd_c_* scheme palette via __sd_set_scheme — so it shares
+#  prompt-sd's schemes and current selection, and switching schemes here
+#  recolors prompt-sd too — plus the compact-path builder and the cached
+#  async git segment ([branch|clean] / [branch|+*?^v] with per-flag colors).
+#  Every borrow is guarded with declare -f, so a shell that somehow loaded
+#  only this file still gets a working (plain \w, gitless) prompt.
+#  nvim-bash's vi mode pill works here too: __nvim_bash_rebind recognizes
+#  __mini_prompt_command and colors the pill from the __sd_c_* roles.
+# ──────────────────────────────────────────────────────────────────────────────
+
+__mini_build_ps1() {
+  local last_status=${1:-0} c_reset='\[\e[0m\]'
+
+  local path_segment='\w'
+  if declare -f __sd_prompt_path_segment >/dev/null; then
+    __sd_prompt_path_segment
+    path_segment=$__sd_prompt_path_value
+  fi
+
+  local git_segment=""
+  if declare -f __sd_git_prompt_segment >/dev/null; then
+    __sd_git_prompt_segment
+    git_segment=$__sd_git_prompt_segment_value
+  fi
+
+  local char
+  if (( last_status == 0 )); then
+    char="${__sd_c_ok:-}❯${c_reset} "
+  else
+    char="${__sd_c_err:-}❯${c_reset} "
+  fi
+
+  PS1="${__sd_c_user:-}\\u${c_reset} ${__sd_c_path:-}${path_segment}${c_reset}${git_segment} ${char}"
+}
+
+__mini_prompt_command() {
+  local s=$?
+  # Per-prompt history flush — see the twin comment in .bash_prompt's
+  # __sd_prompt_command (file-searching Ctrl+R needs it; up-arrow unaffected).
+  builtin history -a
+  __mini_build_ps1 "$s"
+}
+
+# Switch to this prompt, optionally picking a color scheme:
+#   prompt-minimal             keep the current scheme (shared with prompt-sd)
+#   prompt-minimal <scheme>    switch scheme + prompt in one go
+#   prompt-minimal -h          usage (prompt-sd -h lists the schemes)
+# (Declared with the `function` keyword so a stray alias of the same name
+# can't alias-expand at parse time and abort sourcing this file.)
+function prompt-minimal {
+  case "${1:-}" in
+    -h|--help)
+      printf 'Usage: prompt-minimal [scheme]\n\n'
+      printf 'Minimal one-line prompt: user, directory, git info, ❯.\n'
+      printf 'Shares prompt-sd'\''s color schemes — prompt-sd -h lists them.\n'
+      printf 'Current scheme: %s\n' "${__sd_scheme:-default}"
+      return 0
+      ;;
+    "") ;;
+    *)
+      if ! declare -f __sd_set_scheme >/dev/null || ! __sd_set_scheme "$1"; then
+        echo "prompt-minimal: unknown scheme '$1' (see: prompt-sd -h)" >&2
+        return 1
+      fi
+      ;;
+  esac
+  PROMPT_COMMAND="__mini_prompt_command"
+  # Recolor the nvim-bash vi mode pill to this scheme (defined in
+  # .bash_aliases; a no-op unless the shell is in vi editing mode).
+  ! declare -F __nvim_bash_rebind >/dev/null || __nvim_bash_rebind
+  echo "switched to minimal prompt (${__sd_scheme:-default} scheme)"
+}
+
+fi
