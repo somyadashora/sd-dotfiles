@@ -11,6 +11,8 @@ abbrev-alias tmux-cs="sed -n '/TMUX CHEATSHEET/,/# split panes/p' \$DOTFILES_DIR
 
 abbrev-alias git-cs="grep -E '^\s*[a-z]+\s*=' \$DOTFILES_DIR/git/git-aliases.gitconfig | sed 's/^\s*//' | sed 's/\s*#.*$//' | sed 's/\s*=\s*/ - /' | sort"
 
+abbrev-alias fzf-cs="sed -n '/FZF CHEATSHEET/,/# Colors/p' \$DOTFILES_DIR/fzf/fzf.bash | sed '\$d'"
+
 abbrev-alias watchtty="watch -d -n 1 'ps -f --forest --tty $1'"
 
 abbrev-alias getdotfiles="git -C $DOTFILES_DIR pull --rebase"

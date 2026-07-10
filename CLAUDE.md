@@ -313,6 +313,12 @@ sees it as the next argument. Use separate sequential `#[fg=...]#[bg=...]` tags 
   space-key expansion would swallow arguments, and a function name that
   collides with a live alias alias-expands at parse time (hence `function`
   keyword + scrubbing of stale alias/abbrev/function names on source)
+- `fzf/fzf.bash` — fzf config (sourced from `.bash_rc`; fzf has no config file,
+  it's all `FZF_*` env vars): catppuccin mocha colors with the mauve accent +
+  peach match-highlight, rounded borders/reverse layout matching the tmux
+  popups, fd/rg-backed default command, bat/tree previews for `Ctrl+T`/`Alt+C`,
+  tmux-popup pickers via `FZF_TMUX_OPTS`. Its `FZF CHEATSHEET` comment block is
+  printed by the `fzf-cs` alias (same sed-extraction pattern as `tmux-cs`)
 - `git/git-aliases.gitconfig` — git aliases; include with `[include] path = ...`
   in `~/.gitconfig`
 - `lazygit/config.yml` — lazygit theme (catppuccin mocha, mauve accent — matches
@@ -325,6 +331,7 @@ sees it as the next argument. Use separate sequential `#[fg=...]#[bg=...]` tags 
 ```bash
 tmux-cs       # print tmux keybinding cheatsheet
 git-cs        # print git aliases
+fzf-cs        # print fzf keybindings/syntax cheatsheet
 getdotfiles   # git pull --rebase on this repo
 prompt-check  # verify Nerd Font glyphs render correctly
 ```
