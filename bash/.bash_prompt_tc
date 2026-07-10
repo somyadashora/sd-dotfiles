@@ -16,8 +16,9 @@ if [[ $- == *i* ]]; then
 #  one dark rounded CAPSULE (rounded caps U+E0B6/U+E0B4 at both ends, sharp
 #  U+E0B0 only as inner separators), with icons + dim pastel text as the color:
 #    (  user@host ▶   ~/path )
-#    (  HH:MM ▶   branch flags )  ❯
-#    Line 2 is just the time capsule + ❯ when outside a git repo.
+#    (  HH:MM:SS  N ▶   branch flags )  ❯
+#    N is the history number (recall with !N). Line 2 is just the
+#    time+history capsule + ❯ when outside a git repo.
 # ──────────────────────────────────────────────────────────────────────────────
 
 # Color roles (names come from the catppuccin-flavored default; other schemes
@@ -25,7 +26,7 @@ if [[ $- == *i* ]]; then
 #   bg_s0/fg_s0  first pill  (user + time)      bg_s1/fg_s1  second pill (dir + git)
 #   mauve  user text + v behind      blue   host text
 #   green  dir + staged + ok ❯       pink   git clean text
-#   teal   git dirty base            sky    ^ ahead flag
+#   teal   git dirty base            sky    ^ ahead flag + history number
 #   peach  ? untracked flag          red    * modified + err ❯
 #   gray   time text + the @ in user@host
 #
@@ -173,6 +174,7 @@ __tc_B='\[\e[1m\]'        # bold
 #   U+E0B0  filled right arrow — inner segment separator
 #   U+E0B4  rounded right cap  — closes the capsule
 #   U+E0A0  git branch icon · U+F007 user · U+F07B folder · U+F017 clock
+#   U+F1DA  history (clock with back-arrow)
 __tc_ARR=$''
 __tc_CAP_R=$''
 __tc_GIT=$''
@@ -180,6 +182,7 @@ __tc_CAP_L=$''
 __tc_USR=$''
 __tc_DIR=$''
 __tc_CLK=$''
+__tc_HIS=$''
 
 # Give every status flag its own color, mirroring the default prompt's scheme
 # in dim mocha: + staged green, * modified red, ? untracked peach, ^N ahead
@@ -257,8 +260,9 @@ __tc_build_ps1() {
     char="${__tc_fg_red}${__tc_B}❯${__tc_R} "
   fi
 
-  # Rounded left cap + time [gray on crust — \A is bash's HH:MM]
-  local line2="${__tc_fg_s0}${__tc_CAP_L}${__tc_bg_s0}${__tc_fg_gray}${__tc_B}${__tc_CLK}  \\A "
+  # Rounded left cap + time [gray on crust — \t is bash's HH:MM:SS] + history
+  # number [sky — N as shown recalls that command with !N]
+  local line2="${__tc_fg_s0}${__tc_CAP_L}${__tc_bg_s0}${__tc_fg_gray}${__tc_B}${__tc_CLK}  \\t ${__tc_fg_sky}${__tc_HIS} \\! "
   if (( has_git )); then
     # Inner arrow (crust → mantle) + git seg; base accent in the text (dim
     # pink = clean, dim teal = dirty/pending) with per-flag colors after the
