@@ -5,6 +5,46 @@
 # rg run, including rg inside tools (telescope live-grep, fzf fallback);
 # any single run can opt out with --no-config, and CLI flags always win.
 
+# ============================================================================
+# RG CHEATSHEET  (rg-cs prints this)
+# ============================================================================
+# BASICS:
+#   rg foo                search recursively from here (respects .gitignore)
+#   rg foo rtl/ tb/       limit to paths
+#   rg -w rst_n           whole-word match (no "arst_n")
+#   rg -F 'a[0]'          literal string, no regex
+#   rg -i foo / -s foo    force case-insensitive / case-sensitive
+#                         (default here: smart-case — capital ⇒ sensitive)
+#   rg -v pattern         invert: lines NOT matching
+#
+# WHICH FILES GET SEARCHED:
+#   rg -tsv always_ff     only SV/Verilog (custom type: sv svh v vh vg vp f)
+#   rg -Tsv foo           everything EXCEPT sv-type files
+#   rg -g '*.sdc' foo     glob include · rg -g '!tb/**' foo   glob exclude
+#   rg --hidden foo       include dotfiles     rg -uu foo   +gitignored too
+#   rg --files            just list searchable files (pipe into fzf!)
+#   rg --type-list        show all known types
+#
+# OUTPUT SHAPES:
+#   rg -l foo             file names only      rg -c foo    per-file counts
+#   rg -C3 foo            3 context lines (-A after / -B before)
+#   rg -o 'v\d+\.\d+'     print only the match, not the whole line
+#   rg -m1 foo            at most 1 match per file
+#   rg --stats foo        match/file/timing summary at the end
+#
+# REGEX POWER:
+#   rg 'module\s+(\w+)' -or '$1'    -r rewrites output w/ capture groups
+#   rg -e foo -e bar                multiple patterns (OR)
+#   rg -U 'begin(.|\n)*?end'        multiline match across lines
+#   rg -P '(?<!_)clk\b'             PCRE2: lookbehind/lookahead
+#
+# EVERYDAY COMBOS:
+#   rg -tsv 'module\s+\w+' -or '$1'         list all module names
+#   rg -l 'TODO|FIXME' | fzf | xargs -r nvim   pick a file to fix
+#   rg -tsv -l 'uvm_component' | wc -l      how many UVM comp files
+#   rg foo --no-config                      bypass these defaults once
+# ============================================================================
+
 # Case-insensitive until the pattern contains a capital letter
 --smart-case
 

@@ -13,6 +13,8 @@ abbrev-alias git-cs="grep -E '^\s*[a-z]+\s*=' \$DOTFILES_DIR/git/git-aliases.git
 
 abbrev-alias fzf-cs="sed -n '/FZF CHEATSHEET/,/# Colors/p' \$DOTFILES_DIR/fzf/fzf.bash | sed '\$d'"
 
+abbrev-alias rg-cs="sed -n '/RG CHEATSHEET/,/# Case-insensitive/p' \$DOTFILES_DIR/rg/ripgreprc | sed '\$d'"
+
 abbrev-alias watchtty="watch -d -n 1 'ps -f --forest --tty $1'"
 
 abbrev-alias getdotfiles="git -C $DOTFILES_DIR pull --rebase"

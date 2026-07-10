@@ -330,7 +330,8 @@ sees it as the next argument. Use separate sequential `#[fg=...]#[bg=...]` tags 
   read because `.bash_rc` exports `RIPGREP_CONFIG_PATH` pointing here):
   `--smart-case`, an `sv` type (`rg -tsv` = SV/Verilog + `.f` filelists),
   long-line truncation, catppuccin colors (peach match / mauve path). Applies
-  to every rg run incl. inside tools; opt out per-run with `--no-config`
+  to every rg run incl. inside tools; opt out per-run with `--no-config`.
+  Its `RG CHEATSHEET` comment block is printed by the `rg-cs` alias
 - `git/git-aliases.gitconfig` — git aliases; include with `[include] path = ...`
   in `~/.gitconfig`
 - `lazygit/config.yml` — lazygit theme (catppuccin mocha, mauve accent — matches
@@ -344,6 +345,7 @@ sees it as the next argument. Use separate sequential `#[fg=...]#[bg=...]` tags 
 tmux-cs       # print tmux keybinding cheatsheet
 git-cs        # print git aliases
 fzf-cs        # print fzf keybindings/syntax cheatsheet
+rg-cs         # print ripgrep usage cheatsheet
 getdotfiles   # git pull --rebase on this repo
 prompt-check  # verify Nerd Font glyphs render correctly
 ```
