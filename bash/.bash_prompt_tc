@@ -336,6 +336,9 @@ function prompt-tc {
       ;;
   esac
   PROMPT_COMMAND="__tc_prompt_command"
+  # Recolor the nvim-bash vi mode pill to this scheme (defined in
+  # .bash_aliases; a no-op unless the shell is in vi editing mode).
+  ! declare -F __nvim_bash_rebind >/dev/null || __nvim_bash_rebind
   echo "switched to TypeCraft prompt (${__tc_scheme} scheme)"
 }
 

@@ -490,6 +490,9 @@ if [[ $- == *i* ]]; then
         ;;
     esac
     PROMPT_COMMAND="__sd_prompt_command"
+    # Recolor the nvim-bash vi mode pill to this scheme (defined in
+    # .bash_aliases; a no-op unless the shell is in vi editing mode).
+    ! declare -F __nvim_bash_rebind >/dev/null || __nvim_bash_rebind
     echo "switched to sd prompt (${__sd_scheme} scheme)"
   }
 fi

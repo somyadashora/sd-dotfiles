@@ -304,7 +304,14 @@ sees it as the next argument. Use separate sequential `#[fg=...]#[bg=...]` tags 
 ## Bash / git
 
 - `bash/.bash_aliases` — aliases including `tmux-cs` (print tmux cheatsheet),
-  `git-cs` (print git aliases), `getdotfiles` (pull this repo)
+  `git-cs` (print git aliases), `getdotfiles` (pull this repo). Also
+  `nvim-bash` / `emacs-bash`: per-shell vi editing mode (nvim as `$EDITOR`,
+  jumps to prompt-tc, live I/N mode pill at the start of the prompt's last
+  line via readline's show-mode-in-prompt — the only mechanism that updates on
+  Esc/i mid-edit) and its undo. The pill recolors to the active prompt
+  scheme's green/mauve roles: `__nvim_bash_rebind` reads the `__tc_fg_*` /
+  `__sd_c_*` vars and both prompt-sd/prompt-tc call it after scheme switches
+  (a no-op unless the shell is in vi mode)
 - `bash/.bash_prompt` / `.bash_prompt_tc` — two prompt styles, switched with
   the `prompt-sd` / `prompt-tc` shell functions. Both take an optional
   color-scheme argument (`-h` lists them: default, catppuccin, monokai-pro,
