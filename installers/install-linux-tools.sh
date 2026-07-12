@@ -128,6 +128,10 @@ command_version() {
 
 needs_update() {
   local label=$1 command_name=$2 latest=$3 latest_version installed_version
+  # Prefer the installer-managed binary in BIN_DIR over whatever else PATH
+  # resolves first — a stale manually-installed copy earlier in PATH would
+  # otherwise misreport the version and force a re-download every run.
+  local PATH="$BIN_DIR:$PATH"
   latest_version=$(strip_v "$latest")
   [[ "$FORCE" == 1 ]] && return 0
   have "$command_name" || return 0
@@ -146,6 +150,8 @@ needs_update() {
 
 needs_exact_tag_update() {
   local label=$1 command_name=$2 latest_tag_value=$3
+  # Same BIN_DIR-first lookup as needs_update (see comment there).
+  local PATH="$BIN_DIR:$PATH"
   [[ "$FORCE" == 1 ]] && return 0
   have "$command_name" || return 0
   if "$command_name" --version 2>&1 | grep -Fq "$latest_tag_value"; then
@@ -417,21 +423,36 @@ install_tree_sitter() {
 
 install_slang_server() {
   local arch=$1 tag version asset url tmp archive target binary
+  local candidates=()
   tag=$(latest_tag hudson-trading/slang-server)
-  [[ -n "$tag" ]] || die "Could not resolve latest slang-server release."
+  [[ -n "$tag" ]] || { warn "Could not resolve latest slang-server release; skipping."; return 0; }
   needs_update slang-server slang-server "$tag" || return 0
   version=$(strip_v "$tag")
-  case "$arch" in x86_64) asset="slang-server-linux-x64-gcc.tar.gz" ;; *) warn "No slang-server Linux asset for ${arch}; skipping."; return 0 ;; esac
-  url="https://github.com/hudson-trading/slang-server/releases/download/${tag}/${asset}"
-  tmp=$(tmpdir); archive="$tmp/$asset"
-  download "$url" "$archive"
-  tar -xzf "$archive" -C "$tmp"
-  binary="$tmp/slang-server"
-  [[ -x "$binary" ]] || die "slang-server archive layout was not recognized."
-  if ! test_binary "$binary"; then
-    skip_incompatible_binary slang-server "$tmp"
-    return 0
-  fi
+  # Asset names changed in v0.2.8: linux-x64-gcc.tar.gz -> linux-x64.tar.gz,
+  # plus an old-linux build (older glibc) and an arm64 build. Try candidates
+  # in order until one both downloads and runs on this host, so upstream
+  # renames degrade to the next candidate instead of failing the tool.
+  case "$arch" in
+    x86_64) candidates=(slang-server-linux-x64.tar.gz slang-server-old-linux-x64-gcc.tar.gz slang-server-linux-x64-gcc.tar.gz) ;;
+    arm64)  candidates=(slang-server-linux-arm64.tar.gz) ;;
+    *) warn "No slang-server Linux asset for ${arch}; skipping."; return 0 ;;
+  esac
+  binary=""
+  for asset in "${candidates[@]}"; do
+    url="https://github.com/hudson-trading/slang-server/releases/download/${tag}/${asset}"
+    tmp=$(tmpdir); archive="$tmp/$asset"
+    log "Downloading ${url}"
+    curl -fsSL -o "$archive" "$url" || { rm -rf "$tmp"; continue; }
+    tar -xzf "$archive" -C "$tmp"
+    [[ -x "$tmp/slang-server" ]] || { warn "slang-server archive layout not recognized (${asset})."; rm -rf "$tmp"; continue; }
+    if test_binary "$tmp/slang-server"; then
+      binary="$tmp/slang-server"
+      break
+    fi
+    warn "slang-server from ${asset} does not run on this host; trying next candidate."
+    rm -rf "$tmp"
+  done
+  [[ -n "$binary" ]] || { warn "No usable slang-server asset for this host; skipping."; return 0; }
   target="$OPT_DIR/slang-server-$version"
   mkdir -p "$target"
   mv "$binary" "$target/slang-server"
@@ -650,6 +671,19 @@ check_existing_only_tools() {
   done
 }
 
+# Isolate each tool: run the step in a subshell so any failure — including
+# an explicit `die` inside the function — skips only that tool instead of
+# aborting the whole installer (one 404 must never block the tools after it).
+FAILED_STEPS=()
+run_step() {
+  local step=$1
+  shift
+  if ! ( "$step" "$@" ); then
+    warn "${step#install_} failed; continuing with the remaining tools."
+    FAILED_STEPS+=("${step#install_}")
+  fi
+}
+
 main() {
   local arch
   require_linux
@@ -658,21 +692,25 @@ main() {
   arch=$(host_arch)
   log "Detected Linux/${arch}; installing into ${OPT_DIR} and ${BIN_DIR}"
 
-  install_nvim "$arch"
-  install_lazygit "$arch"
-  install_fzf "$arch"
-  install_ripgrep "$arch"
-  install_fd "$arch"
-  install_tree_sitter "$arch"
-  install_slang_server "$arch"
-  install_delta "$arch"
-  install_bat "$arch"
-  install_bat_themes
-  install_abbrev_alias
-  install_fzf_git
-  install_verible "$arch"
-  install_meslo_font
-  check_existing_only_tools
+  run_step install_nvim "$arch"
+  run_step install_lazygit "$arch"
+  run_step install_fzf "$arch"
+  run_step install_ripgrep "$arch"
+  run_step install_fd "$arch"
+  run_step install_tree_sitter "$arch"
+  run_step install_slang_server "$arch"
+  run_step install_delta "$arch"
+  run_step install_bat "$arch"
+  run_step install_bat_themes
+  run_step install_abbrev_alias
+  run_step install_fzf_git
+  run_step install_verible "$arch"
+  run_step install_meslo_font
+  run_step check_existing_only_tools
+
+  if (( ${#FAILED_STEPS[@]} > 0 )); then
+    warn "Finished with failed steps: ${FAILED_STEPS[*]} (everything else installed)."
+  fi
 
   cat <<EOF_STATUS
 

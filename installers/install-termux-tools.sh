@@ -193,13 +193,26 @@ install_tpm() {
   ok "TPM installed. Open tmux and press Ctrl+Space+I to install all plugins (catppuccin etc)."
 }
 
+# Isolate each tool: run the step in a subshell so any failure (including a
+# die inside the function) skips only that tool instead of aborting the rest.
+FAILED_STEPS=""
+run_step() {
+  step=$1
+  shift
+  if ! ( "$step" "$@" ); then
+    warn "${step} failed; continuing with the remaining steps."
+    FAILED_STEPS="${FAILED_STEPS} ${step}"
+  fi
+}
+
 main() {
   require_termux
   install_packages
-  install_fzf_git
-  install_tpm
-  install_meslo_font
+  run_step install_fzf_git
+  run_step install_tpm
+  run_step install_meslo_font
   show_status
+  [ -n "$FAILED_STEPS" ] && warn "Finished with failed steps:${FAILED_STEPS} (everything else installed)."
   ok "Termux tool installation complete."
 }
 
