@@ -8,7 +8,6 @@ set -eu
 
 FONT_DIR="${FONT_DIR:-$HOME/.termux}"
 NERD_FONT_VERSION_FILE="${FONT_DIR}/.meslo-nerd-font-version"
-GITHUB_API="${GITHUB_API:-https://api.github.com}"
 FORCE=0
 SKIP_FONTS=0
 
@@ -53,26 +52,26 @@ require_termux() {
   esac
 }
 
-github_curl() {
-  if [ -n "${GITHUB_TOKEN:-}" ]; then
-    curl -fsSL -H "Authorization: Bearer ${GITHUB_TOKEN}" "$@"
-  else
-    curl -fsSL "$@"
-  fi
-}
+# Everything below uses only plain curl/git — no GitHub API, no tokens.
+# If a project moves hosts, only the URLs here need to change.
 
 latest_tag() {
-  local repo=$1
-  github_curl "${GITHUB_API}/repos/${repo}/releases/latest" \
-    | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
-    | head -n 1
+  # `releases/latest` on the plain website 302-redirects to
+  # `releases/tag/<TAG>` — same "latest published release" semantics as the
+  # API, resolved with a HEAD request. Prints nothing on failure.
+  local repo=$1 final
+  final=$(curl -fsSLI -o /dev/null -w '%{url_effective}' \
+    "https://github.com/${repo}/releases/latest" 2>/dev/null) || true
+  case "$final" in
+    */releases/tag/*) printf '%s\n' "${final##*/}" ;;
+  esac
 }
 
 latest_commit() {
+  # Plain `git ls-remote` — no GitHub API, so no token/rate-limit trouble.
+  # Prints nothing on failure so callers can warn-and-skip under set -e.
   local repo=$1 branch=$2
-  github_curl "${GITHUB_API}/repos/${repo}/commits/${branch}" \
-    | sed -n 's/.*"sha"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
-    | head -n 1
+  git ls-remote "https://github.com/${repo}" "refs/heads/${branch}" 2>/dev/null | cut -f1 || true
 }
 
 install_packages() {
@@ -120,7 +119,7 @@ install_meslo_font() {
   log "Installing MesloLGS Nerd Font ${version} for Termux"
   tmp=$(mktemp -d "${TMPDIR:-/tmp}/termux-font.XXXXXX")
   archive="$tmp/Meslo.tar.xz"
-  github_curl -o "$archive" "https://github.com/ryanoasis/nerd-fonts/releases/download/${tag}/Meslo.tar.xz"
+  curl -fsSL -o "$archive" "https://github.com/ryanoasis/nerd-fonts/releases/download/${tag}/Meslo.tar.xz"
   mkdir -p "$tmp/Meslo"
   tar -xJf "$archive" -C "$tmp/Meslo"
   font_file=$(find "$tmp/Meslo" -type f -name 'MesloLGSNerdFontMono-Regular.ttf' | head -n 1)
@@ -174,7 +173,7 @@ install_fzf_git() {
   url="https://raw.githubusercontent.com/junegunn/fzf-git.sh/${sha}/fzf-git.sh"
   log "Installing fzf-git.sh (${sha7})"
   mkdir -p "$opt_dir/fzf-git" "$opt_dir/.versions"
-  github_curl -o "$dest" "$url"
+  curl -fsSL -o "$dest" "$url" || { warn "Download failed for fzf-git.sh; skipping."; return 0; }
   printf '%s\n' "$sha" > "$marker"
   ok "Installed fzf-git.sh (${sha7})."
 }

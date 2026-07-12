@@ -9,7 +9,6 @@ BIN_DIR="${BIN_DIR:-$HOME/.local/bin}"
 OPT_DIR="${OPT_DIR:-$HOME/.somyadashora/sd-tools}"
 FONT_DIR="${FONT_DIR:-$HOME/.local/share/fonts/MesloNerdFonts}"
 VERSION_DIR="${OPT_DIR}/.versions"
-GITHUB_API="${GITHUB_API:-https://api.github.com}"
 # Neovim's official Linux tarballs (neovim/neovim) are built against a recent
 # glibc. Hosts with an older glibc get the same versions from
 # neovim/neovim-releases, which builds against an older glibc.
@@ -33,7 +32,6 @@ Environment overrides:
   BIN_DIR       Directory for command symlinks/binaries. Default: ~/.local/bin
   OPT_DIR       Directory for downloaded tool payloads. Default: ~/.local/opt/sd-tools
   FONT_DIR      Directory for Linux user fonts. Default: ~/.local/share/fonts/MesloNerdFonts
-  GITHUB_TOKEN  Optional token to avoid GitHub API rate limits.
   NVIM_GLIBC_MIN  Min host glibc for official neovim/neovim builds. Older hosts
                   fall back to neovim/neovim-releases. Default: 2.34
 
@@ -76,26 +74,31 @@ require_basic_tools() {
   [[ ${#missing[@]} -eq 0 ]] || die "Missing required host tools: ${missing[*]}"
 }
 
-github_curl() {
-  local args=(-fsSL)
-  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-    args+=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
-  fi
-  curl "${args[@]}" "$@"
-}
+# Everything below uses only plain curl/git — no GitHub API, no tokens.
+# (api.github.com 403s when rate-limited, and CI/codespace GITHUB_TOKENs are
+# repo-scoped and 403 on foreign repos.) If a project moves hosts, only the
+# URLs in these helpers/functions need to change.
 
 latest_tag() {
-  local repo=$1
-  github_curl "${GITHUB_API}/repos/${repo}/releases/latest" \
-    | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
-    | head -n 1
+  # `releases/latest` on the plain website 302-redirects to
+  # `releases/tag/<TAG>` — same "latest published release" semantics as the
+  # API (prereleases/drafts excluded), resolved with a HEAD request. Prints
+  # nothing on failure so callers can warn-and-skip under set -e.
+  local repo=$1 final
+  final=$(curl -fsSLI -o /dev/null -w '%{url_effective}' \
+    "https://github.com/${repo}/releases/latest" 2>/dev/null) || true
+  case "$final" in
+    */releases/tag/*) printf '%s\n' "${final##*/}" ;;
+  esac
 }
 
 latest_commit() {
+  # Plain `git ls-remote` — no GitHub API, so no token/rate-limit trouble
+  # (api.github.com 403s when rate-limited, and CI/codespace GITHUB_TOKENs
+  # are repo-scoped and 403 on foreign repos). Prints nothing on failure so
+  # callers can warn-and-skip instead of dying under set -e.
   local repo=$1 branch=${2:-master}
-  github_curl "${GITHUB_API}/repos/${repo}/commits/${branch}" \
-    | sed -n 's/.*"sha"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
-    | head -n 1
+  git ls-remote "https://github.com/${repo}" "refs/heads/${branch}" 2>/dev/null | cut -f1 || true
 }
 
 strip_v() { printf '%s' "${1#v}"; }
@@ -197,7 +200,7 @@ prepare_dirs() { mkdir -p "$BIN_DIR" "$OPT_DIR" "$VERSION_DIR"; }
 download() {
   local url=$1 output=$2
   log "Downloading ${url}"
-  github_curl -o "$output" "$url"
+  curl -fsSL -o "$output" "$url"
 }
 
 link_binary() {
@@ -529,7 +532,9 @@ install_bat_themes() {
     fi
     url="https://raw.githubusercontent.com/${repo}/${sha}/${path// /%20}"
     log "Installing bat theme ${name} (${sha:0:7})"
-    github_curl -o "$themes_dir/$file" "$url"
+    # Plain curl: raw.githubusercontent.com needs no auth, and a scoped
+    # GITHUB_TOKEN header can actively break it.
+    curl -fsSL -o "$themes_dir/$file" "$url" || { warn "Download failed for bat theme ${name}; skipping."; continue; }
     printf '%s\n' "$sha" > "$marker"
     changed=1
   done
@@ -552,7 +557,7 @@ install_abbrev_alias() {
   url="https://raw.githubusercontent.com/momo-lab/bash-abbrev-alias/${sha}/abbrev-alias.plugin.bash"
   log "Installing bash-abbrev-alias (${sha:0:7})"
   mkdir -p "$OPT_DIR/abbrev-alias"
-  github_curl -o "$dest" "$url"
+  curl -fsSL -o "$dest" "$url" || { warn "Download failed for bash-abbrev-alias; skipping."; return 0; }
   printf '%s\n' "$sha" > "$marker"
   ok "Installed bash-abbrev-alias (${sha:0:7})."
 }
@@ -570,7 +575,7 @@ install_fzf_git() {
   url="https://raw.githubusercontent.com/junegunn/fzf-git.sh/${sha}/fzf-git.sh"
   log "Installing fzf-git.sh (${sha:0:7})"
   mkdir -p "$OPT_DIR/fzf-git"
-  github_curl -o "$dest" "$url"
+  curl -fsSL -o "$dest" "$url" || { warn "Download failed for fzf-git.sh; skipping."; return 0; }
   printf '%s\n' "$sha" > "$marker"
   ok "Installed fzf-git.sh (${sha:0:7})."
 }

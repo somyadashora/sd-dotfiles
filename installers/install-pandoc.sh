@@ -7,7 +7,6 @@ set -euo pipefail
 
 BIN_DIR="${BIN_DIR:-$HOME/.local/bin}"
 OPT_DIR="${OPT_DIR:-$HOME/.somyadashora/sd-tools}"
-GITHUB_API="${GITHUB_API:-https://api.github.com}"
 FORCE=0
 
 usage() {
@@ -21,7 +20,6 @@ Options:
 Environment overrides:
   BIN_DIR      Directory for command symlinks. Default: ~/.local/bin
   OPT_DIR      Directory for downloaded tool payloads. Default: ~/.somyadashora/sd-tools
-  GITHUB_TOKEN Optional token to avoid GitHub API rate limits.
 
 Platform support:
   - Termux  : uses pkg install pandoc
@@ -57,19 +55,18 @@ host_arch() {
   esac
 }
 
-github_curl() {
-  local args=(-fsSL)
-  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-    args+=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
-  fi
-  curl "${args[@]}" "$@"
-}
-
+# Plain curl only — no GitHub API, no tokens. If the project moves hosts,
+# only the URLs need to change.
 latest_tag() {
-  local repo=$1
-  github_curl "${GITHUB_API}/repos/${repo}/releases/latest" \
-    | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
-    | head -n 1
+  # `releases/latest` on the plain website 302-redirects to
+  # `releases/tag/<TAG>` — same "latest published release" semantics as the
+  # API, resolved with a HEAD request. Prints nothing on failure.
+  local repo=$1 final
+  final=$(curl -fsSLI -o /dev/null -w '%{url_effective}' \
+    "https://github.com/${repo}/releases/latest" 2>/dev/null) || true
+  case "$final" in
+    */releases/tag/*) printf '%s\n' "${final##*/}" ;;
+  esac
 }
 
 strip_v()          { printf '%s' "${1#v}"; }
@@ -130,7 +127,7 @@ install_pandoc_linux() {
   archive="$tmp/$asset"
 
   log "Downloading pandoc ${version} for linux-${arch}"
-  github_curl -o "$archive" "$url"
+  curl -fsSL -o "$archive" "$url"
 
   tar -xzf "$archive" -C "$tmp"
   root=$(find "$tmp" -mindepth 1 -maxdepth 1 -type d | head -n 1)

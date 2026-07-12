@@ -84,11 +84,33 @@ function Install-ScoopApp {
 $OptDir  = Join-Path $env:LOCALAPPDATA 'sd-tools'
 $ShimDir = Join-Path $env:USERPROFILE 'scoop\shims'
 
-function Get-LatestRelease {
+# Plain-web release resolution — no GitHub API, no tokens (api.github.com
+# rate-limits and scoped CI tokens 403). If a project moves hosts, only these
+# URLs need to change.
+function Get-LatestTag {
     param($Repo)
-    $headers = @{ 'User-Agent' = 'sd-dotfiles-installer' }
-    if ($env:GITHUB_TOKEN) { $headers['Authorization'] = "Bearer $($env:GITHUB_TOKEN)" }
-    Invoke-RestMethod -Headers $headers -Uri "https://api.github.com/repos/$Repo/releases/latest"
+    # releases/latest 302-redirects to releases/tag/<TAG> — same "latest
+    # published release" semantics as the API.
+    $resp = Invoke-WebRequest -Uri "https://github.com/$Repo/releases/latest" `
+        -Method Head -UseBasicParsing
+    # Final URL after redirects: .NET Framework (PS5) vs HttpClient (PS7).
+    $final = $resp.BaseResponse.ResponseUri.AbsoluteUri
+    if (-not $final) { $final = $resp.BaseResponse.RequestMessage.RequestUri.AbsoluteUri }
+    if ($final -match '/releases/tag/(.+)$') {
+        return [uri]::UnescapeDataString($Matches[1])
+    }
+    return $null
+}
+
+function Get-ReleaseAssetUrls {
+    param($Repo, $Tag)
+    # expanded_assets is the plain-web fragment GitHub renders the release
+    # asset list from; its hrefs are /<repo>/releases/download/<tag>/<asset>.
+    $enc = [uri]::EscapeDataString($Tag)
+    $html = (Invoke-WebRequest -Uri "https://github.com/$Repo/releases/expanded_assets/$enc" `
+        -UseBasicParsing).Content
+    [regex]::Matches($html, 'href="(/' + [regex]::Escape($Repo) + '/releases/download/[^"]+)"') |
+        ForEach-Object { "https://github.com$($_.Groups[1].Value)" }
 }
 
 # Download the first release asset whose name matches $Pattern, unzip it into
@@ -102,22 +124,27 @@ function Install-GhZip {
         [string]$Label
     )
     Log "Resolving latest $Label release ($Repo)"
-    try { $release = Get-LatestRelease $Repo }
+    try {
+        $tag = Get-LatestTag $Repo
+        if (-not $tag) { throw "no /releases/tag/ redirect" }
+        $assetUrls = Get-ReleaseAssetUrls $Repo $tag
+    }
     catch { Warn "Could not query $Repo releases ($_); skipping $Label."; return }
 
-    $asset = $release.assets | Where-Object { $_.name -match $Pattern } | Select-Object -First 1
-    if (-not $asset) { Warn "No Windows asset matching /$Pattern/ for $Label; skipping."; return }
+    $assetUrl = $assetUrls | Where-Object { ($_ -split '/')[-1] -match $Pattern } | Select-Object -First 1
+    if (-not $assetUrl) { Warn "No Windows asset matching /$Pattern/ for $Label; skipping."; return }
+    $assetName = [uri]::UnescapeDataString(($assetUrl -split '/')[-1])
 
     $dest = Join-Path $OptDir $DirName
     $marker = Join-Path $dest '.tag'
-    if ((Test-Path $marker) -and -not $Force -and (Get-Content $marker) -eq $release.tag_name) {
-        Ok "$Label is current ($($release.tag_name))."
+    if ((Test-Path $marker) -and -not $Force -and (Get-Content $marker) -eq $tag) {
+        Ok "$Label is current ($tag)."
         return
     }
 
     $tmp = Join-Path $env:TEMP "sd-$DirName-$([guid]::NewGuid().ToString('N')).zip"
-    Log "Downloading $($asset.name)"
-    Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $tmp -UseBasicParsing
+    Log "Downloading $assetName"
+    Invoke-WebRequest -Uri $assetUrl -OutFile $tmp -UseBasicParsing
     if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
     Expand-Archive -Path $tmp -DestinationPath $dest -Force
     Remove-Item $tmp -Force
@@ -125,13 +152,13 @@ function Install-GhZip {
     $exe = Get-ChildItem -Path $dest -Recurse -Filter $ExeName | Select-Object -First 1
     if (-not $exe) { Warn "$ExeName not found in $Label archive; skipping shim."; return }
 
-    Set-Content -Path $marker -Value $release.tag_name
+    Set-Content -Path $marker -Value $tag
     if (Test-Cmd scoop) {
         # `scoop shim add` makes <ExeName-less> shims on PATH via ~\scoop\shims.
         $shimName = [IO.Path]::GetFileNameWithoutExtension($ExeName)
         scoop shim add $shimName $exe.FullName 2>$null | Out-Null
     }
-    Ok "Installed $Label $($release.tag_name)."
+    Ok "Installed $Label $tag."
 }
 
 function Install-Verible {
