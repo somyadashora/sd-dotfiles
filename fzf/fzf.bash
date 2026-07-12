@@ -143,12 +143,15 @@ _sd_fzf_git="$HOME/.somyadashora/sd-tools/fzf-git/fzf-git.sh"
 if [[ $- == *i* && -f $_sd_fzf_git ]] && command -v fzf >/dev/null 2>&1; then
   source "$_sd_fzf_git"
   # Upstream's sanctioned hook ("Redefine this function to change the
-  # options"): a copy of its wrapper with two changes — tmux popup sized like
-  # FZF_TMUX_OPTS (80%,70% vs upstream's 90%,70%), and upstream's hardcoded
-  # `--color label:blue` dropped so the mauve label from FZF_DEFAULT_OPTS wins.
+  # options"): a copy of its wrapper with three changes — tmux popup sized
+  # like FZF_TMUX_OPTS (80%,70% vs upstream's 90%,70%), upstream's hardcoded
+  # `--color label:blue` dropped so the mauve label from FZF_DEFAULT_OPTS
+  # wins, and `--exit-0` added so a picker with nothing to show (no tags, no
+  # stashes, …) closes immediately instead of presenting an empty list that
+  # looks like a hang.
   _fzf_git_fzf() {
     fzf --height 50% --tmux 80%,70% \
-      --layout reverse --multi --min-height 20+ \
+      --layout reverse --multi --min-height 20+ --exit-0 \
       --no-separator --header-border horizontal \
       --border-label-pos 2 \
       --preview-window 'right,50%' --preview-border line \
