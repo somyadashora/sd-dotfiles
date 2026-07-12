@@ -223,6 +223,88 @@ if [[ $- == *i* ]]; then
     fi
   }
 
+  # Follow the prompt scheme in bat too (BAT_THEME) — syntax colors in bat,
+  # the fzf Ctrl+T / fzf-git previews, and delta (which falls back to
+  # BAT_THEME) track whichever scheme is active. The named schemes map to
+  # matching .tmTheme files installed by install-linux-tools.sh
+  # (install_bat_themes) into bat's config dir; if a file is missing — or for
+  # `default` — we use `ansi`, the bat built-in that follows the terminal
+  # palette. monokai-pro has no free tmTheme port (Monokai Pro is
+  # proprietary), so it maps to the built-in "Monokai Extended".
+  # Called from __sd_set_scheme and __tc_set_scheme, so all three prompts
+  # (sd / tc / minimal) keep BAT_THEME in step.
+  __sd_apply_bat_theme() {
+    local dir="${BAT_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/bat}/themes" theme=""
+    case "$1" in
+      catppuccin)  theme="Catppuccin Mocha" ;;
+      monokai-pro) export BAT_THEME="Monokai Extended"; return ;;
+      tokyonight)  theme="tokyonight_storm" ;;
+      material)    theme="base16-material-palenight" ;;
+      kanagawa)    theme="Kanagawa" ;;
+      cyberdream)  theme="cyberdream" ;;
+      *)           export BAT_THEME="ansi"; return ;;
+    esac
+    if [[ -f "$dir/$theme.tmTheme" ]]; then
+      export BAT_THEME="$theme"
+    else
+      export BAT_THEME="ansi"
+    fi
+  }
+
+  # Follow the prompt scheme in fzf's chrome too: recompose FZF_DEFAULT_OPTS
+  # from the layout half defined in fzf/fzf.bash plus a per-scheme color
+  # block (bg/selection-pill from the scheme's editor bg, its purple as the
+  # prompt/pointer/label accent, orange match highlight, green marker — the
+  # same role mapping as the mocha block in fzf.bash). Fallbacks: if
+  # fzf.bash wasn't sourced there is no layout half, so FZF_DEFAULT_OPTS is
+  # left exactly as-is; default/catppuccin/unknown schemes reuse fzf.bash's
+  # mocha block. Costs nothing per prompt — this runs only on scheme switch,
+  # and fzf reads the env var at launch.
+  __sd_apply_fzf_colors() {
+    [[ -n "${__sd_fzf_layout_opts:-}" && -n "${__sd_fzf_colors_default:-}" ]] || return 0
+    local colors
+    case "$1" in
+      monokai-pro) colors="
+  --color=bg:#2d2a2e,bg+:#403e41,gutter:#2d2a2e
+  --color=fg:#fcfcfa,fg+:#fcfcfa,hl:#fc9867,hl+:#fc9867
+  --color=prompt:#ab9df2,pointer:#ab9df2,marker:#a9dc76
+  --color=info:#939293,spinner:#ff6188,header:#78dce8
+  --color=border:#5b595c,label:#ab9df2
+" ;;
+      tokyonight) colors="
+  --color=bg:#24283b,bg+:#292e42,gutter:#24283b
+  --color=fg:#c0caf5,fg+:#c0caf5,hl:#ff9e64,hl+:#ff9e64
+  --color=prompt:#bb9af7,pointer:#bb9af7,marker:#9ece6a
+  --color=info:#565f89,spinner:#f7768e,header:#7dcfff
+  --color=border:#3b4261,label:#bb9af7
+" ;;
+      material) colors="
+  --color=bg:#0f111a,bg+:#232637,gutter:#0f111a
+  --color=fg:#8f93a2,fg+:#eeffff,hl:#f78c6c,hl+:#f78c6c
+  --color=prompt:#c792ea,pointer:#c792ea,marker:#c3e88d
+  --color=info:#717cb4,spinner:#89ddff,header:#89ddff
+  --color=border:#3b3f51,label:#c792ea
+" ;;
+      kanagawa) colors="
+  --color=bg:#1f1f28,bg+:#2a2a37,gutter:#1f1f28
+  --color=fg:#dcd7ba,fg+:#dcd7ba,hl:#ffa066,hl+:#ffa066
+  --color=prompt:#957fb8,pointer:#957fb8,marker:#98bb6c
+  --color=info:#727169,spinner:#d27e99,header:#7aa89f
+  --color=border:#54546d,label:#957fb8
+" ;;
+      cyberdream) colors="
+  --color=bg:#16181a,bg+:#3c4048,gutter:#16181a
+  --color=fg:#ffffff,fg+:#ffffff,hl:#ffbd5e,hl+:#ffbd5e
+  --color=prompt:#bd5eff,pointer:#bd5eff,marker:#5eff6c
+  --color=info:#7b8496,spinner:#ff5ea0,header:#5ef1ff
+  --color=border:#3c4048,label:#bd5eff
+" ;;
+      *) colors=$__sd_fzf_colors_default ;;
+    esac
+    export FZF_DEFAULT_OPTS="${__sd_fzf_layout_opts}
+${colors}"
+  }
+
   # Select a prompt color scheme; returns 1 (colors untouched) on unknown
   # names. `default` uses 256-color codes for maximum terminal compatibility;
   # the named schemes mirror the nvim colorschemes in truecolor (same palettes
@@ -261,6 +343,8 @@ if [[ $- == *i* ]]; then
       __sd_c_ok=$__sd_c_staged             __sd_c_err=$__sd_c_mod
     fi
     __sd_scheme=$1
+    __sd_apply_bat_theme "$1"
+    __sd_apply_fzf_colors "$1"
   }
 
   __sd_set_scheme default

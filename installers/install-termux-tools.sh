@@ -68,6 +68,13 @@ latest_tag() {
     | head -n 1
 }
 
+latest_commit() {
+  local repo=$1 branch=$2
+  github_curl "${GITHUB_API}/repos/${repo}/commits/${branch}" \
+    | sed -n 's/.*"sha"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
+    | head -n 1
+}
+
 install_packages() {
   log "Updating Termux repositories and packages"
   pkg update -y
@@ -150,6 +157,28 @@ EOF_STATUS
   warn "termux-api installed — also install the Termux:API companion app (F-Droid/Play Store) for Android clipboard to work in nvim."
 }
 
+# Same layout as install-linux-tools.sh (OPT_DIR/fzf-git + a commit marker in
+# OPT_DIR/.versions), so fzf/fzf.bash finds the script at one path everywhere.
+install_fzf_git() {
+  local opt_dir sha sha7 marker dest url
+  opt_dir="${OPT_DIR:-$HOME/.somyadashora/sd-tools}"
+  sha=$(latest_commit junegunn/fzf-git.sh main)
+  [ -n "$sha" ] || { warn "Could not resolve fzf-git.sh commit; skipping."; return 0; }
+  sha7=$(printf '%.7s' "$sha")
+  marker="$opt_dir/.versions/fzf-git"
+  dest="$opt_dir/fzf-git/fzf-git.sh"
+  if [ "$FORCE" != 1 ] && [ -f "$marker" ] && [ "$(cat "$marker")" = "$sha" ]; then
+    ok "fzf-git.sh is current (${sha7})."
+    return 0
+  fi
+  url="https://raw.githubusercontent.com/junegunn/fzf-git.sh/${sha}/fzf-git.sh"
+  log "Installing fzf-git.sh (${sha7})"
+  mkdir -p "$opt_dir/fzf-git" "$opt_dir/.versions"
+  github_curl -o "$dest" "$url"
+  printf '%s\n' "$sha" > "$marker"
+  ok "Installed fzf-git.sh (${sha7})."
+}
+
 install_tpm() {
   local tpm_dir="$HOME/.tmux/plugins/tpm"
 
@@ -168,6 +197,7 @@ install_tpm() {
 main() {
   require_termux
   install_packages
+  install_fzf_git
   install_tpm
   install_meslo_font
   show_status

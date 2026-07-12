@@ -162,6 +162,11 @@ __tc_set_scheme() {
       ;;
   esac
   __tc_scheme=$1
+  # Keep bat/delta syntax colors and the fzf chrome in step with the scheme
+  # (helpers live in .bash_prompt, which .bash_rc sources first; the guards
+  # make standalone sourcing safe — colors simply stay as they were).
+  declare -F __sd_apply_bat_theme >/dev/null && __sd_apply_bat_theme "$1"
+  declare -F __sd_apply_fzf_colors >/dev/null && __sd_apply_fzf_colors "$1"
 }
 
 __tc_set_scheme default

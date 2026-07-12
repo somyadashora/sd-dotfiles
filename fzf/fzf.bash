@@ -4,6 +4,9 @@
 #  Sourced from bash/.bash_rc (fzf has no config file of its own — everything
 #  rides on FZF_* environment variables). Requires fzf; fd/bat/tree upgrade
 #  the experience when present but everything degrades gracefully.
+#  The color half of FZF_DEFAULT_OPTS follows the active bash prompt scheme
+#  (prompt-sd/tc/minimal <scheme> → __sd_apply_fzf_colors in .bash_prompt);
+#  the catppuccin-mocha block below is the standalone/default fallback.
 #
 #  Print the cheatsheet below with:  fzf-cs
 # ──────────────────────────────────────────────────────────────────────────────
@@ -33,6 +36,16 @@
 #   kill -9 **<Tab>   pick a process      ssh **<Tab>    pick a host
 #   export **<Tab>    pick an env var     unalias **<Tab> pick an alias
 #
+# GIT PICKERS (fzf-git.sh — Ctrl+G, then a key; result pastes onto the
+# command line, so prefix a command first: `git rebase -i ` + Ctrl+G Ctrl+H):
+#   Ctrl+G Ctrl+F  files (status + untracked)   Ctrl+G Ctrl+B  branches
+#   Ctrl+G Ctrl+H  commit hashes                Ctrl+G Ctrl+T  tags
+#   Ctrl+G Ctrl+S  stashes                      Ctrl+G Ctrl+R  remotes
+#   Ctrl+G Ctrl+L  reflog                       Ctrl+G Ctrl+W  worktrees
+#   Ctrl+G Ctrl+E  every ref                    Ctrl+G ?       this list
+#   inside a picker: Ctrl+O open on GitHub · Alt+E edit · Tab multi-select
+#   (each picker's header shows its own extras, e.g. Ctrl+X drop stash)
+#
 # PIPE ANYTHING:
 #   git branch | fzf                    fuzzy-pick a branch name
 #   git log --oneline | fzf --multi     pick commit(s)
@@ -44,21 +57,34 @@
 #   prefix+f = tmux-fzf action menu · prefix+b = paste-buffer picker
 # ============================================================================
 
-# Colors — catppuccin mocha, same palette as the nvim/tmux/lazygit configs:
-# mauve #cba6f7 accent (prompt/pointer/border label — the repo accent), peach
-# match highlight (echoes nvim's Search/CurSearch overrides), surface pills
-# for selection, crust-adjacent base bg. Layout mirrors the repo's shapes:
-# rounded borders like the tmux popups + prompt capsules, ❯ like prompt-tc.
-export FZF_DEFAULT_OPTS="
+# FZF_DEFAULT_OPTS is built from two halves so the bash prompt schemes can
+# recolor the chrome without touching layout (__sd_apply_fzf_colors in
+# bash/.bash_prompt recomposes them on every prompt-sd/tc/minimal scheme
+# switch). Sourcing this file alone — prompts never loaded — still exports
+# the full catppuccin-mocha default below, so fzf always works.
+#
+# Layout half: rounded borders like the tmux popups + prompt capsules,
+# ❯ like prompt-tc.
+__sd_fzf_layout_opts="
   --height=80% --layout=reverse --border=rounded --info=inline-right
   --prompt='❯ ' --pointer='❯' --marker='✓'
-  --bind=ctrl-/:toggle-preview
+  --bind=ctrl-/:toggle-preview"
+
+# Color half — catppuccin mocha, same palette as the nvim/tmux/lazygit
+# configs: mauve #cba6f7 accent (prompt/pointer/border label — the repo
+# accent), peach match highlight (echoes nvim's Search/CurSearch overrides),
+# surface pills for selection, crust-adjacent base bg. Doubles as the
+# fallback block for the `default`/`catppuccin` (and unknown) schemes.
+__sd_fzf_colors_default="
   --color=bg:#1e1e2e,bg+:#313244,gutter:#1e1e2e
   --color=fg:#cdd6f4,fg+:#cdd6f4,hl:#fab387,hl+:#fab387
   --color=prompt:#cba6f7,pointer:#cba6f7,marker:#a6e3a1
   --color=info:#7f849c,spinner:#f5c2e7,header:#94e2d5
   --color=border:#45475a,label:#cba6f7
 "
+
+export FZF_DEFAULT_OPTS="${__sd_fzf_layout_opts}
+${__sd_fzf_colors_default}"
 
 # Inside tmux, open the Ctrl+T / Ctrl+R / Alt+C pickers in a centered floating
 # popup — same look as the prefix+b buffer picker in .tmux.conf.
@@ -106,3 +132,26 @@ __sd_fzf_history_file() {
 if [[ $- == *i* ]] && command -v fzf >/dev/null 2>&1; then
   bind -x '"\C-r": __sd_fzf_history_file'
 fi
+
+# fzf-git.sh — Ctrl+G chord pickers for git objects (files, branches, hashes,
+# stashes, …; cheatsheet section above). Installed by the tool installers into
+# sd-tools, like abbrev-alias; it binds nothing outside a git repo's Ctrl+G
+# chords and handles bash vi mode itself (bridges through emacs mode), so it
+# coexists with nvim-bash. Colors ride on FZF_DEFAULT_OPTS.
+_sd_fzf_git="$HOME/.somyadashora/sd-tools/fzf-git/fzf-git.sh"
+if [[ $- == *i* && -f $_sd_fzf_git ]] && command -v fzf >/dev/null 2>&1; then
+  source "$_sd_fzf_git"
+  # Upstream's sanctioned hook ("Redefine this function to change the
+  # options"): a copy of its wrapper with two changes — tmux popup sized like
+  # FZF_TMUX_OPTS (80%,70% vs upstream's 90%,70%), and upstream's hardcoded
+  # `--color label:blue` dropped so the mauve label from FZF_DEFAULT_OPTS wins.
+  _fzf_git_fzf() {
+    fzf --height 50% --tmux 80%,70% \
+      --layout reverse --multi --min-height 20+ \
+      --no-separator --header-border horizontal \
+      --border-label-pos 2 \
+      --preview-window 'right,50%' --preview-border line \
+      --bind 'ctrl-/:change-preview-window(down,50%|hidden|)' "$@"
+  }
+fi
+unset _sd_fzf_git

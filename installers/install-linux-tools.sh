@@ -499,6 +499,46 @@ install_bat() {
   ok "Installed bat ${version}."
 }
 
+# One .tmTheme per bash prompt scheme (see __sd_apply_bat_theme in
+# bash/.bash_prompt, which maps BAT_THEME to these): catppuccin (mocha),
+# tokyonight (storm — the variant the prompt palette mirrors), kanagawa
+# (wave), cyberdream, material (base16 palenight port — material styles share
+# their accent colors, only backgrounds differ). monokai-pro needs no
+# download: it maps to bat's built-in "Monokai Extended" (Monokai Pro itself
+# is proprietary, no free tmTheme exists).
+install_bat_themes() {
+  local themes_dir spec repo branch path file name sha marker url changed=0
+  command -v bat >/dev/null 2>&1 || { warn "bat not on PATH; skipping bat themes."; return 0; }
+  themes_dir="$(bat --config-dir)/themes"
+  mkdir -p "$themes_dir"
+  for spec in \
+    'catppuccin/bat|main|themes/Catppuccin Mocha.tmTheme|Catppuccin Mocha.tmTheme' \
+    'folke/tokyonight.nvim|main|extras/sublime/tokyonight_storm.tmTheme|tokyonight_storm.tmTheme' \
+    'obergodmar/kanagawa-tmTheme|master|Kanagawa.tmTheme|Kanagawa.tmTheme' \
+    'scottmckendry/cyberdream.nvim|main|extras/textmate/cyberdream.tmTheme|cyberdream.tmTheme' \
+    'chriskempson/base16-textmate|master|Themes/base16-material-palenight.tmTheme|base16-material-palenight.tmTheme'
+  do
+    IFS='|' read -r repo branch path file <<< "$spec"
+    name=${file%.tmTheme}
+    sha=$(latest_commit "$repo" "$branch")
+    [[ -n "$sha" ]] || { warn "Could not resolve ${repo} commit; skipping bat theme ${name}."; continue; }
+    marker="$VERSION_DIR/bat-theme-${name// /-}"
+    if [[ "$FORCE" != 1 && -f "$marker" && "$(cat "$marker")" == "$sha" && -f "$themes_dir/$file" ]]; then
+      ok "bat theme ${name} is current (${sha:0:7})."
+      continue
+    fi
+    url="https://raw.githubusercontent.com/${repo}/${sha}/${path// /%20}"
+    log "Installing bat theme ${name} (${sha:0:7})"
+    github_curl -o "$themes_dir/$file" "$url"
+    printf '%s\n' "$sha" > "$marker"
+    changed=1
+  done
+  if [[ "$changed" == 1 ]]; then
+    bat cache --build >/dev/null
+    ok "Rebuilt bat's theme cache."
+  fi
+}
+
 install_abbrev_alias() {
   local sha marker dest url
   sha=$(latest_commit momo-lab/bash-abbrev-alias master)
@@ -515,6 +555,24 @@ install_abbrev_alias() {
   github_curl -o "$dest" "$url"
   printf '%s\n' "$sha" > "$marker"
   ok "Installed bash-abbrev-alias (${sha:0:7})."
+}
+
+install_fzf_git() {
+  local sha marker dest url
+  sha=$(latest_commit junegunn/fzf-git.sh main)
+  [[ -n "$sha" ]] || { warn "Could not resolve fzf-git.sh commit; skipping."; return 0; }
+  marker="$VERSION_DIR/fzf-git"
+  dest="$OPT_DIR/fzf-git/fzf-git.sh"
+  if [[ "$FORCE" != 1 && -f "$marker" && "$(cat "$marker")" == "$sha" ]]; then
+    ok "fzf-git.sh is current (${sha:0:7})."
+    return 0
+  fi
+  url="https://raw.githubusercontent.com/junegunn/fzf-git.sh/${sha}/fzf-git.sh"
+  log "Installing fzf-git.sh (${sha:0:7})"
+  mkdir -p "$OPT_DIR/fzf-git"
+  github_curl -o "$dest" "$url"
+  printf '%s\n' "$sha" > "$marker"
+  ok "Installed fzf-git.sh (${sha:0:7})."
 }
 
 install_verible() {
@@ -604,7 +662,9 @@ main() {
   install_slang_server "$arch"
   install_delta "$arch"
   install_bat "$arch"
+  install_bat_themes
   install_abbrev_alias
+  install_fzf_git
   install_verible "$arch"
   install_meslo_font
   check_existing_only_tools
@@ -628,6 +688,8 @@ Useful checks:
   bat --version
   verible-verilog-ls --version
   # bash-abbrev-alias: source \$HOME/.somyadashora/sd-tools/abbrev-alias/abbrev-alias.plugin.bash
+  # fzf-git.sh: sourced by fzf/fzf.bash from \$HOME/.somyadashora/sd-tools/fzf-git/fzf-git.sh (Ctrl-G pickers)
+  bat --list-themes | grep -E 'Catppuccin|tokyonight|Kanagawa|cyberdream|palenight'  # prompt-scheme bat themes
   tmux -V
   git --version
 EOF_STATUS

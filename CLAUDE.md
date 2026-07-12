@@ -318,6 +318,19 @@ sees it as the next argument. Use separate sequential `#[fg=...]#[bg=...]` tags 
   `prompt-minimal` shell functions. All take an optional color-scheme
   argument (`-h` lists them: default, catppuccin, monokai-pro, tokyonight,
   material, kanagawa, cyberdream — palettes mirroring the nvim colorschemes).
+  Switching a scheme also re-themes the rest of the shell: a matching
+  **BAT_THEME** is exported (`__sd_apply_bat_theme` in `.bash_prompt`, called
+  from both scheme setters), so bat, the fzf Ctrl+T / fzf-git previews, and
+  delta follow the prompt scheme; and the **fzf chrome** is recolored
+  (`__sd_apply_fzf_colors` — recomposes FZF_DEFAULT_OPTS from fzf.bash's
+  layout half + a per-scheme color block; no-op if fzf.bash wasn't sourced,
+  and default/catppuccin/unknown schemes fall back to the mocha block).
+  Both helpers run only at scheme-switch time — zero per-prompt cost. The .tmTheme files are installed by `install-linux-tools.sh`
+  (`install_bat_themes`, commit-pinned into `$(bat --config-dir)/themes` +
+  `bat cache --build`); a missing file — and the `default` scheme — falls back
+  to bat's built-in `ansi` (follows the terminal palette), and monokai-pro
+  maps to the built-in "Monokai Extended" (no free Monokai Pro tmTheme
+  exists).
   The minimal prompt (`user ~/path [branch|flags] ❯`, green/red ❯ by exit
   status) borrows everything from `.bash_prompt` — the `__sd_c_*` palette
   (schemes shared with prompt-sd), compact-path builder, and cached async git
@@ -337,7 +350,16 @@ sees it as the next argument. Use separate sequential `#[fg=...]#[bg=...]` tags 
   `__sd_prompt_command`/`__tc_prompt_command` (it must live *inside* them:
   prompt-sd/prompt-tc overwrite PROMPT_COMMAND wholesale, so anything chained
   in .bash_rc would be clobbered). Net effect: Ctrl+R finds every shell's
-  commands instantly, while up-arrow/`!N` stay per-shell, never interleaved
+  commands instantly, while up-arrow/`!N` stay per-shell, never interleaved.
+  **fzf-git.sh** (junegunn) is sourced at the end when present — `Ctrl+G
+  Ctrl+<key>` pickers for git objects (Files/Branches/Tags/Hashes/Stashes/
+  Remotes/refLogs/Worktrees/Each-ref, `Ctrl+G ?` lists them) that paste the
+  pick onto the command line. Installed by both tool installers into
+  `~/.somyadashora/sd-tools/fzf-git/` (commit-pinned, same pattern as
+  abbrev-alias — not vendored). Its `_fzf_git_fzf` wrapper is redefined
+  (upstream's documented hook) to size the tmux popup like FZF_TMUX_OPTS and
+  drop the hardcoded blue label so the mauve accent wins; it handles bash vi
+  mode itself, so it coexists with nvim-bash
 - `rg/ripgreprc` — ripgrep defaults (rg has no default config location — only
   read because `.bash_rc` exports `RIPGREP_CONFIG_PATH` pointing here):
   `--smart-case`, an `sv` type (`rg -tsv` = SV/Verilog + `.f` filelists),
@@ -346,6 +368,10 @@ sees it as the next argument. Use separate sequential `#[fg=...]#[bg=...]` tags 
   Its `RG CHEATSHEET` comment block is printed by the `rg-cs` alias
 - `git/git-aliases.gitconfig` — git aliases; include with `[include] path = ...`
   in `~/.gitconfig`
+- `git/delta.gitconfig` — delta pager config (side-by-side, line numbers,
+  hyperlinks), included the same way. Deliberately sets **no** `syntax-theme`:
+  delta falls back to `BAT_THEME`, which the prompt schemes export — so diff
+  syntax colors follow the active prompt scheme
 - `lazygit/config.yml` — lazygit theme (catppuccin mocha, mauve accent — matches
   the nvim accent) + density settings (command log hidden, narrower side panel,
   Nerd Font icons). Font size itself is terminal-owned; lazygit can't set it.

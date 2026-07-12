@@ -17,5 +17,9 @@
     navigate = true
     side-by-side = true
     line-numbers = true
-    syntax-theme = Catppuccin Mocha
+    # No syntax-theme on purpose: delta then falls back to the BAT_THEME env
+    # var, which the bash prompt schemes export (__sd_apply_bat_theme in
+    # bash/.bash_prompt) — so diffs follow the active prompt scheme. Where
+    # BAT_THEME is unset (non-interactive shells), delta uses its default
+    # dark theme.
     hyperlinks = true
