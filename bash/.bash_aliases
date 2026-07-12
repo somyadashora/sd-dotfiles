@@ -11,7 +11,9 @@ abbrev-alias tmux-cs="sed -n '/TMUX CHEATSHEET/,/# split panes/p' \$DOTFILES_DIR
 
 abbrev-alias git-cs="grep -E '^\s*[a-z]+\s*=' \$DOTFILES_DIR/git/git-aliases.gitconfig | sed 's/^\s*//' | sed 's/\s*#.*$//' | sed 's/\s*=\s*/ - /' | sort"
 
-abbrev-alias fzf-cs="sed -n '/FZF CHEATSHEET/,/# Colors/p' \$DOTFILES_DIR/fzf/fzf.bash | sed '\$d'"
+# End the range at the first blank line after the block (the cheatsheet is one
+# contiguous comment block), not at a prose comment that may get reworded.
+abbrev-alias fzf-cs="sed -n '/FZF CHEATSHEET/,/^\$/p' \$DOTFILES_DIR/fzf/fzf.bash | sed '\$d'"
 
 abbrev-alias rg-cs="sed -n '/RG CHEATSHEET/,/# Case-insensitive/p' \$DOTFILES_DIR/rg/ripgreprc | sed '\$d'"
 
