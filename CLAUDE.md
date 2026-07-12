@@ -363,7 +363,8 @@ sees it as the next argument. Use separate sequential `#[fg=...]#[bg=...]` tags 
   in .bash_rc would be clobbered). Net effect: Ctrl+R finds every shell's
   commands instantly, while up-arrow/`!N` stay per-shell, never interleaved.
   **fzf-git.sh** (junegunn) is sourced at the end when present — `Ctrl+G
-  Ctrl+<key>` pickers for git objects (Files/Branches/Tags/Hashes/Stashes/
+  <key>` pickers (plain key or Ctrl+key both bound) for git objects
+  (Files/Branches/Tags/Hashes/Stashes/
   Remotes/refLogs/Worktrees/Each-ref, `Ctrl+G ?` lists them) that paste the
   pick onto the command line. Installed by both tool installers into
   `~/.somyadashora/sd-tools/fzf-git/` (commit-pinned, same pattern as

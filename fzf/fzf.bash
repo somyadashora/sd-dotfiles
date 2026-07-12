@@ -36,13 +36,14 @@
 #   kill -9 **<Tab>   pick a process      ssh **<Tab>    pick a host
 #   export **<Tab>    pick an env var     unalias **<Tab> pick an alias
 #
-# GIT PICKERS (fzf-git.sh — Ctrl+G, then a key; result pastes onto the
-# command line, so prefix a command first: `git rebase -i ` + Ctrl+G Ctrl+H):
-#   Ctrl+G Ctrl+F  files (status + untracked)   Ctrl+G Ctrl+B  branches
-#   Ctrl+G Ctrl+H  commit hashes                Ctrl+G Ctrl+T  tags
-#   Ctrl+G Ctrl+S  stashes                      Ctrl+G Ctrl+R  remotes
-#   Ctrl+G Ctrl+L  reflog                       Ctrl+G Ctrl+W  worktrees
-#   Ctrl+G Ctrl+E  every ref                    Ctrl+G ?       this list
+# GIT PICKERS (fzf-git.sh — Ctrl+G, then a plain key; holding Ctrl for the
+# second key works too. The pick pastes onto the command line, so prefix a
+# command first: `git rebase -i ` + Ctrl+G H):
+#   Ctrl+G F   files (status + untracked)   Ctrl+G B   branches
+#   Ctrl+G H   commit hashes                Ctrl+G T   tags
+#   Ctrl+G S   stashes                      Ctrl+G R   remotes
+#   Ctrl+G L   reflog                       Ctrl+G W   worktrees
+#   Ctrl+G E   every ref                    Ctrl+G ?   this list
 #   inside a picker: Ctrl+O open on GitHub · Alt+E edit · Tab multi-select
 #   (each picker's header shows its own extras, e.g. Ctrl+X drop stash)
 #
