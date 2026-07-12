@@ -19,11 +19,21 @@
 
 local home = vim.fn.expand("~/.somyadashora/sd-notes")
 local notes_file = home .. "/notes.md"
+local weekly_template = home .. "/templates/weekly.md"
 
 -- ── Bootstrap: make the vault a local git repo with a notes file ─────────────
+-- Also seeds vault/templates/ (telekasten fills {{placeholders}} when creating
+-- a note from a template — see :h telekasten or the README's template list:
+-- {{title}} {{date}} {{hdate}} {{week}} {{year}} {{monday}}..{{sunday}} …).
+-- Each file is written only if missing, so per-machine edits to a template are
+-- never overwritten — edit vault/templates/weekly.md freely.
 local function ensure_repo()
-  if vim.fn.isdirectory(home) == 0 then
-    vim.fn.mkdir(home, "p")
+  -- Create the vault plus its subdirs up front — telekasten otherwise stops
+  -- to ask "folder does not exist, create?" on the first Zd/Zw.
+  for _, dir in ipairs({ home, home .. "/daily", home .. "/weekly", home .. "/templates" }) do
+    if vim.fn.isdirectory(dir) == 0 then
+      vim.fn.mkdir(dir, "p")
+    end
   end
   if vim.fn.isdirectory(home .. "/.git") == 0 and vim.fn.executable("git") == 1 then
     vim.fn.system({ "git", "-C", home, "init", "-q" })
@@ -36,6 +46,27 @@ local function ensure_repo()
       "Local notes for the work on this machine. Created " .. os.date("%Y-%m-%d") .. ".",
       "",
     }, notes_file)
+  end
+  if vim.fn.filereadable(weekly_template) == 0 then
+    vim.fn.mkdir(home .. "/templates", "p")
+    vim.fn.writefile({
+      "# {{title}}",
+      "",
+      "Week {{week}} of {{year}} · {{monday}} → {{sunday}}",
+      "",
+      "## Accomplishments this week",
+      "",
+      "- ",
+      "",
+      "## Plans",
+      "",
+      "- ",
+      "",
+      "## Other comments — insights, challenges",
+      "",
+      "- ",
+      "",
+    }, weekly_template)
   end
 end
 
@@ -118,6 +149,8 @@ local function notes_help()
         { "?",           "calendar's own help" },
         { "── vault (local git repo, commit manually) ──", "" },
         { home,          "" },
+        { "── templates (Zw uses templates/weekly.md; edit freely) ──", "" },
+        { home .. "/templates", "" },
       },
     },
   }, {
@@ -148,6 +181,9 @@ return {
       dailies = home .. "/daily",
       weeklies = home .. "/weekly",
       templates = home .. "/templates",
+      -- <leader>Zw fills this template for a new week's note (bootstrapped
+      -- into the vault by ensure_repo; edit the vault copy to taste).
+      template_new_weekly = weekly_template,
       extension = ".md",
       new_note_filename = "title",
       follow_creates_nonexisting = true,

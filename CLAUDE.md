@@ -130,8 +130,15 @@ exits to normal, `<C-h/j/k/l>` navigate windows; `<esc>` is left alone so TUI ap
 **Note-taking** (`nvim/lua/somya/plugins/telekasten.lua`): telekasten.nvim over a
 single local vault at `~/.somyadashora/sd-notes` (a **local** git repo — never
 pushed, so notes stay per-machine; commits are manual). The vault is bootstrapped
-on first use (`ensure_repo`: `mkdir -p` + `git init` + write `notes.md` if absent),
-so no manual setup. All maps live under the `<leader>Z` ("+Notes") prefix. The
+on first use (`ensure_repo`: `mkdir -p` the vault + `daily`/`weekly`/`templates`
+subdirs — pre-creating them stops telekasten's "create folder?" prompt — +
+`git init` + write `notes.md` and `templates/weekly.md` if absent), so no manual
+setup. **Templates** live in `vault/templates/`; `Zw` fills
+`templates/weekly.md` (`template_new_weekly`) with telekasten's
+`{{placeholders}}` ({{title}}, {{week}}, {{year}}, {{monday}}…{{sunday}}, …) for
+a new week's note. Bootstrap writes a template only when the file is missing, so
+per-machine edits are never overwritten; add more (e.g. `daily.md` +
+`template_new_daily`) the same way. All maps live under the `<leader>Z` ("+Notes") prefix. The
 headline pair is a jump-to-notes-tab / jump-back: `<leader>Zz` opens (or switches
 to) a dedicated **notes tab** — a new tab tagged with a tab-local `vim.t.is_notes_tab`
 flag plus a tab-local `name` var set to the vault's base dir name (**"sd-notes"**,
