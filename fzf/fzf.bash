@@ -39,7 +39,7 @@
 # GIT PICKERS (fzf-git.sh — Ctrl+G, then a plain key; holding Ctrl for the
 # second key works too. The pick pastes onto the command line, so prefix a
 # command first: `git rebase -i ` + Ctrl+G H):
-#   Ctrl+G F   files (status + untracked)   Ctrl+G B   branches
+#   Ctrl+G F   files (changed + all tracked) Ctrl+G B  branches
 #   Ctrl+G H   commit hashes                Ctrl+G T   tags
 #   Ctrl+G S   stashes                      Ctrl+G R   remotes
 #   Ctrl+G L   reflog                       Ctrl+G W   worktrees
