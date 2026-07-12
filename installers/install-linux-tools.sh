@@ -559,6 +559,16 @@ install_bat_themes() {
     printf '%s\n' "$sha" > "$marker"
     changed=1
   done
+  # Upstream fix-up (idempotent; runs even when the theme was already
+  # current): Kanagawa ships gutterForeground #2A2A37 (sumiInk4) — bat's
+  # line numbers render invisible against a dark terminal. Lift just the
+  # gutter to sumiInk6 #54546D (what nvim's kanagawa uses for LineNr); the
+  # theme's other #2A2A37 use (invisibles) is meant to stay dim.
+  if [[ -f "$themes_dir/Kanagawa.tmTheme" ]] \
+      && grep -A1 '<key>gutterForeground</key>' "$themes_dir/Kanagawa.tmTheme" | grep -q '#2A2A37'; then
+    sed -i '/<key>gutterForeground<\/key>/{n;s/#2A2A37/#54546D/;}' "$themes_dir/Kanagawa.tmTheme"
+    changed=1
+  fi
   if [[ "$changed" == 1 ]]; then
     bat cache --build >/dev/null
     ok "Rebuilt bat's theme cache."
