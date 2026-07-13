@@ -48,6 +48,7 @@ return {
       { "<leader>v", group = "LSP / Code" }, -- generic LSP actions + slang-only cone tracing
       { "<leader>w", group = "Session" }, -- auto-session
       { "<leader>x", group = "Trouble & diagnostics" },
+      { "<leader>Y", group = "Yank file ref" }, -- file:line refs for AI prompts (core/keymaps.lua)
       { "<leader>Z", group = "Notes" }, -- telekasten note-taking
     },
   },

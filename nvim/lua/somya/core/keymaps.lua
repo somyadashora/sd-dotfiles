@@ -116,6 +116,36 @@ keymap.set("n", "<leader>uf", function()
   vim.notify("Fold column: " .. (on and "off" or "on"), vim.log.levels.INFO)
 end, { desc = "Toggle fold column" })
 
+-- Yank a "file:line" reference to the clipboard — for pasting into AI prompts
+-- and reviews ("look at foo.sv:42"). Under <leader>Y ("Yank file ref"): Yy is
+-- the cwd-relative path (tabs are tcd'd to the project root, so this is
+-- repo-relative), Ya the absolute one. In visual mode the reference becomes a
+-- range, "file:10-20". Lands in the system clipboard AND the unnamed register.
+local function yank_ref(abs)
+  return function()
+    local path = vim.fn.expand(abs and "%:p" or "%:.")
+    if path == "" then
+      vim.notify("No file name for this buffer", vim.log.levels.WARN)
+      return
+    end
+    local ref
+    if vim.fn.mode():match("[vV\22]") then
+      local s, e = vim.fn.line("v"), vim.fn.line(".")
+      if s > e then s, e = e, s end
+      ref = path .. ":" .. (s == e and s or (s .. "-" .. e))
+      -- leave visual mode so the yank feels like a normal y
+      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", false)
+    else
+      ref = path .. ":" .. vim.fn.line(".")
+    end
+    vim.fn.setreg("+", ref)
+    vim.fn.setreg('"', ref)
+    vim.notify("Yanked: " .. ref, vim.log.levels.INFO)
+  end
+end
+keymap.set({ "n", "x" }, "<leader>Yy", yank_ref(false), { desc = "Yank file:line (relative path)" })
+keymap.set({ "n", "x" }, "<leader>Ya", yank_ref(true), { desc = "Yank file:line (absolute path)" })
+
 -- Linter control
 keymap.set("n", "<leader>ld", ":lua vim.diagnostic.enable(false)<CR>", { desc = "disable lint messages" })
 keymap.set("n", "<leader>le", ":lua vim.diagnostic.enable(true)<CR>", { desc = "enable lint messages" })

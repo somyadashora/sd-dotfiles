@@ -186,6 +186,7 @@ local sections = {
       { "<leader>y",       "telescope yank-history picker (<CR> put, <C-x> delete)" },
       { "d / c / x",       "deletes enter the ring too — recover via <leader>y" },
       { ":YankyClearHistory", "wipe the ring (persists via shada otherwise)" },
+      { "<leader>Yy / Ya", "yank file:line ref, relative / absolute path (visual: file:10-20)" },
     },
   },
   {
