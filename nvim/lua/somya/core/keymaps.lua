@@ -146,6 +146,34 @@ end
 keymap.set({ "n", "x" }, "<leader>Yy", yank_ref(false), { desc = "Yank file:line (relative path)" })
 keymap.set({ "n", "x" }, "<leader>Ya", yank_ref(true), { desc = "Yank file:line (absolute path)" })
 
+-- <leader>Yc includes the code itself: "file:line:col: <line text>" for the
+-- cursor line; in visual mode a "file:start-end:" header followed by the
+-- selected lines. Relative path, like Yy.
+keymap.set({ "n", "x" }, "<leader>Yc", function()
+  local path = vim.fn.expand("%:.")
+  if path == "" then
+    vim.notify("No file name for this buffer", vim.log.levels.WARN)
+    return
+  end
+  local ref, shown
+  if vim.fn.mode():match("[vV\22]") then
+    local s, e = vim.fn.line("v"), vim.fn.line(".")
+    if s > e then s, e = e, s end
+    local lines = vim.api.nvim_buf_get_lines(0, s - 1, e, false)
+    shown = path .. ":" .. (s == e and s or (s .. "-" .. e))
+    ref = shown .. ":\n" .. table.concat(lines, "\n")
+    shown = shown .. " (+" .. #lines .. (#lines == 1 and " line)" or " lines)")
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", false)
+  else
+    local l, c = unpack(vim.api.nvim_win_get_cursor(0))
+    ref = ("%s:%d:%d: %s"):format(path, l, c + 1, vim.api.nvim_get_current_line())
+    shown = ("%s:%d:%d (+content)"):format(path, l, c + 1)
+  end
+  vim.fn.setreg("+", ref)
+  vim.fn.setreg('"', ref)
+  vim.notify("Yanked: " .. shown, vim.log.levels.INFO)
+end, { desc = "Yank file:line:col + content" })
+
 -- Linter control
 keymap.set("n", "<leader>ld", ":lua vim.diagnostic.enable(false)<CR>", { desc = "disable lint messages" })
 keymap.set("n", "<leader>le", ":lua vim.diagnostic.enable(true)<CR>", { desc = "enable lint messages" })

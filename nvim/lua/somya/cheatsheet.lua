@@ -187,6 +187,7 @@ local sections = {
       { "d / c / x",       "deletes enter the ring too — recover via <leader>y" },
       { ":YankyClearHistory", "wipe the ring (persists via shada otherwise)" },
       { "<leader>Yy / Ya", "yank file:line ref, relative / absolute path (visual: file:10-20)" },
+      { "<leader>Yc",      "yank file:line:col + the line's text (visual: ref header + lines)" },
     },
   },
   {
