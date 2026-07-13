@@ -19,7 +19,7 @@ abbrev-alias rg-cs="sed -n '/RG CHEATSHEET/,/# Case-insensitive/p' \$DOTFILES_DI
 
 abbrev-alias watchtty="watch -d -n 1 'ps -f --forest --tty $1'"
 
-abbrev-alias getdotfiles="git -C $DOTFILES_DIR pull --rebase"
+abbrev-alias getdotfiles="git -C $DOTFILES_DIR pull --rebase --autostash"
 
 abbrev-alias slang-init="$DOTFILES_DIR/nvim/scripts/slang-init"
 abbrev-alias verible-init="$DOTFILES_DIR/nvim/scripts/verible-init"
