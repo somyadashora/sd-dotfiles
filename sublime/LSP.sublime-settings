@@ -1,0 +1,24 @@
+{
+	// SystemVerilog language servers — the SAME binaries the nvim config uses.
+	// LSP resolves bare command names via PATH (it does no ~/$HOME expansion):
+	// slang-server lives in ~/.local/bin (on PATH in this setup); for verible,
+	// Mason's bin dir (~/.local/share/nvim/mason/bin) must be on PATH — or
+	// replace the command with that full path. Both start disabled, mirroring
+	// nvim's one-server-at-a-time rule (:UseSlang / :UseVerible): enable one
+	// via Command Palette → "LSP: Enable Language Server Globally" (or
+	// per-project in the .sublime-project). Python comes from the LSP-pyright
+	// package and needs no client entry here.
+	"clients":
+	{
+		"slang": {
+			"enabled": false,
+			"command": ["slang-server"],
+			"selector": "source.systemverilog"
+		},
+		"verible": {
+			"enabled": false,
+			"command": ["verible-verilog-ls", "--rules_config_search"],
+			"selector": "source.systemverilog"
+		}
+	}
+}

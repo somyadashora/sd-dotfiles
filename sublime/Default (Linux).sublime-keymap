@@ -23,6 +23,9 @@
         }
     },
 
+    // alt+d is deliberately bound twice: this global goto_definition, and the
+    // SV-context verilog_goto_declaration below. Later bindings win, so the
+    // verilog one takes over in .sv/.svh — keep the global one ABOVE it.
     { "keys": ["alt+d"], "command": "goto_definition" },
 
     { "keys": ["ctrl+shift+s"], "command": "gs_show_status" },

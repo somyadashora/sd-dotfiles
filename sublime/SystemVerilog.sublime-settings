@@ -484,7 +484,7 @@
 	"sv.inst_oneline": true,
 	"sv.instance_prefix": "inst_",
 	"sv.instance_suffix": "",
-	"sv.max_line_length": 120,
+	"sv.max_line_length": 100,
 	"sv.mod_import_same_line": false,
 	"sv.navbar_show_interface_cb": false,
 	"sv.navbar_show_module_port": true,

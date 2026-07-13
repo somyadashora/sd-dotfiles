@@ -9,7 +9,7 @@
 		["carry_file_to_pane", {"direction": "right"}]
 	],
 
-	"shell_cmd": "/usr/bin/python3.6 \"$file\"",
+	"shell_cmd": "python3 \"$file\"",
 	"file_regex": "^[ ]*File \"(...*?)\", line ([0-9]*)",
 	"selector": "source.python",
 

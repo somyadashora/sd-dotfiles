@@ -3,45 +3,47 @@
 	"in_process_packages":
 	[
 	],
+	// Pruned 2026-07: Anaconda → LSP + LSP-pyright; SublimeLinter (no linter
+	// plugins were installed with it) and TrailingSpaces (built-in
+	// trim_trailing_white_space_on_save covers it) dropped; unused themes
+	// (Brogrammer, Seti Monokai, Seti_UI, Monocyanide Colorscheme) dropped —
+	// Theme - Cyanide stays: it provides the active Monocyanide-Black scheme.
+	// GitSavvy added: the keymap's gs_* bindings depend on it.
 	"installed_packages":
 	[
 		"A File Icon",
 		"Alignment",
 		"AlignTab",
 		"All Autocomplete",
-		"Anaconda",
 		"ARM Assembly",
 		"BracketHighlighter",
 		"Compare Side-By-Side",
 		"CursorRuler",
 		"DiffView",
 		"EditorConfig",
+		"GitSavvy",
 		"gruvbox",
 		"Hex-Bin System",
 		"LanguageTool",
 		"Log Highlight",
+		"LSP",
+		"LSP-pyright",
 		"Makefile Plus",
 		"Markdown Extended",
 		"MarkdownLivePreview",
-		"Monocyanide Colorscheme",
 		"Notes",
 		"Package Control",
 		"PackageResourceViewer",
 		"Search in Project",
 		"Select By Regex",
-		"Seti_UI",
 		"SideBarEnhancements",
 		"Smart Repeat",
 		"Smart VHDL",
 		"Sublime Bookmarks",
-		"SublimeLinter",
 		"SystemVerilog",
 		"Tcsh and Csh Mode",
 		"Terminus",
-		"Theme - Brogrammer",
 		"Theme - Cyanide",
-		"Theme - Seti Monokai",
-		"TrailingSpaces",
 		"Verilog Automatic",
 		"Verilog Gadget",
 		"Wrap Plus",

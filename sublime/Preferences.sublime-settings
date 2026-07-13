@@ -7,14 +7,36 @@
 		"netlist"
 	],
 	"always_show_minimap_viewport": false,
+	// Waveform/sim dumps never belong in Goto Anything or search indexing.
 	"binary_file_patterns":
 	[
-		"*/build-dc*/*"
+		"*/build-dc*/*",
+		"*.fsdb",
+		"*.vcd",
+		"*.wlf",
+		"*.shm/*"
 	],
 	"color_scheme": "Packages/Theme - Cyanide/Monocyanide - Black.tmTheme",
 	"draw_minimap_border": true,
+	"ensure_newline_at_eof_on_save": true,
 	"fold_buttons": false,
-	"font_face": "Source Code Pro",
+	// Overriding this replaces the defaults, so the VCS dirs are repeated
+	// ahead of the simulator output dirs.
+	"folder_exclude_patterns":
+	[
+		".svn",
+		".git",
+		".hg",
+		"CVS",
+		"csrc",
+		"simv.daidir",
+		"xcelium.d",
+		"INCA_libs",
+		".slang"
+	],
+	// Source Code Pro with Nerd Font glyphs, so the bash prompt's pills and
+	// icons render inside Terminus.
+	"font_face": "SauceCodePro Nerd Font",
 	"font_size": 12,
 	"gni_001": false,
 	"gni_002": false,
@@ -29,6 +51,7 @@
 	"gruvbox_statusbar_xs": true,
 	"gruvbox_tabs_font_size_10": true,
 	"gruvbox_tabs_s": true,
+	"highlight_line": true,
 	"hot_exit": false,
 	"ignored_packages":
 	[

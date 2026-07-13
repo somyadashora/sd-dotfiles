@@ -399,10 +399,13 @@ Contents: `Preferences.sublime-settings` (gruvbox theme, Monocyanide scheme,
 goto-driver/declaration on `alt+a`/`alt+d`), `SystemVerilog.sublime-settings`
 (SystemVerilog plugin: completions, `clk`/`rst_n` names, instance prefix),
 `Package Control.sublime-settings` (package list — Package Control installs
-from it on a fresh machine), Terminus/Makefile settings + a Terminus python
-build. Machine-local files plugins write into `Packages/User` are kept out of
-git by `sublime/.gitignore`. Sublime Text itself is not installed by the
-installers — only the config is managed here.
+from it on a fresh machine), `LSP.sublime-settings` (slang-server + verible
+clients for the LSP package, both disabled — enable ONE via the command
+palette, mirroring nvim's `:UseSlang`/`:UseVerible` rule; binaries resolve via
+PATH), Terminus/Makefile settings + a Terminus python build. Machine-local
+files plugins write into `Packages/User` are kept out of git by
+`sublime/.gitignore`. Sublime Text itself is not installed by the installers —
+only the config is managed here.
 
 ## Useful aliases (from `.bash_aliases`)
 
