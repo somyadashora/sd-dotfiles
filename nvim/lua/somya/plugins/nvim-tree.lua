@@ -94,6 +94,9 @@ return {
       view = {
         width = 25,
         relativenumber = true,
+        -- nvim-tree's own default is "yes" (2 cells); the tree has no signs, so
+        -- reclaim that width for file names (statuscol ignores this ft).
+        signcolumn = "no",
       },
       -- change folder arrow icons
       renderer = {

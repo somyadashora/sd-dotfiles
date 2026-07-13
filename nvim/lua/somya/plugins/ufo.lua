@@ -35,7 +35,10 @@
     dependencies = { "kevinhwang91/promise-async" },
     event = { "BufReadPost", "BufNewFile" },
     init = function()
-      vim.o.foldcolumn = "1"
+      -- Fold-arrow column starts hidden to keep the gutter narrow; <leader>uf
+      -- (core/keymaps.lua) shows it per-window. Folding itself (za/zR/zM, the
+      -- fold text below) works regardless of the column.
+      vim.o.foldcolumn = "0"
       vim.o.foldlevel = 99
       vim.o.foldlevelstart = 99
       vim.o.foldenable = true

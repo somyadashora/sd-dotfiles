@@ -106,6 +106,16 @@ keymap.set("n", "<leader>uv", function()
   vim.notify("Virtualedit: " .. (on and "off" or "on"), vim.log.levels.INFO)
 end, { desc = "Toggle virtualedit (free cursor)" })
 
+-- Toggle the fold-arrow column (off by default — ufo.lua sets foldcolumn=0 so
+-- the gutter stays narrow). Window-local; statuscol draws its fold segment only
+-- while foldcolumn ~= 0 (see plugins/statuscol.lua). Folding itself (za/zR/zM)
+-- works either way. Under the <leader>u "UI / Theme" group.
+keymap.set("n", "<leader>uf", function()
+  local on = vim.wo.foldcolumn ~= "0"
+  vim.wo.foldcolumn = on and "0" or "1"
+  vim.notify("Fold column: " .. (on and "off" or "on"), vim.log.levels.INFO)
+end, { desc = "Toggle fold column" })
+
 -- Linter control
 keymap.set("n", "<leader>ld", ":lua vim.diagnostic.enable(false)<CR>", { desc = "disable lint messages" })
 keymap.set("n", "<leader>le", ":lua vim.diagnostic.enable(true)<CR>", { desc = "enable lint messages" })

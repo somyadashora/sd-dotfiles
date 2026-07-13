@@ -23,6 +23,12 @@ return {
     local function one_col(args)
       return not two_col(args)
     end
+    -- Fold-arrow segment only draws when the window's foldcolumn is on (off by
+    -- default — ufo.lua sets the global to "0"; <leader>uf flips it per-window).
+    -- Without this condition the segment's trailing space would stay reserved.
+    local function fold_on(args)
+      return vim.wo[args.win].foldcolumn ~= "0"
+    end
     -- Right-align a number within the number-column width.
     local function pad(n, width)
       local s = tostring(n)
@@ -54,8 +60,11 @@ return {
         --    statuscol matches LEGACY signs (marks, todo-comments) by `name`
         --    and EXTMARK signs (diagnostics) by `namespace`, so we need both
         --    catch-alls here. git is de-duped out by the dedicated segment below.
+        --    colwidth=1: mark letters and diagnostic glyphs are single-cell, so
+        --    two signs fit in 2 cells instead of 4 (bump back to 2 if a
+        --    double-width icon ever clips).
         {
-          sign = { name = { ".*" }, namespace = { ".*" }, maxwidth = 2, colwidth = 2, auto = false, wrap = true },
+          sign = { name = { ".*" }, namespace = { ".*" }, maxwidth = 2, colwidth = 1, auto = false, wrap = true },
           click = "v:lua.ScSa",
         },
         -- 2a. normal number column (respects number/relativenumber) — default.
@@ -64,8 +73,9 @@ return {
         { text = { abs_lnum, " " }, condition = { two_col, two_col }, click = "v:lua.ScLa" },
         { text = { hyb_lnum, " " }, condition = { two_col, two_col }, click = "v:lua.ScLa" },
         -- 3. fold column (ufo) between the number and the git signs, plus a
-        --    space so the fold arrow and a git sign never touch
-        { text = { builtin.foldfunc, " " }, click = "v:lua.ScFa" },
+        --    space so the fold arrow and a git sign never touch. Hidden while
+        --    foldcolumn=0 (the default) — toggle with <leader>uf.
+        { text = { builtin.foldfunc, " " }, condition = { fold_on, fold_on }, click = "v:lua.ScFa" },
         -- 4. RIGHT of number: dedicated git-signs column, always reserved so the
         --    code text never shifts when a change sign appears/disappears.
         {

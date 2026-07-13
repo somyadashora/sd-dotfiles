@@ -58,6 +58,7 @@ opt.guicursor = "n-v-c:block-blinkwait500-blinkoff250-blinkon600-Cursor/lCursor,
 opt.termguicolors = true
 opt.background = "dark" -- colorschemes that can be light or dark will be made dark
 opt.signcolumn = "no" -- statuscol.nvim owns the gutter (reads signs from extmarks)
+opt.numberwidth = 3 -- narrower number column in small files; auto-grows past 99 lines
 
 -- backspace
 opt.backspace = "indent,eol,start" -- allow backspace on indent, end of line or insert mode start position
