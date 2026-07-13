@@ -1,0 +1,16 @@
+{
+	"target": "terminus_open",
+
+	"auto_close": false,
+	"title": "python out",
+	"timeit":true,
+
+	"post_window_hooks": [
+		["carry_file_to_pane", {"direction": "right"}]
+	],
+
+	"shell_cmd": "/usr/bin/python3.6 \"$file\"",
+	"file_regex": "^[ ]*File \"(...*?)\", line ([0-9]*)",
+	"selector": "source.python",
+
+}

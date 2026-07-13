@@ -1,0 +1,48 @@
+[
+{
+    "keys": ["alt+shift+/"],
+    "command": "select_by_regex_all",
+},
+
+{ "keys": ["shift+f3"], "command": "find_all_under" },
+
+{
+   "keys": ["alt+/"], "command": "align_tab",
+   "args" : {"live_preview" : true}
+ },
+
+ { "keys": ["ctrl+alt+v"], "command": "paste_from_history" },
+
+    {
+        "keys": ["alt+`"], "command": "toggle_terminus_panel"
+    },
+
+  {
+        "keys": ["ctrl+alt+t"], "command": "terminus_open", "args": {
+            "cwd": "${file_path:${folder}}"
+        }
+    },
+
+    { "keys": ["alt+d"], "command": "goto_definition" },
+
+    { "keys": ["ctrl+shift+s"], "command": "gs_show_status" },
+    { "keys": ["ctrl+shift+g"], "command": "gs_graph" },
+
+ {
+    "keys": ["alt+a"], "command": "verilog_goto_driver",
+    "context":
+    [
+        { "key": "num_selections", "operator": "equal", "operand": 1 },
+        { "key": "selector", "operator": "equal", "operand": "source.systemverilog"}
+    ]
+},
+{
+    "keys": ["alt+d"], "command": "verilog_goto_declaration",
+    "context":
+    [
+        { "key": "num_selections", "operator": "equal", "operand": 1 },
+        { "key": "selector", "operator": "equal", "operand": "source.systemverilog"}
+    ]
+},
+
+]

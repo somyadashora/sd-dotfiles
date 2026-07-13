@@ -1,0 +1,11 @@
+# This folder is symlinked as Sublime's Packages/User, so Sublime and its
+# plugins write machine-local state here at runtime. Keep that noise out of
+# the repo; real settings files show up in git status and get committed.
+Package Control.cache/
+Package Control.ca-*
+Package Control.last-run
+Package Control.merged-ca-bundle
+Package Control.system-ca-bundle
+oscrypt-ca-bundle.crt
+Anaconda.last-check
+*.sublime-workspace

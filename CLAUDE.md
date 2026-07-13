@@ -4,14 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-Personal dotfiles for Neovim, tmux, bash, and git — focused on VLSI/SystemVerilog development.
-`install.sh` creates the necessary symlinks:
+Personal dotfiles for Neovim, tmux, bash, git, and Sublime Text — focused on
+VLSI/SystemVerilog development. `install.sh` creates the necessary symlinks:
 
 ```
 nvim/               → ~/.config/nvim
 tmux/.tmux.conf     → ~/.tmux.conf
 tmux/scripts/       → ~/.config/tmux/scripts
 lazygit/config.yml  → ~/.config/lazygit/config.yml
+sublime/            → ~/.config/sublime-text/Packages/User  (ST3 dir if that's what exists)
 ```
 
 ## Installation
@@ -388,6 +389,20 @@ sees it as the next argument. Use separate sequential `#[fg=...]#[bg=...]` tags 
   the nvim accent) + density settings (command log hidden, narrower side panel,
   Nerd Font icons). Font size itself is terminal-owned; lazygit can't set it.
   The nvim `<leader>lg` float opens at full editor size (plugins/lazygit.lua).
+
+## Sublime Text
+
+`sublime/` IS Sublime's `Packages/User` (whole-dir symlink — same pattern as
+`nvim/`), so edits made in Sublime's settings UI land directly in the repo.
+Contents: `Preferences.sublime-settings` (gruvbox theme, Monocyanide scheme,
+100-col rulers), `Default (Linux).sublime-keymap` (AlignTab, Terminus, SV
+goto-driver/declaration on `alt+a`/`alt+d`), `SystemVerilog.sublime-settings`
+(SystemVerilog plugin: completions, `clk`/`rst_n` names, instance prefix),
+`Package Control.sublime-settings` (package list — Package Control installs
+from it on a fresh machine), Terminus/Makefile settings + a Terminus python
+build. Machine-local files plugins write into `Packages/User` are kept out of
+git by `sublime/.gitignore`. Sublime Text itself is not installed by the
+installers — only the config is managed here.
 
 ## Useful aliases (from `.bash_aliases`)
 

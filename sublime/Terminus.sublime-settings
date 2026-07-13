@@ -1,0 +1,16 @@
+{
+	"256color": true,
+	"default_config":
+	{
+		"linux": "Bash",
+		"osx": null,
+		"windows": "Command Prompt"
+	},
+	"preserve_keys":
+	[
+		"ctrl+p",
+		"ctrl+k"
+	],
+	"theme": "default",
+	"unix_term": "xterm-256color"
+}

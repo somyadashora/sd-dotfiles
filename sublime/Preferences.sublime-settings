@@ -1,0 +1,49 @@
+{
+	"added_words":
+	[
+		"Somya",
+		"Dashora",
+		"verilog",
+		"netlist"
+	],
+	"always_show_minimap_viewport": false,
+	"binary_file_patterns":
+	[
+		"*/build-dc*/*"
+	],
+	"color_scheme": "Packages/Theme - Cyanide/Monocyanide - Black.tmTheme",
+	"draw_minimap_border": true,
+	"fold_buttons": false,
+	"font_face": "Source Code Pro",
+	"font_size": 12,
+	"gni_001": false,
+	"gni_002": false,
+	"gni_003": false,
+	"gruvbox_accent_blue": true,
+	"gruvbox_autocollapse_tabs": false,
+	"gruvbox_autocomplete_border": true,
+	"gruvbox_autocomplete_border_thick": true,
+	"gruvbox_sidebar_cramped": true,
+	"gruvbox_sidebar_font_size_11": true,
+	"gruvbox_sidebar_indent_xs": true,
+	"gruvbox_statusbar_xs": true,
+	"gruvbox_tabs_font_size_10": true,
+	"gruvbox_tabs_s": true,
+	"hot_exit": false,
+	"ignored_packages":
+	[
+		"Vintage",
+	],
+	"margin": -2,
+	"rulers":
+	[
+		100,
+		100.1,
+		100.2,
+		101
+	],
+	"theme": "gruvbox.sublime-theme",
+	"auto_complete_use_history": true,
+	"auto_complete_commit_on_tab": true,
+	"trim_trailing_white_space_on_save": true,
+}
