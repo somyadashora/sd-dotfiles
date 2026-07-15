@@ -176,6 +176,14 @@ local function stop_lsp_by_name(name)
     vim.cmd("edit")
   end, {})
 
+  -- Back to the startup state: no SystemVerilog LSP at all.
+  vim.api.nvim_create_user_command("UseNoSvLsp", function()
+    for _, name in ipairs({ "verible", "slang-server" }) do
+      vim.lsp.enable(name, false)
+      stop_lsp_by_name(name)
+    end
+  end, {})
+
 
     -- configure lua server with special settings
     vim.lsp.config("lua_ls", {
