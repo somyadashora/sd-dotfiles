@@ -5,7 +5,7 @@ return {
   -- fzf-native off startup; config() re-defines these maps with full behaviour.
   cmd = "Telescope",
   keys = {
-    "<leader>ff", "<leader>fFi", "<leader>fr", "<leader>fs", "<leader>*",
+    "<leader>ff", "<leader>fi", "<leader>fr", "<leader>fs", "<leader>*", "<leader>fo",
     "<leader>B", "<leader>\"", "<leader>j", "<leader>`", "<leader>fT",
     "<leader>/", "<leader>fb", "<leader>:", "<leader>?", "<leader>Q", "<leader>;",
   },
@@ -139,7 +139,7 @@ return {
     local keymap = vim.keymap -- for conciseness
 
     keymap.set("n", "<leader>ff", "<cmd>Telescope find_files<cr>", { desc = "Fuzzy find files in cwd" })
-    keymap.set("n", "<leader>fFi", function()
+    keymap.set("n", "<leader>fi", function()
       require("telescope.builtin").find_files({ hidden = true, no_ignore = true })
     end, { desc = "Fuzzy find files in cwd, including hidden and gitignored" })
 
@@ -151,6 +151,11 @@ return {
     -- keymap.set("n", "<leader>fSi", "<cmd>Telescope live_grep no_ignore=true hidden=true<cr>", { desc = "Find string in cwd, don't respect gitignore" })
 
     keymap.set("n", "<leader>*", "<cmd>Telescope grep_string<cr>", { desc = "Find string under cursor in cwd" })
+
+    -- <leader>* scoped down to just the buffers currently open
+    keymap.set("n", "<leader>fo", function()
+      require("telescope.builtin").grep_string({ grep_open_files = true })
+    end, { desc = "Find string under cursor in open buffers" })
 
     keymap.set("n", "<leader>B", function()
       require("telescope.builtin").buffers({

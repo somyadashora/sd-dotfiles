@@ -328,7 +328,7 @@ local sections = {
       { "<leader>fb",        "fuzzy line search in current buffer" },
       { "<leader>fs",        "live grep in cwd (repo)" },
       { "── files ──", "" },
-      { "<leader>ff  /  fFi", "find files (cwd / + hidden & ignored)" },
+      { "<leader>ff  /  fi", "find files (cwd / + hidden & ignored)" },
       { "<leader>fr",         "recent files (oldfiles)" },
       { "<leader>fT",         "find TODOs" },
     },
