@@ -28,9 +28,6 @@
     // verilog one takes over in .sv/.svh — keep the global one ABOVE it.
     { "keys": ["alt+d"], "command": "goto_definition" },
 
-    { "keys": ["ctrl+shift+s"], "command": "gs_show_status" },
-    { "keys": ["ctrl+shift+g"], "command": "gs_graph" },
-
  {
     "keys": ["alt+a"], "command": "verilog_goto_driver",
     "context":
