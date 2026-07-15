@@ -17,11 +17,11 @@
 --      changes the file explorer but NOT a .sv/.py buffer — that window is
 --      pinned by styler.
 --
--- styler starts OFF (M.styler_enabled = false): on launch every window shows the
--- global default colorscheme. Enable per-filetype themes on demand with
--- <leader>uy / :StylerToggle. Because styler is already off, browsing schemes
--- with a full-window preview just works; <leader>uc opens the picker (and would
--- suspend styler first if it were on). Lock a winner in by editing M.default.
+-- styler starts ON: plugins/styler.lua calls enable_styler() when the plugin
+-- loads (VeryLazy), so per-filetype themes apply by default. Toggle them off
+-- with <leader>uy / :StylerToggle. Browsing schemes with a full-window preview
+-- (<leader>uc) suspends styler first — re-enable with <leader>uy after picking.
+-- Lock a winner in by editing M.default.
 
 local M = {}
 
@@ -184,10 +184,10 @@ function M.bootstrap()
   M.wire_overrides()
 end
 
--- styler starts OFF: on launch the global default colorscheme shows in every
--- window (no per-filetype overrides). Turn per-filetype themes on with
--- <leader>uy / :StylerToggle. Starting false means the FIRST toggle enables it
--- (rather than trying to disable an already-off styler).
+-- Live styler state. Initialized false because styler genuinely isn't running
+-- until its plugin loads — plugins/styler.lua calls enable_styler() at VeryLazy,
+-- so per-filetype themes are ON by default moments after launch. <leader>uy /
+-- :StylerToggle flips them off/on from there.
 M.styler_enabled = false
 
 -- Resume styler: (re)register its autocmds and re-pin every open window.
