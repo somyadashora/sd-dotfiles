@@ -1,16 +1,50 @@
 #!/bin/sh
-# Fetch weather from wttr.in with 30-minute cache.
+# Fetch weather from wttr.in with 30-minute cache, rendered with Nerd Font
+# glyphs (same md-* family as the rest of the status bar) instead of wttr's
+# emoji format, whose variation-selector emoji (🌡️ 🌬️) misalign in tmux.
+# Cache holds the raw "condition|temp|wind" response; rendering happens on
+# every print, so icon tweaks apply without waiting out the cache. If the
+# response doesn't parse (old cache, error page), it's printed as-is.
 # Usage: tmux-weather <city>
 CITY="${1:-Bangalore}"
 SLUG=$(echo "$CITY" | tr ' /+' '___')
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/tmux"
 mkdir -p "$CACHE_DIR"
-CACHE="$CACHE_DIR/weather-${SLUG}"
+# .v2: raw-format cache; never mixes with the old emoji-format cache files
+CACHE="$CACHE_DIR/weather-${SLUG}.v2"
 
 # Refresh cache if missing or older than 30 minutes
 if [ -z "$(find "$CACHE" -mmin -30 2>/dev/null)" ]; then
-    RESULT=$(curl -sf --max-time 5 "wttr.in/${CITY}?format=2" 2>/dev/null | tr -d '\r\n')
+    RESULT=$(curl -sf --max-time 5 "wttr.in/${CITY}?format=%C%7C%t%7C%w" 2>/dev/null | tr -d '\r\n')
     [ -n "$RESULT" ] && printf '%s' "$RESULT" > "$CACHE"
 fi
 
-cat "$CACHE" 2>/dev/null | tr -d '\r\n' || echo "?"
+RAW=$(cat "$CACHE" 2>/dev/null)
+case "$RAW" in
+    *\|*\|*) ;;                      # parses: condition|temp|wind
+    *) printf '%s\n' "${RAW:-?}"; exit 0 ;;
+esac
+
+COND=${RAW%%|*}
+REST=${RAW#*|}
+TEMP=${REST%%|*}
+WIND=${REST#*|}
+TEMP=${TEMP#+}                       # "+29°C" -> "29°C" (keeps the - of negatives)
+
+# Condition text -> nf-md-weather_* glyph. Order matters: thunder before rain,
+# "partly cloudy" before plain cloud.
+LC=$(printf '%s' "$COND" | tr 'A-Z' 'a-z')
+case "$LC" in
+    *thunder*)                        ICON="󰖓" ;;
+    *snow*|*sleet*|*blizzard*|*ice*)  ICON="󰖘" ;;
+    *torrential*|*heavy\ rain*)       ICON="󰖖" ;;
+    *rain*|*drizzle*|*shower*)        ICON="󰖗" ;;
+    *fog*|*mist*|*haze*|*smoke*)      ICON="󰖑" ;;
+    *partly*)                         ICON="󰖕" ;;
+    *cloud*|*overcast*)               ICON="󰖐" ;;
+    *sunny*)                          ICON="󰖙" ;;
+    *clear*)                          ICON="󰖔" ;;
+    *)                                ICON="󰔏" ;;
+esac
+
+printf '%s %s %s\n' "$ICON" "$TEMP" "$WIND"

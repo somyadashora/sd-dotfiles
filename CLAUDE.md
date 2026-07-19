@@ -321,7 +321,7 @@ Config: `tmux/.tmux.conf`. Prefix: `Ctrl+Space`.
 | `tmux-cpu`          | 1-min load average from `/proc/loadavg`               |
 | `tmux-ram`          | used/total RAM from `free -h`                         |
 | `tmux-disk`         | disk usage                                            |
-| `tmux-weather city` | wttr.in weather, 30-min cache in `~/.cache/tmux/`     |
+| `tmux-weather city` | wttr.in weather, 30-min cache in `~/.cache/tmux/` (`.v2` files). Fetches plain `condition\|temp\|wind` and renders with nf-md weather glyphs — wttr's emoji format misaligns in tmux. Unparseable cache prints as-is |
 | `tmux-tz-time tz`   | current time in given timezone                        |
 | `tmux-open-file`    | open file under cursor in nvim (bound to `prefix+gf`) |
 | `tmux-paste`        | paste tmux buffer without trailing newline            |
