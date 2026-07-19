@@ -106,9 +106,12 @@ M.overrides_common = {
   -- and trace the border in the repo's mauve accent, so a float reads as a
   -- box hovering ABOVE the buffer instead of blending into it. Forced on
   -- every scheme so the look is consistent regardless of styler's pin.
+  -- Border in catppuccin teal — deliberately NOT the mauve accent, so the
+  -- float's edge reads as its own thing against mauve-heavy UI (bookmarks,
+  -- sneak labels) and clearly separates the box from the code behind it.
   NormalFloat = { bg = "#313244" },
-  FloatBorder = { fg = "#cba6f7", bg = "#313244" },
-  FloatTitle  = { fg = "#cba6f7", bg = "#313244", bold = true },
+  FloatBorder = { fg = "#94e2d5", bg = "#313244" },
+  FloatTitle  = { fg = "#94e2d5", bg = "#313244", bold = true },
 }
 
 -- Per-scheme cursor / line-number / cursorline. Ordered list: the FIRST entry

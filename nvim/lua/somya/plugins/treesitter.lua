@@ -58,6 +58,16 @@ return {
       -- built-in syntax highlighting take over instead.
       local has_cli = vim.fn.executable("tree-sitter") == 1
 
+      -- When the regex fallback is in play, markdown code fences (LSP hover
+      -- floats! slang emits ````systemverilog blocks) would render as a flat
+      -- grey markdownCodeBlock. Vim's built-in markdown syntax can instead
+      -- delegate fences to real syntax files — one $VIMRUNTIME include per
+      -- entry, only at markdown-syntax load time. Harmless when treesitter
+      -- is active (regex markdown never loads then).
+      vim.g.markdown_fenced_languages = {
+        "systemverilog", "verilog", "bash", "sh", "python", "lua", "tcl",
+      }
+
       if has_cli then
         treesitter.install(parsers)
       else

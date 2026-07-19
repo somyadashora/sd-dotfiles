@@ -205,12 +205,17 @@ return {
               -- focus_id makes a repeat K (same buffer) FOCUS the open float
               -- instead of redrawing it — the same double-K behavior stock
               -- vim.lsp.buf.hover has — so its contents can be yanked.
-              vim.lsp.util.open_floating_preview(
+              local _, fwin = vim.lsp.util.open_floating_preview(
                 vim.split(md, "\n"), "markdown",
                 vim.tbl_extend("force", hover_cfg, {
                   focusable = true,
                   focus_id = "slang-hover",
                 }))
+              -- Floats open with signcolumn=auto: any stray sign placed after
+              -- focusing would pop a gutter open and shift the text. Pin it off.
+              if fwin and vim.api.nvim_win_is_valid(fwin) then
+                vim.wo[fwin].signcolumn = "no"
+              end
             end)
           end, opts)
         end

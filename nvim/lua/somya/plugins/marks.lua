@@ -30,6 +30,10 @@ return {
       -- statuscol). The marks still work for jumping (`[, `], etc), they just
       -- no longer paint a sign. Keep visual bounds + last-jump.
       builtin_marks = { "<", ">", "'" },
+      -- Never decorate scratch buffers: LSP hover/preview floats are nofile
+      -- with signcolumn=auto, so a builtin-mark sign (') appearing on focus
+      -- pops the gutter open and shifts the whole float's text sideways.
+      excluded_buftypes = { "nofile" },
       cyclic = true,
       sign_priority = { lower = 15, upper = 20, builtin = 12, bookmark = 25 },
     },
