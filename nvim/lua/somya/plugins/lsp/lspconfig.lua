@@ -87,13 +87,64 @@ return {
         -- re-attaches the buffer, so these maps appear/disappear accordingly.
         local client = vim.lsp.get_client_by_id(ev.data.client_id)
         if client and client.name == "slang-server" then
-          -- Cone traces render in Trouble (previewable tree, auto-refresh)
-          -- instead of the raw quickfix list vim.lsp.buf.*_calls() would open.
+          -- Cone traces go through a custom request, not Trouble's own
+          -- lsp_incoming_calls source. slang-server (0.2.x) returns call items
+          -- with only name+uri — range/selectionRange default to (0,0) — and one
+          -- entry per cone LEAF with no dedup. Trouble labels each call with the
+          -- text at the caller item's range, i.e. line 1 of the driving file
+          -- (usually a ///// banner), repeated per leaf. So: request the cone
+          -- ourselves, dedup by location, label entries with the hierarchical
+          -- signal path slang puts in `name`, and render via Trouble's qflist.
+          local function slang_cone(incoming)
+            return function()
+              local cl = vim.lsp.get_clients({ bufnr = 0, name = "slang-server" })[1]
+              if not cl then return end
+              local pos = vim.lsp.util.make_position_params(0, cl.offset_encoding)
+              cl:request("textDocument/prepareCallHierarchy", pos, function(perr, prep)
+                if perr or not prep or #prep == 0 then
+                  vim.notify("Slang: nothing to trace under cursor", vim.log.levels.WARN)
+                  return
+                end
+                local method = incoming and "callHierarchy/incomingCalls"
+                                         or "callHierarchy/outgoingCalls"
+                cl:request(method, { item = prep[1] }, function(cerr, calls)
+                  if cerr or not calls or #calls == 0 then
+                    vim.notify("Slang: no " .. (incoming and "drivers" or "loads")
+                      .. " found for " .. prep[1].name, vim.log.levels.WARN)
+                    return
+                  end
+                  local seen, qf = {}, {}
+                  for _, call in ipairs(calls) do
+                    local item = call.from or call.to
+                    local r = (call.fromRanges and call.fromRanges[1]) or item.range
+                    local fname = vim.uri_to_fname(item.uri)
+                    local key = table.concat(
+                      { fname, r.start.line, r.start.character, item.name }, ":")
+                    if not seen[key] then
+                      seen[key] = true
+                      qf[#qf + 1] = {
+                        filename = fname,
+                        lnum = r.start.line + 1,
+                        col = r.start.character + 1,
+                        text = item.name,
+                      }
+                    end
+                  end
+                  vim.fn.setqflist({}, " ", {
+                    title = (incoming and "Drivers of " or "Loads of ") .. prep[1].name,
+                    items = qf,
+                  })
+                  vim.cmd("Trouble qflist open")
+                end)
+              end)
+            end
+          end
+
           opts.desc = "Slang: trace signal drivers"
-          keymap.set("n", "<leader>vd", "<cmd>Trouble lsp_incoming_calls<CR>", opts)
+          keymap.set("n", "<leader>vd", slang_cone(true), opts)
 
           opts.desc = "Slang: trace signal loads"
-          keymap.set("n", "<leader>vl", "<cmd>Trouble lsp_outgoing_calls<CR>", opts)
+          keymap.set("n", "<leader>vl", slang_cone(false), opts)
         end
       end,
     })
