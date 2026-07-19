@@ -163,6 +163,22 @@ source for editing. Lazy-loaded on `ft = markdown`, depends on treesitter's
 (`enabled = true`) for every markdown buffer; `<leader>um` toggles rendering
 (under the `<leader>u` "+UI / Theme" group). Pairs with the telekasten vault.
 
+**Mermaid diagrams / inline images** (`nvim/lua/somya/plugins/image.lua` +
+`diagram.lua`): image.nvim draws markdown image links as real pictures over the
+buffer, and diagram.nvim feeds it rendered ```` ```mermaid ```` fences (plus
+plantuml/d2/gnuplot when those CLIs exist). Chosen over snacks.image for the
+**ueberzugpp backend**: an X11 overlay that works in ANY terminal with a
+`$DISPLAY` (ETX/SLES) — no kitty required. `image.lua`'s `pick_backend()`
+chooses per machine: kitty protocol on kitty/ghostty, else `ueberzug` when
+`ueberzugpp` is on PATH, else kitty escapes (harmless no-op). The buffer is
+never modified — render-markdown styles the text, these draw the pictures.
+Mermaid theme follows `'background'`. Runtime deps (none installed by the
+installers): ImageMagick CLI (`processor = "magick_cli"`, `build = false`
+skips the luarocks magick rock), `ueberzugpp` for the X11 path, `mmdc`
+(`npm i -g @mermaid-js/mermaid-cli`) for mermaid, curl for remote images.
+The kitty path inside tmux needs `allow-passthrough on` + `focus-events on`
+(set in `.tmux.conf`, `-q`-guarded for tmux <3.3); ueberzugpp needs neither.
+
 **Bookmarks** (`nvim/lua/somya/plugins/bookmarks.lua`): bookmarks.nvim
 (LintaoAmons) — **persistent**, SQLite-backed bookmarks that survive across
 sessions, carry names/descriptions, group into named lists, and are browsable via
