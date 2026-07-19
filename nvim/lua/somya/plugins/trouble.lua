@@ -13,6 +13,17 @@ return {
     -- In-window keys (buffer-local, see <leader>fH cheatsheet): <cr> jump,
     --   o jump+close, <c-s>/<c-v> split/vsplit, dd / visual-d delete item,
     --   }/]] next, {/[[ prev, p preview, P toggle preview, zo/zc fold.
+    -- Rows show the source line as-is, and RTL alignment padding (e.g.
+    -- "output logic          abc;") wastes most of a sidebar row. Squeeze
+    -- whitespace runs in the displayed text — the {text:ts} treesitter
+    -- highlight is applied to the returned string, so coloring survives.
+    -- Display-only: jumps use the item's position, not the text.
+    formatters = {
+      text = function(ctx)
+        local text = vim.trim(tostring(ctx.item.text or "")):gsub("%s+", " ")
+        return { text = text }
+      end,
+    },
     modes = {
       -- Every LSP row's default format ends in "({item.client})" — pure noise
       -- here, since only one SV server is ever active (:UseSlang/:UseVerible).
@@ -23,7 +34,7 @@ return {
       -- The lsp mode (<leader>xr) lists defs/refs/impls with a code-line per
       -- entry, so the default sidebar width truncates almost everything —
       -- unlike symbols (<leader>xs), which is just names. Give it 40% of the
-      -- editor and wrap what still overflows instead of cutting it off.
+      -- editor (no wrap — squeezed one-line rows read better than wrapped ones).
       -- TEMPORARILY disabled: the default sections also include incoming/
       -- outgoing calls, but slang-server (<= 0.2.8) fills call-hierarchy items
       -- with (0,0) range/selectionRange, so Trouble renders line 1 of the file
@@ -33,7 +44,7 @@ return {
       -- re-add "lsp_incoming_calls" / "lsp_outgoing_calls" below. Until then
       -- <leader>vd/vl cover cone tracing properly (lsp/lspconfig.lua).
       lsp = {
-        win = { position = "right", size = 0.4, wo = { wrap = true } },
+        win = { position = "right", size = 0.4 },
         sections = {
           "lsp_definitions",
           "lsp_references",
