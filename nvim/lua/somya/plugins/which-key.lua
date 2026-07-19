@@ -26,6 +26,7 @@ return {
     -- which is where the <leader> menu is used.) Add a row here whenever a new
     -- prefix grows a second binding.
     spec = {
+      { "gl", group = "Peek" }, -- glance.nvim gld/glr/gli/glt (non-leader)
       { "<leader>A", group = "Align" },
       { "<leader>S", group = "Spell" },
       { "<leader>T", group = "Tabs" },

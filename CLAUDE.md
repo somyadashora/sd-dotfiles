@@ -270,6 +270,16 @@ maps are guarded by client name: the slang cone-tracing maps (`<leader>vd` drive
 `vl` loads, via LSP call-hierarchy) attach only when `slang-server` is the client, so
 they appear/disappear as you `:UseSlang` / `:UseVerible` (which re-attach the buffer).
 
+**Peek** (`nvim/lua/somya/plugins/glance.lua`): glance.nvim — VSCode-style
+embedded preview under the `gl` prefix ("gl-ance"; `gld`/`glr`/`gli`/`glt` =
+peek definitions/references/implementations/type-defs; in the peek: `<Tab>` next
+location, `<CR>` jump, `q` close). `gp`/`gP` were deliberately avoided — yanky
+owns both as ring-aware puts. Division of labor: `K` hover = info ABOUT a
+symbol, Telescope `gd/gR/...` = fuzzy-pick then jump away, Trouble `<leader>xr`
+= persistent sidebar, glance = look at the source in place without leaving the
+buffer. Fully lazy (cmd/keys). Its auto theme derives borders from FloatBorder,
+so it inherits the teal float identity from `theme.lua` on every scheme.
+
 **Per-project LSP setup** — two bootstrap scripts in `nvim/scripts/` (aliased in
 `.bash_aliases`), run once at a project root:
 - `slang-init` — creates `.slang/server.json` + a `.f` filelist (indexing →
