@@ -62,8 +62,17 @@ return {
         opts.desc = "Go to next diagnostic"
         keymap.set("n", "]d", vim.diagnostic.goto_next, opts) -- jump to next diagnostic in buffer
 
+        -- Hover float styling, shared by both K mappings below. The border +
+        -- the NormalFloat/FloatBorder overrides in core/theme.lua make the box
+        -- read as a panel floating above the code. Press K a SECOND time to
+        -- jump INTO the float (normal buffer: yank/search/visual all work),
+        -- q closes it from inside (moving the cursor outside also closes it).
+        local hover_cfg = { border = "rounded", max_width = 100, max_height = 30 }
+
         opts.desc = "Show documentation for what is under cursor"
-        keymap.set("n", "K", vim.lsp.buf.hover, opts) -- show documentation for what is under cursor
+        keymap.set("n", "K", function()
+          vim.lsp.buf.hover(hover_cfg)
+        end, opts) -- show documentation for what is under cursor
 
         opts.desc = "LSP: info (active clients)"
         keymap.set("n", "<leader>vi", function()
@@ -159,7 +168,7 @@ return {
           opts.desc = "Hover (slang macro-aware)"
           keymap.set("n", "K", function()
             local scl = vim.lsp.get_clients({ bufnr = 0, name = "slang-server" })[1]
-            if not scl then return vim.lsp.buf.hover() end
+            if not scl then return vim.lsp.buf.hover(hover_cfg) end
             local params = vim.lsp.util.make_position_params(0, scl.offset_encoding)
             local col = params.position.character
             if vim.api.nvim_get_current_line():sub(col + 1, col + 1) == "`" then
@@ -167,11 +176,11 @@ return {
             end
             scl:request("textDocument/hover", params, function(err, res)
               if err or not res or not res.contents then
-                return vim.lsp.buf.hover()
+                return vim.lsp.buf.hover(hover_cfg)
               end
               local md = type(res.contents) == "table" and res.contents.value
                 or res.contents
-              if type(md) ~= "string" then return vim.lsp.buf.hover() end
+              if type(md) ~= "string" then return vim.lsp.buf.hover(hover_cfg) end
               if md:match("^DefineDirective") then
                 local sections = vim.split(md, "\n+%-%-%-\n+")
                 local keep = { sections[1] }
@@ -180,8 +189,15 @@ return {
                 end
                 md = table.concat(keep, "\n\n---\n\n")
               end
+              -- focus_id makes a repeat K (same buffer) FOCUS the open float
+              -- instead of redrawing it — the same double-K behavior stock
+              -- vim.lsp.buf.hover has — so its contents can be yanked.
               vim.lsp.util.open_floating_preview(
-                vim.split(md, "\n"), "markdown", { focusable = true })
+                vim.split(md, "\n"), "markdown",
+                vim.tbl_extend("force", hover_cfg, {
+                  focusable = true,
+                  focus_id = "slang-hover",
+                }))
             end)
           end, opts)
         end

@@ -101,6 +101,14 @@ M.overrides_common = {
   -- scheme. (Native quickfix already uses Normal, so it needs nothing.)
   TroubleNormal   = { link = "Normal" },
   TroubleNormalNC = { link = "Normal" },
+  -- Floating panels (LSP hover, diagnostics, previews, which-key, …): lift
+  -- the panel off the code with a lighter background (catppuccin surface0)
+  -- and trace the border in the repo's mauve accent, so a float reads as a
+  -- box hovering ABOVE the buffer instead of blending into it. Forced on
+  -- every scheme so the look is consistent regardless of styler's pin.
+  NormalFloat = { bg = "#313244" },
+  FloatBorder = { fg = "#cba6f7", bg = "#313244" },
+  FloatTitle  = { fg = "#cba6f7", bg = "#313244", bold = true },
 }
 
 -- Per-scheme cursor / line-number / cursorline. Ordered list: the FIRST entry
