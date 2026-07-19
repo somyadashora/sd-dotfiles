@@ -229,8 +229,8 @@ local sections = {
     title = "SLANG / SYSTEMVERILOG LSP  (:UseSlang to activate)",
     entries = {
       { ":UseSlang / :UseVerible", "switch active SV language server" },
-      { "<leader>vd",   "trace signal drivers (slang only, incoming calls → quickfix)" },
-      { "<leader>vl",   "trace signal loads (slang only, outgoing calls → quickfix)" },
+      { "<leader>vd",   "trace signal drivers (slang only, incoming calls → Trouble)" },
+      { "<leader>vl",   "trace signal loads (slang only, outgoing calls → Trouble)" },
     },
   },
   {

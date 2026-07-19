@@ -87,15 +87,13 @@ return {
         -- re-attaches the buffer, so these maps appear/disappear accordingly.
         local client = vim.lsp.get_client_by_id(ev.data.client_id)
         if client and client.name == "slang-server" then
+          -- Cone traces render in Trouble (previewable tree, auto-refresh)
+          -- instead of the raw quickfix list vim.lsp.buf.*_calls() would open.
           opts.desc = "Slang: trace signal drivers"
-          keymap.set("n", "<leader>vd", function()
-            vim.lsp.buf.incoming_calls()
-          end, opts)
+          keymap.set("n", "<leader>vd", "<cmd>Trouble lsp_incoming_calls<CR>", opts)
 
           opts.desc = "Slang: trace signal loads"
-          keymap.set("n", "<leader>vl", function()
-            vim.lsp.buf.outgoing_calls()
-          end, opts)
+          keymap.set("n", "<leader>vl", "<cmd>Trouble lsp_outgoing_calls<CR>", opts)
         end
       end,
     })
