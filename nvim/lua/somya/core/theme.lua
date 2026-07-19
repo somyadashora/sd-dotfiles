@@ -101,17 +101,38 @@ M.overrides_common = {
   -- scheme. (Native quickfix already uses Normal, so it needs nothing.)
   TroubleNormal   = { link = "Normal" },
   TroubleNormalNC = { link = "Normal" },
-  -- Floating panels (LSP hover, diagnostics, previews, which-key, …): lift
-  -- the panel off the code with a lighter background (catppuccin surface0)
-  -- and trace the border in the repo's mauve accent, so a float reads as a
-  -- box hovering ABOVE the buffer instead of blending into it. Forced on
-  -- every scheme so the look is consistent regardless of styler's pin.
-  -- Border in catppuccin teal — deliberately NOT the mauve accent, so the
-  -- float's edge reads as its own thing against mauve-heavy UI (bookmarks,
-  -- sneak labels) and clearly separates the box from the code behind it.
-  NormalFloat = { bg = "#313244" },
-  FloatBorder = { fg = "#94e2d5", bg = "#313244" },
-  FloatTitle  = { fg = "#94e2d5", bg = "#313244", bold = true },
+  -- Floating panels (LSP hover, diagnostics, previews, which-key, …) share
+  -- the TERMINAL's "mint" identity (see toggleterm.lua): dark TEAL-tinted
+  -- background + teal accents. Surface0 grey was tried first but reads too
+  -- close to the editor bg — the teal hue makes "this is a panel, not the
+  -- buffer" obvious at a glance, echoing the established convention that
+  -- teal surfaces are "not the editor". Forced on every scheme + styler
+  -- namespace. (Deliberately not mauve — that's the mark/label accent.)
+  NormalFloat = { bg = "#15241f" },
+  FloatBorder = { fg = "#94e2d5", bg = "#15241f" },
+  FloatTitle  = { fg = "#94e2d5", bg = "#15241f", bold = true },
+  -- glance.nvim peek windows — same mint/teal panel family, hand-picked
+  -- because glance's auto theme (subtle brighten of Normal) was too close to
+  -- the editor to tell "am I in the peek?" (its theme.enable is off in
+  -- plugins/glance.lua; glance's own defaults use default=true, so these
+  -- explicit groups always win). Preview = panel bg; list = darker teal so
+  -- the two halves also read apart; winbar = solid teal pill (dark text on
+  -- accent — dashboard-box style) as the unmissable "peek is open" banner.
+  GlancePreviewNormal       = { bg = "#15241f" },
+  GlancePreviewCursorLine   = { bg = "#1f3a33" },
+  GlancePreviewLineNr       = { fg = "#5a8fa8" },
+  GlancePreviewSignColumn   = { fg = "#15241f" },
+  GlancePreviewEndOfBuffer  = { bg = "#15241f", fg = "#15241f" },
+  GlancePreviewBorderBottom = { fg = "#94e2d5", bg = "#15241f" },
+  GlanceListNormal          = { bg = "#101b17", fg = "#cdd6f4" },
+  GlanceListCursorLine      = { bg = "#1f3a33" },
+  GlanceListFilepath        = { fg = "#5a8fa8" },
+  GlanceListEndOfBuffer     = { bg = "#101b17", fg = "#101b17" },
+  GlanceListBorderBottom    = { fg = "#94e2d5", bg = "#101b17" },
+  GlanceWinBarFilename      = { fg = "#11111b", bg = "#94e2d5", bold = true },
+  GlanceWinBarFilepath      = { fg = "#11111b", bg = "#94e2d5" },
+  GlanceWinBarTitle         = { fg = "#11111b", bg = "#94e2d5", bold = true },
+  GlanceBorderTop           = { fg = "#94e2d5", bg = "#15241f" },
 }
 
 -- Per-scheme cursor / line-number / cursorline. Ordered list: the FIRST entry

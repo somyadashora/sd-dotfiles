@@ -273,12 +273,18 @@ they appear/disappear as you `:UseSlang` / `:UseVerible` (which re-attach the bu
 **Peek** (`nvim/lua/somya/plugins/glance.lua`): glance.nvim — VSCode-style
 embedded preview under the `gl` prefix ("gl-ance"; `gld`/`glr`/`gli`/`glt` =
 peek definitions/references/implementations/type-defs; in the peek: `<Tab>` next
-location, `<CR>` jump, `q` close). `gp`/`gP` were deliberately avoided — yanky
+location, `<CR>` jump, `<C-g>` hop between list and preview text (the editable
+real buffer; glance's `<leader>l` default is removed — it shadowed the
+Lint/LazyGit prefix), `q` close). `gp`/`gP` were deliberately avoided — yanky
 owns both as ring-aware puts. Division of labor: `K` hover = info ABOUT a
 symbol, Telescope `gd/gR/...` = fuzzy-pick then jump away, Trouble `<leader>xr`
 = persistent sidebar, glance = look at the source in place without leaving the
-buffer. Fully lazy (cmd/keys). Its auto theme derives borders from FloatBorder,
-so it inherits the teal float identity from `theme.lua` on every scheme.
+buffer. Fully lazy (cmd/keys). Glance's auto theme is OFF: all floats/panels
+(hover K box included) use the mint/teal "not the editor" identity — dark-teal
+panel bg + teal borders + solid-teal winbar pill — via NormalFloat/FloatBorder/
+`Glance*` in `theme.lua`'s `overrides_common`, matching toggleterm's mint. The
+preview winbar shows the filename only (glance hardcodes an absolute path;
+its `Winbar.render` is wrapped to drop it).
 
 **Per-project LSP setup** — two bootstrap scripts in `nvim/scripts/` (aliased in
 `.bash_aliases`), run once at a project root:

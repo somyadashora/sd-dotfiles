@@ -22,16 +22,45 @@ return {
     { "glt", "<cmd>Glance type_definitions<cr>", desc = "Peek type definitions (glance)" },
   },
   opts = {
-    -- Auto theme: list/preview backgrounds are lightened shades of the active
-    -- scheme's Normal, and the border lines take FloatBorder's fg — i.e. the
-    -- teal from theme.lua's overrides_common — re-derived on every
-    -- ColorScheme, so the peek window matches the hover float's identity on
-    -- any scheme without extra highlight plumbing here.
-    theme = { enable = true, mode = "auto" },
+    -- Auto theme OFF: its subtle brighten-of-Normal was too close to the
+    -- editor to tell the peek apart. The Glance* groups in theme.lua's
+    -- overrides_common paint the whole peek in the mint/teal panel identity
+    -- (same family as the hover float and the terminal) on every scheme.
+    theme = { enable = false },
     border = { enable = true }, -- top/bottom rule lines around the peek window
     -- RTL alignment padding makes lines long; a wrapped preview is
     -- disorienting (same reasoning as Trouble's lsp mode — see trouble.lua).
     preview_win_opts = { cursorline = true, number = true, wrap = false },
     folds = { folded = false }, -- start with all files' results visible
   },
+  config = function(_, opts)
+    local glance = require("glance")
+    -- <C-g> ("g for glance") hops between the list and the preview text —
+    -- single chord, symmetric from both sides. Free in normal mode config-wide
+    -- (the <C-g> sticky-move chord in core/keymaps.lua is insert-mode only).
+    opts.mappings = {
+      list = { ["<C-g>"] = glance.actions.enter_win("preview") },
+      preview = { ["<C-g>"] = glance.actions.enter_win("list") },
+    }
+    glance.setup(opts)
+    -- Drop glance's default <leader>l window-hop: it shadows this config's
+    -- <leader>l ("Lint & LazyGit") prefix inside peek windows, adding
+    -- timeoutlen lag there. Glance reads mappings from config.options at
+    -- window-open time, and its setup() deep-merge can't DELETE a default
+    -- key (and false isn't a valid rhs), so nil it out after setup.
+    local mappings = require("glance.config").options.mappings
+    mappings.list["<leader>l"] = nil
+    mappings.preview["<leader>l"] = nil
+    -- Preview winbar: filename only. Glance hardcodes filename + ABSOLUTE
+    -- dir (:p:~:h) with no option to trim, and deep RTL hierarchies push the
+    -- name off-screen. Strip the filepath section in the render hook — the
+    -- list window's winbar ("References (N)") passes no filepath, so it's
+    -- untouched, and the list rows keep their cwd-relative dir for context.
+    local Winbar = require("glance.winbar")
+    local winbar_render = Winbar.render
+    Winbar.render = function(self, sections)
+      sections.filepath = nil
+      return winbar_render(self, sections)
+    end
+  end,
 }
