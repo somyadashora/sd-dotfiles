@@ -1,26 +1,29 @@
 #!/usr/bin/env bash
-# tmux-sysmon -- open a system-wide health monitor window.
+# tmux-sysmon -- open a lightweight system-health window (alias: watchsys).
 #
-# Creates (or replaces) a tmux window named "sysmon" with three panes:
+# Creates (or replaces) a tmux window named "sysmon" with two panes, both
+# refreshed every 2s through `watch -d`, so whatever changed since the last
+# refresh is highlighted -- no htop, just ps/free/df/vmstat snapshots:
 #
-#   +---------------------------+---------------------------+
-#   | htop (whole system,       | RAM: free -h summary +    |
-#   | sorted by CPU)            | top 15 procs by RSS       |
-#   | (fallback: top)           | (refreshed every 2s)      |
-#   +---------------------------+---------------------------+
-#   | bottleneck vitals: load vs cores, PSI cpu/mem/io      |
-#   | pressure, swap in/out + iowait, D-state (stuck-on-IO) |
-#   | processes, root-disk usage -- refreshed every 2s      |
+#   +-------------------------------------------------------+
+#   | what's using the CPU  /  what's using the RAM         |
+#   | (top 10 programs each)                                |
+#   +-------------------------------------------------------+
+#   | system health in plain terms: CPU queue vs cores,     |
+#   | RAM used vs still free, swap spill, % of time         |
+#   | programs sat waiting (PSI), disk space + disk wait,   |
+#   | frozen (D-state) programs                             |
 #   +-------------------------------------------------------+
 #
-# The vitals pane is the "what is slowing the system down" answer:
-#   load > cores          -> CPU oversubscribed
-#   PSI memory/io avg10   -> % of time tasks stalled waiting on RAM / disk
-#   si/so (swap) nonzero  -> thrashing; wa (iowait) high -> disk-bound
-#   D-state processes     -> the exact tasks stuck in uninterruptible IO
+# Reading the health pane:
+#   CPU queue > cores       -> more work queued than the CPU can run at once
+#   swap in/out not 0       -> RAM is full and spilling to disk (slow)
+#   waiting percents        -> share of time programs stalled for that resource
+#   frozen programs         -> stuck mid disk/network operation; disk likely sick
 #
-# System-wide sibling of tmux-watch (which monitors one process).
-# Killing the sysmon window never touches anything.
+# Without `watch` on PATH each pane falls back to a plain clear+sleep loop
+# (same info, no change-highlighting). Killing the window never touches
+# anything. System-wide sibling of tmux-watch (which follows one process).
 #
 # Usage:
 #   tmux-sysmon           # open/replace the sysmon window (alias: watchsys)
@@ -34,65 +37,73 @@ die() {
   exit 1
 }
 
-# ── internal mode: --mem → the RAM pane's refresh loop ──────────────────────
-mem_pane() {
-  while :; do
-    local out
-    out="── memory ──────────────────────────────────────────
-$(free -h)
-
-── top 15 by resident RAM ──────────────────────────
-$(ps -eo pid,user,rss,pmem,comm --sort=-rss 2>/dev/null \
-    | awk 'NR==1 {printf "%7s %-10s %9s %5s %s\n", $1, $2, "RSS", $4, $5; next}
-           NR<=16 {printf "%7s %-10s %8.1fM %5s %s\n", $1, $2, $3/1024, $4, $5}')"
-    clear
-    printf '%s\n' "$out"
-    sleep 2
-  done
+# ── one-shot reports: `watch -d` re-runs these and highlights what changed ──
+report_procs() {
+  local cores mem_total
+  cores=$(nproc 2>/dev/null || echo "?")
+  mem_total=$(free -h 2>/dev/null | awk '/^Mem:/ {print $2}')
+  echo "── what's using the CPU ──  (top 10 · this machine has $cores cores)"
+  ps -eo pid,user,pcpu,pmem,comm --sort=-pcpu 2>/dev/null | awk '
+    NR==1  {printf "%7s %-10s %6s %6s  %s\n", "PID", "WHO", "CPU%", "RAM%", "PROGRAM"; next}
+    NR<=11 {printf "%7s %-10s %6s %6s  %s\n", $1, $2, $3, $4, $5}'
+  echo
+  echo "── what's using the RAM ──  (top 10 · this machine has ${mem_total:-?} total)"
+  ps -eo pid,user,rss,pmem,comm --sort=-rss 2>/dev/null | awk '
+    NR==1  {printf "%7s %-10s %9s %6s  %s\n", "PID", "WHO", "RAM", "RAM%", "PROGRAM"; next}
+    NR<=11 {printf "%7s %-10s %8.1fM %6s  %s\n", $1, $2, $3/1024, $4, $5}'
 }
 
-# ── internal mode: --vitals → the bottom pane's refresh loop ────────────────
-psi_line() { # psi_line cpu|memory|io
-  awk -v k="$1" '/^some/ {
-    for (i = 2; i <= NF; i++) if ($i ~ /^avg(10|60)=/) printf " %s", $i
+psi_pct() { # psi_pct cpu|memory|io -> avg10 value ("2.31") or nothing
+  awk '/^some/ {
+    for (i = 2; i <= NF; i++)
+      if ($i ~ /^avg10=/) { sub("avg10=", "", $i); print $i }
   }' "/proc/pressure/$1" 2>/dev/null
 }
 
-vitals() {
-  local cores
+report_vitals() {
+  local cores load1 load5 total used avail vm si so wa pc pm pi dstate
   cores=$(nproc 2>/dev/null || echo "?")
-  while :; do
-    # vmstat 1 2: second sample = "now", not average-since-boot
-    local vm si so wa psi_cpu psi_mem psi_io dstate out
-    vm=$(vmstat 1 2 2>/dev/null | tail -1)
-    si=$(echo "$vm" | awk '{print $7}')
-    so=$(echo "$vm" | awk '{print $8}')
-    wa=$(echo "$vm" | awk '{print $16}')
-    psi_cpu=$(psi_line cpu); psi_mem=$(psi_line memory); psi_io=$(psi_line io)
-    dstate=$(ps -eo pid,stat,comm 2>/dev/null \
-      | awk '$2 ~ /^D/ {printf "  %s %s (%s)", $1, $3, $2}')
-    out="── system bottlenecks ──────────────────────────────────────
-load:    $(cut -d' ' -f1-3 /proc/loadavg)  (1/5/15 min, $cores cores)
-$(if [ -n "$psi_cpu$psi_mem$psi_io" ]; then
-    printf 'stall%%:  cpu%s   mem%s   io%s  (PSI: %% of time tasks waited)' \
-      "$psi_cpu" "$psi_mem" "$psi_io"
+  read -r load1 load5 _ < /proc/loadavg
+  read -r total used avail < <(free -h 2>/dev/null | awk '/^Mem:/ {print $2, $3, $7}')
+  # vmstat 1 2: second sample = "now", not average-since-boot
+  vm=$(vmstat 1 2 2>/dev/null | tail -1)
+  si=$(echo "$vm" | awk '{print $7}')
+  so=$(echo "$vm" | awk '{print $8}')
+  wa=$(echo "$vm" | awk '{print $16}')
+  pc=$(psi_pct cpu); pm=$(psi_pct memory); pi=$(psi_pct io)
+  dstate=$(ps -eo pid,stat,comm 2>/dev/null | awk '$2 ~ /^D/ {printf " %s(%s)", $3, $1}')
+
+  echo "── system health ──  updated $(date +%H:%M:%S)"
+  echo "CPU queue:  $load1 jobs now · $load5 avg over 5 min · fine while below $cores (the core count)"
+  echo "RAM:        ${used:-?} used of ${total:-?} · ${avail:-?} still free for new programs"
+  echo "Swap:       in ${si:-?} / out ${so:-?} kB/s · not 0 means RAM is full, spilling to disk"
+  if [ -n "$pc$pm$pi" ]; then
+    echo "Waiting:    programs stalled ${pc:-0}% for CPU · ${pm:-0}% for RAM · ${pi:-0}% for disk (last 10s)"
   else
-    printf 'stall%%:  PSI not available on this kernel'
-  fi)
-swap:    in ${si:-?} kB/s   out ${so:-?} kB/s   iowait ${wa:-?}%
-disk /:  $(df -h / 2>/dev/null | awk 'NR==2 {printf "%s used of %s (%s)", $3, $2, $5}')
-D-state: ${dstate:-none  (no processes stuck in uninterruptible IO)}"
-    clear
-    printf '%s\n' "$out"
-    # vmstat already spent ~1s sampling; top up to a ~2s cycle
-    sleep 1
-  done
+    echo "Waiting:    (no PSI on this kernel — can't measure stall time)"
+  fi
+  echo "Disk:       $(df -h / 2>/dev/null | awk 'NR==2 {printf "%s of %s used (%s) on /", $3, $2, $5}') · CPU idles ${wa:-?}% waiting on it"
+  if [ -n "$dstate" ]; then
+    echo "Frozen:    $dstate — stuck mid disk/network operation"
+  else
+    echo "Frozen:     none — nothing stuck mid disk/network operation"
+  fi
+}
+
+# ── pane runner: watch -d when available, plain loop otherwise ──────────────
+pane_loop() { # pane_loop <report-fn> <--*-report flag>
+  if command -v watch >/dev/null 2>&1; then
+    exec watch -d -n 2 -t -x "$SELF" "$2"
+  fi
+  while :; do clear; "$1"; sleep 2; done
 }
 
 case "${1:-}" in
-  --mem)    mem_pane; exit 0 ;;
-  --vitals) vitals;   exit 0 ;;
-  -h|--help) sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+  --procs-report)  report_procs;  exit 0 ;;
+  --vitals-report) report_vitals; exit 0 ;;
+  --procs)  pane_loop report_procs  --procs-report ;;
+  --vitals) pane_loop report_vitals --vitals-report ;;
+  -h|--help) sed -n '2,29p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
 esac
 
 # ── create / replace the sysmon window ──────────────────────────────────────
@@ -100,18 +111,11 @@ esac
 # export it, but the server is always reachable from there.
 sess=$(tmux display -p '#{session_name}' 2>/dev/null) || die "run inside tmux"
 
-if command -v htop >/dev/null 2>&1; then
-  cmd_cpu="htop"
-else
-  cmd_cpu="top"
-fi
-
 tmux list-windows -t "$sess" -F '#{window_id} #{window_name}' 2>/dev/null \
   | awk '$2 == "sysmon" {print $1}' \
   | xargs -r -n1 tmux kill-window -t
 
 # Address panes by ID (not index) so this works with any pane-base-index.
-p0=$(tmux new-window -t "$sess" -P -F '#{pane_id}' -n "sysmon" "$cmd_cpu")
-tmux split-window -t "$p0" -v -l '30%' "'$SELF' --vitals"
-tmux split-window -t "$p0" -h "'$SELF' --mem"
+p0=$(tmux new-window -t "$sess" -P -F '#{pane_id}' -n "sysmon" "'$SELF' --procs")
+tmux split-window -t "$p0" -v -l 9 "'$SELF' --vitals"
 tmux select-pane -t "$p0"

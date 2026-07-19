@@ -327,7 +327,7 @@ Config: `tmux/.tmux.conf`. Prefix: `Ctrl+Space`.
 | `tmux-paste`        | paste tmux buffer without trailing newline            |
 | `tmux-getdotfiles`  | pull latest dotfiles in a popup                       |
 | `tmux-watch`        | watch window for the command running in / last fired from the current pane (`prefix+W`; shell: `watchlast`, `watchthis CMD`): htop scoped to the job's process tree + `ps -f --forest` (watchtty format) + a vitals pane that announces when the job exits. Targets the pane tty's foreground process, falling back to the newest non-shell child of the pane's shell (prompt helpers are skipped), `-g` for newest user process machine-wide |
-| `tmux-sysmon`       | system-wide monitor window (`prefix+M`; shell: `watchsys`): htop + a RAM pane (`free -h` + top 15 by RSS) + a bottleneck-vitals pane (load vs cores, `/proc/pressure` PSI stall %, swap in/out + iowait via vmstat, D-state processes, root-disk usage). The machine-scoped sibling of `tmux-watch`; re-invoking replaces the window |
+| `tmux-sysmon`       | lightweight system-health window (`prefix+M`; shell: `watchsys`), no htop: two panes refreshed via `watch -d` so per-refresh changes are highlighted (falls back to a clear+sleep loop where `watch` is missing). Top: top-10 CPU / RAM consumers (`ps`). Bottom: plain-English vitals — CPU queue vs cores, RAM used/still-free, swap spill, `/proc/pressure` PSI stall %, disk space + iowait, frozen D-state programs. The machine-scoped sibling of `tmux-watch`; re-invoking replaces the window |
 
 **Plugins**: catppuccin/tmux (theme), JosephLai241/tmux-line-numbers
 (vim-style relative line numbers in a narrow left pane during copy mode —
