@@ -31,10 +31,30 @@ return {
       lsp_base = {
         format = "{text:ts} {pos}",
       },
+      -- Symbols outline (<leader>xs), two fixes for SystemVerilog:
+      -- 1. slang-server kinds: signals are Variable, parameters TypeParameter,
+      --    instances Object, macros Constant — none in Trouble's default
+      --    symbol-kind allowlist, so they were silently hidden (ports/modules/
+      --    functions only). SV joins the ft escape list (like help/markdown):
+      --    all kinds show for SV buffers; other languages keep the curated set.
+      -- 2. The default row format appends {text:Comment}, but slang's symbol
+      --    range covers just the name token, so the "text" was the name again
+      --    plus the rest of the source line — every row echoed its name twice.
+      --    Name + position is all the outline needs.
+      symbols = {
+        win = { position = "right", size = 0.25 },
+        filter = {
+          any = {
+            ft = { "help", "markdown", "systemverilog", "verilog" },
+            -- kind list inherits from the default config
+          },
+        },
+        format = "{kind_icon} {symbol.name} {pos}",
+      },
       -- The lsp mode (<leader>xr) lists defs/refs/impls with a code-line per
       -- entry, so the default sidebar width truncates almost everything —
-      -- unlike symbols (<leader>xs), which is just names. Give it 40% of the
-      -- editor (no wrap — squeezed one-line rows read better than wrapped ones).
+      -- unlike symbols (<leader>xs), which is just names. Rows are squeezed to
+      -- one line (no wrap; whitespace runs collapsed by formatters.text above).
       -- TEMPORARILY disabled: the default sections also include incoming/
       -- outgoing calls, but slang-server (<= 0.2.8) fills call-hierarchy items
       -- with (0,0) range/selectionRange, so Trouble renders line 1 of the file
@@ -44,7 +64,7 @@ return {
       -- re-add "lsp_incoming_calls" / "lsp_outgoing_calls" below. Until then
       -- <leader>vd/vl cover cone tracing properly (lsp/lspconfig.lua).
       lsp = {
-        win = { position = "right", size = 0.4 },
+        win = { position = "right", size = 0.25 },
         sections = {
           "lsp_definitions",
           "lsp_references",
