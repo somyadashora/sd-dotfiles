@@ -145,6 +145,45 @@ return {
 
           opts.desc = "Slang: trace signal loads"
           keymap.set("n", "<leader>vl", slang_cone(false), opts)
+
+          -- Macro-aware hover. slang-server's macro hover works and includes
+          -- the expansion ("Expands to <value>"), but two things make stock K
+          -- useless on macros: hovering the leading backtick of `NAME returns
+          -- nothing (only the name token resolves), and the hover buries the
+          -- definition + expansion below the ENTIRE comment block preceding
+          -- the `define (harvested as doc comment — banners included). This
+          -- buffer-local K nudges the position off a backtick and, for macro
+          -- (DefineDirective) hovers only, keeps just the header and code
+          -- sections. Non-macro hovers pass through untouched; any surprise
+          -- falls back to stock vim.lsp.buf.hover.
+          opts.desc = "Hover (slang macro-aware)"
+          keymap.set("n", "K", function()
+            local scl = vim.lsp.get_clients({ bufnr = 0, name = "slang-server" })[1]
+            if not scl then return vim.lsp.buf.hover() end
+            local params = vim.lsp.util.make_position_params(0, scl.offset_encoding)
+            local col = params.position.character
+            if vim.api.nvim_get_current_line():sub(col + 1, col + 1) == "`" then
+              params.position.character = col + 1
+            end
+            scl:request("textDocument/hover", params, function(err, res)
+              if err or not res or not res.contents then
+                return vim.lsp.buf.hover()
+              end
+              local md = type(res.contents) == "table" and res.contents.value
+                or res.contents
+              if type(md) ~= "string" then return vim.lsp.buf.hover() end
+              if md:match("^DefineDirective") then
+                local sections = vim.split(md, "\n+%-%-%-\n+")
+                local keep = { sections[1] }
+                for i = 2, #sections do
+                  if sections[i]:find("```") then keep[#keep + 1] = sections[i] end
+                end
+                md = table.concat(keep, "\n\n---\n\n")
+              end
+              vim.lsp.util.open_floating_preview(
+                vim.split(md, "\n"), "markdown", { focusable = true })
+            end)
+          end, opts)
         end
       end,
     })
