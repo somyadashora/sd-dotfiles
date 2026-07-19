@@ -4,9 +4,15 @@ return {
     config = function()
       local neoscroll = require("neoscroll")
       neoscroll.setup({ easing = "quadratic", mappings = {} })
+      local ctrl_u = function() neoscroll.ctrl_u({ duration = 200, easing = "quadratic" }) end
+      local ctrl_d = function() neoscroll.ctrl_d({ duration = 200, easing = "quadratic" }) end
       local keymap = {
-        ["<C-u>"] = function() neoscroll.ctrl_u({ duration = 200, easing = "quadratic" }) end,
-        ["<C-d>"] = function() neoscroll.ctrl_d({ duration = 200, easing = "quadratic" }) end,
+        ["<C-u>"] = ctrl_u,
+        ["<C-d>"] = ctrl_d,
+        -- <C-j>/<C-k> mirror <C-d>/<C-u> — normal/visual only, so they don't
+        -- touch cmp menu nav (insert), telescope (insert), or terminal window nav
+        ["<C-j>"] = ctrl_d,
+        ["<C-k>"] = ctrl_u,
         ["<C-b>"] = function() neoscroll.ctrl_b({ duration = 200, easing = "sine" }) end,
         ["<C-f>"] = function() neoscroll.ctrl_f({ duration = 200, easing = "sine" }) end,
         ["<C-y>"] = function() neoscroll.scroll(-0.1, { move_cursor = false, duration = 100 }) end,
