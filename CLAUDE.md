@@ -409,8 +409,11 @@ sees it as the next argument. Use separate sequential `#[fg=...]#[bg=...]` tags 
   Its `RG CHEATSHEET` comment block is printed by the `rg-cs` alias
 - `git/git-aliases.gitconfig` — git aliases; include with `[include] path = ...`
   in `~/.gitconfig`
-- `git/delta.gitconfig` — delta pager config (side-by-side, line numbers,
-  hyperlinks), included the same way. Deliberately sets **no** `syntax-theme`:
+- `git/delta.gitconfig` — delta pager config (side-by-side, line numbers),
+  included the same way. Hyperlinks live in a named `[delta "hyper"]` feature
+  that the pager enables only when `less` >= 566 — older less can't pass
+  OSC 8 through `-R`, so links would leak as literal `8;;file://…` text
+  (stray semicolons) across the diff. Deliberately sets **no** `syntax-theme`:
   delta falls back to `BAT_THEME`, which the prompt schemes export — so diff
   syntax colors follow the active prompt scheme. `core.pager` and
   `interactive.diffFilter` are **fallback-guarded** (`command -v delta … ||

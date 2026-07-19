@@ -11,6 +11,7 @@
 
     # ── Status & Info ───────────────────────────────────────
     s    = status                    # Show working directory status
+    su   = status -uno               # Status w/o untracked scan (fast on big repos)
     si   = status --ignored          # Show status including ignored files
 
     # ── Add / Stage ─────────────────────────────────────────
@@ -22,7 +23,10 @@
     c    = commit                    # Create a commit
     cm   = commit -m                 # Commit with message
     ca   = commit --amend            # Amend last commit
+    can  = commit --amend --no-edit  # Amend last commit, keep its message
     ce   = commit --allow-empty -m   # Create empty commit with message
+    undo = reset --soft HEAD~1       # Un-commit the last commit, keep changes staged
+    unstage = restore --staged       # Un-stage files: git unstage <path>|.
 
     # ── Checkout / Switch ───────────────────────────────────
     co   = checkout                  # Switch branches or restore files
@@ -44,8 +48,13 @@
 
     # ── Log ─────────────────────────────────────────────────
     l    = log --oneline             # Compact log (one line per commit)
-    lg   = log --oneline --graph --decorate --all  # Graphical log of all branches
-    ll   = log --oneline --graph --decorate --all --author-date-relative-format  # Enhanced graphical log
+    # Graph of current branch vs main only — not --all, which walks every ref
+    # and crawls on big repos. Commit-date order. Main is resolved from
+    # origin/HEAD, falling back to a local main/master; extra args pass
+    # through (git lg -20). ll = same graph + author & relative date.
+    lg   = "!f() { m=$(git symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null); if [ -z \"$m\" ]; then if git rev-parse -q --verify main >/dev/null; then m=main; elif git rev-parse -q --verify master >/dev/null; then m=master; fi; fi; git log --oneline --graph --decorate --date-order \"$@\" HEAD $m; }; f"
+    ll   = "!git lg --pretty=tformat:'%C(auto)%h%d %s %C(dim)%an, %ar%C(reset)'"
+    lga  = log --oneline --graph --decorate --date-order --all  # All branches (slow on big repos)
     lp   = log --patch               # Log with full diffs
     ls   = log --stat --oneline      # Log with file change stats
 
@@ -53,6 +62,10 @@
     d    = diff                      # Show unstaged changes
     ds   = diff --staged             # Show staged changes
     dw   = diff --word-diff          # Show word-level differences
+    # Delta view toggles (side-by-side is this config's default; both also
+    # take normal diff args, e.g. git dn --staged, git dss main..HEAD)
+    dn   = "!git -c delta.side-by-side=false diff"  # Normal top-down view
+    dss  = "!git -c delta.side-by-side=true diff"   # Force side-by-side view
 
     # ── Worktree ────────────────────────────────────────────
     wt   = worktree list             # List git worktrees
@@ -63,9 +76,14 @@
     # New worktree + branch at ../<repo>-<branch> in one shot: git wtn <branch>
     wtn  = "!f() { b=\"$1\"; [ -n \"$b\" ] || { echo 'usage: git wtn <branch>' >&2; exit 1; }; r=$(basename \"$(git rev-parse --show-toplevel)\"); n=$(printf '%s' \"$b\" | tr '/' '-'); git worktree add -b \"$b\" \"../$r-$n\"; }; f"
 
+    # ── Fetch / Pull ────────────────────────────────────────
+    f    = fetch --prune             # Fetch + drop deleted remote branches
+    pl   = pull --rebase --autostash # Pull without merge bubbles, auto-stashing
+
     # ── Misc / Handy ────────────────────────────────────────
     bl   = blame                     # Show who last modified each line
     bs   = bisect                    # Binary search for bug-introducing commit
     gr   = grep -n                   # Search for text in files
     sh   = show                      # Show commit details
+    rl   = reflog --date=relative    # Rescue log: every HEAD move, newest first
     sub  = submodule update --init --recursive  # Update all submodules

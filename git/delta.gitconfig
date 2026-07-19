@@ -13,8 +13,11 @@
 # "delta: command not found" instead of showing the diff. Git runs the pager
 # through `sh -c` with the diff on stdin, so a shell one-liner is fine; git
 # still exports LESS=FRX when unset, matching its default less behavior.
+# Hyperlinks are a named feature (below), enabled only when less >= 566 —
+# older less can't pass OSC 8 through -R, so the links leak as literal
+# "8;;file://…" text (stray semicolons) all over the diff.
 [core]
-    pager = command -v delta >/dev/null 2>&1 && exec delta || exec less
+    pager = "command -v delta >/dev/null 2>&1 || exec less; v=$(less --version 2>/dev/null | awk 'NR==1 {print $2+0}'); if [ \"${v:-0}\" -ge 566 ]; then exec delta --features hyper; else exec delta; fi"
 
 [interactive]
     # diffFilter must be line-count-preserving: cat is the identity fallback
@@ -29,4 +32,8 @@
     # bash/.bash_prompt) — so diffs follow the active prompt scheme. Where
     # BAT_THEME is unset (non-interactive shells), delta uses its default
     # dark theme.
+
+# Opt-in feature: the core.pager one-liner adds --features hyper only when
+# less can render OSC 8 (>= 566); never enable hyperlinks unconditionally
+[delta "hyper"]
     hyperlinks = true
