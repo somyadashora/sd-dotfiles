@@ -87,6 +87,7 @@ install_packages() {
     ripgrep \
     tmux \
     git \
+    git-delta \
     fd \
     tree-sitter \
     sqlite \

@@ -23,6 +23,19 @@ bash installers/install-linux-tools.sh   # tools for standard Linux
 bash installers/install-termux-tools.sh  # tools for Termux (Android)
 ```
 
+## Config principle: graceful degradation
+
+These dotfiles land on many machines (Linux workstations, ETX/SLES, Termux,
+codespaces) where fancy tools may be missing or uninstallable. **Whenever a
+config replaces or upgrades a base tool's behavior — now or for any future
+tool — the base behavior must still work when the upgrade is absent.** Guard
+the upgrade with a runtime check (`command -v X … || <stock fallback>`) instead
+of assuming X exists; a missing optional tool must never break the underlying
+command. Existing examples: delta's `core.pager`/`diffFilter` fall back to
+plain less/cat (`git/delta.gitconfig`), bat themes fall back to built-ins,
+image.nvim picks a backend per machine and no-ops on dumb terminals,
+`nvim-clip` only activates when xclip/xsel/wl-copy are absent.
+
 ## Neovim architecture
 
 Entry point: `nvim/init.lua` → `somya.core` + `somya.lazy`
@@ -399,7 +412,12 @@ sees it as the next argument. Use separate sequential `#[fg=...]#[bg=...]` tags 
 - `git/delta.gitconfig` — delta pager config (side-by-side, line numbers,
   hyperlinks), included the same way. Deliberately sets **no** `syntax-theme`:
   delta falls back to `BAT_THEME`, which the prompt schemes export — so diff
-  syntax colors follow the active prompt scheme
+  syntax colors follow the active prompt scheme. `core.pager` and
+  `interactive.diffFilter` are **fallback-guarded** (`command -v delta … ||
+  exec less`/`cat`): on machines without delta (e.g. Termux before
+  `pkg install git-delta`, which install-termux-tools.sh now includes)
+  `git diff` / `git add -p` still work with plain less/cat instead of dying
+  with "cannot run delta"
 - `lazygit/config.yml` — lazygit theme (catppuccin mocha, mauve accent — matches
   the nvim accent) + density settings (command log hidden, narrower side panel,
   Nerd Font icons). Font size itself is terminal-owned; lazygit can't set it.

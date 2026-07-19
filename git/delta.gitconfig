@@ -7,11 +7,18 @@
 #
 # ============================================================
 
+# Fallback-guarded pager: if delta isn't on PATH (Termux before `pkg install
+# git-delta`, fresh machines), fall back to plain less/cat so `git diff` and
+# `git add -p` always work — a bare `pager = delta` makes git error out with
+# "delta: command not found" instead of showing the diff. Git runs the pager
+# through `sh -c` with the diff on stdin, so a shell one-liner is fine; git
+# still exports LESS=FRX when unset, matching its default less behavior.
 [core]
-    pager = delta
+    pager = command -v delta >/dev/null 2>&1 && exec delta || exec less
 
 [interactive]
-    diffFilter = delta --color-only
+    # diffFilter must be line-count-preserving: cat is the identity fallback
+    diffFilter = command -v delta >/dev/null 2>&1 && exec delta --color-only || exec cat
 
 [delta]
     navigate = true
