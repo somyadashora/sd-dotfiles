@@ -273,7 +273,8 @@ they appear/disappear as you `:UseSlang` / `:UseVerible` (which re-attach the bu
 **Surface identities** (chrome groups in `theme.lua`'s `overrides_common`, so
 they hold on every scheme + styler namespace): generic floats/panels =
 **mint/teal** (NormalFloat, matching the terminal); `K` hover = **"ember"**
-rust-brown bg + saturated Monokai orange border (`SdHover*` groups, stamped
+dark coffee bg, warm ivory text, glowing gold border + solid gold
+" 󰋗 hover " title pill (`SdHover*` groups, stamped
 onto hover floats by a one-time `vim.lsp.util.open_floating_preview` wrapper
 in `lspconfig.lua` keyed on hover `focus_id`s — stock K and the slang macro K
 both pass through it; signature/which-key floats keep teal); diagnostic floats
@@ -286,11 +287,11 @@ solid neon title pill (`SdGitPopup*`, applied by a `gitsigns.popup.create`
 wrap in `gitsigns.lua`) with neon green/red diff rows. Surfaces also restyle
 their **content**, not just the frame: `theme.pin_surface(win, surface)` loads
 a real non-pastel colorscheme (`M.surface_schemes`: glance →
-`monokai-pro-ristretto`, hover → `kanagawa-dragon` muted warm "ink" — no
-teal/neon accents anywhere; a `capture_backfill` step copies concrete attrs
+`monokai-pro-ristretto`, hover → `kanagawa-dragon` as a no-teal/no-pastel
+base, re-accented VIVID WARM — red/orange/gold/green syntax — by
+`M.surface_overrides.hover`; a `capture_backfill` step copies concrete attrs
 into the ns for common `@`-captures the scheme leaves to nvim's global default
-links, which would otherwise leak the pastel editor colors, and
-`M.surface_overrides` adds per-surface polish like gold markdown headings)
+links, which would otherwise leak the pastel editor colors)
 into a cached window-local namespace via styler's loader and marks the window
 `w.sd_surface`
 — styler's `set_theme`/`clear` are guarded (in `enable_styler`) to skip such

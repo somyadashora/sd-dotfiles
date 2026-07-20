@@ -149,17 +149,18 @@ M.overrides_common = {
   GlanceWinBarFilepath      = { fg = "#1a150c", bg = "#ffd866" },
   GlanceWinBarTitle         = { fg = "#1a150c", bg = "#ffd866", bold = true },
   GlanceBorderTop           = { fg = "#ffd866", bg = "#262019" },
-  -- K hover float — the "ember" identity: warm charcoal base + glowing gold
-  -- (kanagawa roninYellow) border, over kanagawa-dragon ink-toned content
-  -- (surface_schemes.hover below — chosen because it has NO neon/teal or
-  -- pastel accents anywhere, so a hover can never echo the editor or the
-  -- other surfaces). Not set via NormalFloat (that would recolor every
-  -- float): lsp/lspconfig.lua wraps vim.lsp.util.open_floating_preview and
-  -- stamps hover floats (by focus_id) with a winhighlight mapping
-  -- NormalFloat/FloatBorder/FloatTitle to these.
-  SdHoverNormal = { bg = "#191414" },
-  SdHoverBorder = { fg = "#ff9e3b", bg = "#191414" },
-  SdHoverTitle  = { fg = "#191414", bg = "#ff9e3b", bold = true },
+  -- K hover float — the "ember" identity: dark COFFEE-brown base (clearly
+  -- warm next to the navy editor — kanagawa-dragon's near-black charcoal was
+  -- tried and read as "same colorscheme" at a glance), warm ivory body text,
+  -- glowing gold border + solid gold " 󰋗 hover " title pill. The content is
+  -- kanagawa-dragon re-accented VIVID WARM via surface_overrides.hover (red/
+  -- orange/gold/green only — no teal, no pastels). Not set via NormalFloat
+  -- (that would recolor every float): lsp/lspconfig.lua wraps
+  -- vim.lsp.util.open_floating_preview and stamps hover floats (by focus_id)
+  -- with a winhighlight mapping NormalFloat/FloatBorder/FloatTitle to these.
+  SdHoverNormal = { fg = "#dcd7ba", bg = "#201511" },
+  SdHoverBorder = { fg = "#ff9e3b", bg = "#201511" },
+  SdHoverTitle  = { fg = "#201511", bg = "#ff9e3b", bold = true },
   -- gitsigns floating popups (preview_hunk, blame_line) — the "neon" identity,
   -- noice.nvim-inspired: electric cyan border + a solid neon title pill
   -- (noice's cmdline-popup look) on a near-black blue base, stamped onto the
@@ -321,24 +322,44 @@ end
 -- classic's vivid accents under the ember orange.
 M.surface_schemes = {
   glance = "monokai-pro-ristretto",
-  -- kanagawa-dragon for the hover: muted warm "ink" syntax with no teal/neon
-  -- and no pastels — monokai-pro-classic was tried first, but its cyan
-  -- accent on types/functions read as "teal neon" inside the code fences.
+  -- kanagawa-dragon as the hover BASE: it has no teal/neon and no pastels
+  -- anywhere (monokai-pro-classic was tried first — its cyan accent on
+  -- types/functions read as "teal neon" in the code fences). Its muted ink
+  -- accents are then re-colored vivid warm by surface_overrides.hover below;
+  -- the base still supplies every group the override set doesn't name.
   hover  = "kanagawa-dragon",
 }
 
 -- Extra per-surface polish applied INTO the surface's namespace on top of the
--- content scheme — for groups where the scheme's own choice isn't tuned for a
--- small floating panel. Keyed like surface_schemes.
+-- content scheme (and BEFORE capture_backfill, so backfilled children inherit
+-- these instead of the base scheme's colors). Keyed like surface_schemes.
 M.surface_overrides = {
+  -- The hover's vivid-warm syntax set: red / orange / gold / green only —
+  -- hot hues on the coffee bg, unmistakably not the cool pastel editor.
+  -- (kanagawa-dragon's own ink accents were too muted: at a glance the float
+  -- read as "same colorscheme".)
   hover = {
+    ["@comment"]          = { fg = "#8f7a67", italic = true },
+    ["@keyword"]          = { fg = "#e46876", bold = true },
+    ["@type"]             = { fg = "#ffa066" },
+    ["@function"]         = { fg = "#e6c384" },
+    ["@string"]           = { fg = "#98bb6c" },
+    ["@number"]           = { fg = "#ff9e3b" },
+    ["@boolean"]          = { fg = "#ff9e3b" },
+    ["@constant"]         = { fg = "#ffa066" },
+    ["@operator"]         = { fg = "#ff9e3b" },
+    ["@variable"]         = { fg = "#dcd7ba" },
+    ["@variable.builtin"] = { fg = "#e46876", italic = true },
+    ["@property"]         = { fg = "#dcd7ba" },
+    ["@punctuation"]      = { fg = "#a6927b" },
     -- Markdown structure in gold, echoing the ember border; inline code on a
-    -- lifted chip so identifiers pop out of prose. (Hover floats highlight
-    -- via treesitter markdown — @markup.* — with Title as the legacy path.)
+    -- lifted warm chip so identifiers pop out of prose. (Hover floats
+    -- highlight via treesitter markdown — @markup.* — Title is the legacy path.)
     ["@markup.heading"] = { fg = "#ff9e3b", bold = true },
     Title               = { fg = "#ff9e3b", bold = true },
-    ["@markup.raw"]     = { fg = "#c4b28a", bg = "#242020" },
-    ["@markup.link"]    = { fg = "#b6927b", underline = true },
+    ["@markup.raw"]     = { fg = "#e6c384", bg = "#2a1f18" },
+    ["@markup.link"]    = { fg = "#ffa066", underline = true },
+    ["@markup.strong"]  = { fg = "#ffa066", bold = true },
   },
 }
 
@@ -420,6 +441,12 @@ function M.pin_surface(win, surface)
   -- winhighlight remaps resolve in the window's namespace first. Idempotent
   -- and cheap (a few dozen set_hl), and only runs on surface open.
   M.apply_overrides(ns, scheme)
+  -- Surface overrides go in BEFORE the backfill: children the backfill fills
+  -- (@type.builtin, @keyword.return, …) copy attrs from their parent capture,
+  -- which must already carry the surface's colors, not the base scheme's.
+  for group, spec in pairs(M.surface_overrides[surface] or {}) do
+    vim.api.nvim_set_hl(ns, group, spec)
+  end
   if not M._ns_backfilled[ns] then
     -- Copy the target's CONCRETE attrs (following in-ns link chains) rather
     -- than planting a link: draw-time link resolution inside a namespace can
@@ -441,9 +468,6 @@ function M.pin_surface(win, surface)
       end
     end
     M._ns_backfilled[ns] = true
-  end
-  for group, spec in pairs(M.surface_overrides[surface] or {}) do
-    vim.api.nvim_set_hl(ns, group, spec)
   end
   vim.w[win].sd_surface = surface
   vim.api.nvim_win_set_hl_ns(win, ns)

@@ -129,7 +129,16 @@ return {
         -- surface floating above the code. Press K a SECOND time to
         -- jump INTO the float (normal buffer: yank/search/visual all work),
         -- q closes it from inside (moving the cursor outside also closes it).
-        local hover_cfg = { border = "rounded", max_width = 100, max_height = 30 }
+        -- The gold " 󰋗 hover " pill matches the other surfaces' title design
+        -- (gitsigns neon, diagnostic alert); open_floating_preview passes
+        -- title through whenever a border is set.
+        local hover_cfg = {
+          border = "rounded",
+          max_width = 100,
+          max_height = 30,
+          title = { { " 󰋗 hover ", "SdHoverTitle" } },
+          title_pos = "center",
+        }
 
         opts.desc = "Show documentation for what is under cursor"
         keymap.set("n", "K", function()
