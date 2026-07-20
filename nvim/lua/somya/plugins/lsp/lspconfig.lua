@@ -18,6 +18,31 @@ return {
 
     local keymap = vim.keymap -- for conciseness
 
+    -- Hover floats wear their own "ember" rust/orange identity (SdHover* in
+    -- core/theme.lua) instead of the teal generic-panel NormalFloat, so a K
+    -- box is instantly distinguishable from diagnostics/which-key floats and
+    -- from the editor. open_floating_preview is the single choke point every
+    -- hover path goes through (stock K and the slang macro-aware K below);
+    -- keying off focus_id leaves diagnostic/signature floats on the teal
+    -- panel look. Wrapped once here — this config() runs a single time.
+    local hover_focus_ids = { ["textDocument/hover"] = true, ["slang-hover"] = true }
+    local open_floating_preview = vim.lsp.util.open_floating_preview
+    vim.lsp.util.open_floating_preview = function(contents, syntax, fopts, ...)
+      local fbuf, fwin = open_floating_preview(contents, syntax, fopts, ...)
+      if fopts and hover_focus_ids[fopts.focus_id]
+        and fwin and vim.api.nvim_win_is_valid(fwin) then
+        -- Append to (not replace) the winhighlight the float opened with —
+        -- open_floating_preview sets its own entries (e.g. EndOfBuffer). A
+        -- repeat K reuses the float and re-enters here; don't append twice.
+        local winhl = vim.wo[fwin].winhighlight
+        if not winhl:find("SdHoverNormal", 1, true) then
+          vim.wo[fwin].winhighlight = (winhl ~= "" and winhl .. "," or "")
+            .. "NormalFloat:SdHoverNormal,FloatBorder:SdHoverBorder,FloatTitle:SdHoverTitle"
+        end
+      end
+      return fbuf, fwin
+    end
+
     vim.api.nvim_create_autocmd("LspAttach", {
       group = vim.api.nvim_create_augroup("UserLspConfig", {}),
       callback = function(ev)
@@ -63,8 +88,9 @@ return {
         keymap.set("n", "]d", vim.diagnostic.goto_next, opts) -- jump to next diagnostic in buffer
 
         -- Hover float styling, shared by both K mappings below. The border +
-        -- the NormalFloat/FloatBorder overrides in core/theme.lua make the box
-        -- read as a panel floating above the code. Press K a SECOND time to
+        -- the SdHover* "ember" overrides in core/theme.lua (applied via the
+        -- open_floating_preview wrapper above) make the box read as its own
+        -- surface floating above the code. Press K a SECOND time to
         -- jump INTO the float (normal buffer: yank/search/visual all work),
         -- q closes it from inside (moving the cursor outside also closes it).
         local hover_cfg = { border = "rounded", max_width = 100, max_height = 30 }

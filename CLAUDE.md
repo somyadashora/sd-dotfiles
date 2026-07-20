@@ -270,6 +270,18 @@ maps are guarded by client name: the slang cone-tracing maps (`<leader>vd` drive
 `vl` loads, via LSP call-hierarchy) attach only when `slang-server` is the client, so
 they appear/disappear as you `:UseSlang` / `:UseVerible` (which re-attach the buffer).
 
+**Surface identities** (all in `theme.lua`'s `overrides_common`, so they hold on
+every scheme + styler namespace): generic floats/panels = **mint/teal**
+(NormalFloat, matching the terminal); `K` hover = **"ember"** rust-brown bg +
+saturated Monokai orange border (`SdHover*` groups, stamped onto hover floats
+by a one-time `vim.lsp.util.open_floating_preview` wrapper in `lspconfig.lua`
+keyed on hover `focus_id`s — stock K and the slang macro K both pass through
+it; diagnostics/signature floats keep teal); glance peek = **"dune"** amber
+(see Peek below). Diagnostic colors (base/sign/floating/virtual-text/undercurl)
+and gitsigns hunk colors are likewise forced to one saturated Monokai accent
+set — red `#ff6188` / amber `#ffd866` / cyan `#78dce8` / green `#a9dc76` — on
+every scheme, replacing the washed-out per-scheme pastels.
+
 **Peek** (`nvim/lua/somya/plugins/glance.lua`): glance.nvim — VSCode-style
 embedded preview under the `gl` prefix ("gl-ance"; `gld`/`glr`/`gli`/`glt` =
 peek definitions/references/implementations/type-defs; in the peek: `<Tab>` next
@@ -279,12 +291,16 @@ Lint/LazyGit prefix), `q` close). `gp`/`gP` were deliberately avoided — yanky
 owns both as ring-aware puts. Division of labor: `K` hover = info ABOUT a
 symbol, Telescope `gd/gR/...` = fuzzy-pick then jump away, Trouble `<leader>xr`
 = persistent sidebar, glance = look at the source in place without leaving the
-buffer. Fully lazy (cmd/keys). Glance's auto theme is OFF: all floats/panels
-(hover K box included) use the mint/teal "not the editor" identity — dark-teal
-panel bg + teal borders + solid-teal winbar pill — via NormalFloat/FloatBorder/
-`Glance*` in `theme.lua`'s `overrides_common`, matching toggleterm's mint. The
-preview winbar shows the filename only (glance hardcodes an absolute path;
-its `Winbar.render` is wrapped to drop it).
+buffer. Fully lazy (cmd/keys). Glance's auto theme is OFF: the peek wears its
+own warm **"dune"** identity — dark sand-brown panel bgs + saturated Monokai
+amber (`#ffd866`) border rules + a solid-amber winbar pill — via the `Glance*`
+groups in `theme.lua`'s `overrides_common`. That's a third hue family,
+deliberately apart from the editor's pastels and the mint/teal panel/terminal
+family, so peek boundaries are unmistakable. List-row matches are amber-bold
+text (`GlanceListMatch`; glance's default links to Search, whose sand-block
+override painted every reference row garishly); preview matches keep a
+contained warm band. The preview winbar shows the filename only (glance
+hardcodes an absolute path; its `Winbar.render` is wrapped to drop it).
 
 **Per-project LSP setup** — two bootstrap scripts in `nvim/scripts/` (aliased in
 `.bash_aliases`), run once at a project root:

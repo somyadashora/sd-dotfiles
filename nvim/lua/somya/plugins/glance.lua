@@ -24,8 +24,10 @@ return {
   opts = {
     -- Auto theme OFF: its subtle brighten-of-Normal was too close to the
     -- editor to tell the peek apart. The Glance* groups in theme.lua's
-    -- overrides_common paint the whole peek in the mint/teal panel identity
-    -- (same family as the hover float and the terminal) on every scheme.
+    -- overrides_common paint the whole peek in the warm "dune" identity
+    -- (dark sand-brown + Monokai amber accents — its own hue family, apart
+    -- from the editor pastels, the teal panels, and the ember K hover) on
+    -- every scheme, list-row matches included.
     theme = { enable = false },
     border = { enable = true }, -- top/bottom rule lines around the peek window
     -- RTL alignment padding makes lines long; a wrapped preview is

@@ -101,38 +101,99 @@ M.overrides_common = {
   -- scheme. (Native quickfix already uses Normal, so it needs nothing.)
   TroubleNormal   = { link = "Normal" },
   TroubleNormalNC = { link = "Normal" },
-  -- Floating panels (LSP hover, diagnostics, previews, which-key, …) share
+  -- Generic floating panels (diagnostics float, previews, which-key, …) share
   -- the TERMINAL's "mint" identity (see toggleterm.lua): dark TEAL-tinted
   -- background + teal accents. Surface0 grey was tried first but reads too
   -- close to the editor bg — the teal hue makes "this is a panel, not the
   -- buffer" obvious at a glance, echoing the established convention that
   -- teal surfaces are "not the editor". Forced on every scheme + styler
-  -- namespace. (Deliberately not mauve — that's the mark/label accent.)
+  -- namespace. (Deliberately not mauve — that's the mark/label accent.
+  -- The K hover and the glance peek opt OUT of this family — they get their
+  -- own "ember" / "dune" identities below so each surface is recognizable.)
   NormalFloat = { bg = "#15241f" },
   FloatBorder = { fg = "#94e2d5", bg = "#15241f" },
   FloatTitle  = { fg = "#94e2d5", bg = "#15241f", bold = true },
-  -- glance.nvim peek windows — same mint/teal panel family, hand-picked
-  -- because glance's auto theme (subtle brighten of Normal) was too close to
-  -- the editor to tell "am I in the peek?" (its theme.enable is off in
-  -- plugins/glance.lua; glance's own defaults use default=true, so these
-  -- explicit groups always win). Preview = panel bg; list = darker teal so
-  -- the two halves also read apart; winbar = solid teal pill (dark text on
-  -- accent — dashboard-box style) as the unmissable "peek is open" banner.
-  GlancePreviewNormal       = { bg = "#15241f" },
-  GlancePreviewCursorLine   = { bg = "#1f3a33" },
-  GlancePreviewLineNr       = { fg = "#5a8fa8" },
-  GlancePreviewSignColumn   = { fg = "#15241f" },
-  GlancePreviewEndOfBuffer  = { bg = "#15241f", fg = "#15241f" },
-  GlancePreviewBorderBottom = { fg = "#94e2d5", bg = "#15241f" },
-  GlanceListNormal          = { bg = "#101b17", fg = "#cdd6f4" },
-  GlanceListCursorLine      = { bg = "#1f3a33" },
-  GlanceListFilepath        = { fg = "#5a8fa8" },
-  GlanceListEndOfBuffer     = { bg = "#101b17", fg = "#101b17" },
-  GlanceListBorderBottom    = { fg = "#94e2d5", bg = "#101b17" },
-  GlanceWinBarFilename      = { fg = "#11111b", bg = "#94e2d5", bold = true },
-  GlanceWinBarFilepath      = { fg = "#11111b", bg = "#94e2d5" },
-  GlanceWinBarTitle         = { fg = "#11111b", bg = "#94e2d5", bold = true },
-  GlanceBorderTop           = { fg = "#94e2d5", bg = "#15241f" },
+  -- glance.nvim peek windows — the "dune" identity: Monokai's saturated
+  -- amber/sand family on a dark desert-brown base. Deliberately a THIRD hue
+  -- family, away from both the editor's pastels and the teal panel/terminal
+  -- mint, so "am I in the peek?" answers itself and the peek's boundaries
+  -- (amber rule lines + solid amber winbar pill, dashboard-box style) are
+  -- unmissable. (Glance's auto theme — a subtle brighten of Normal — was too
+  -- close to the editor; theme.enable is off in plugins/glance.lua, and
+  -- glance's own defaults use default=true, so these explicit groups win.)
+  -- Preview = warm brown; list = darker brown so the two halves read apart.
+  -- The match groups matter: glance's defaults link them to Search, and our
+  -- Search override is a bright sand BLOCK — on every list row that painted
+  -- the sought signal as a screaming rectangle. List matches are amber-bold
+  -- text instead; preview matches keep a contained warm band (there they mark
+  -- occurrences to look at, not one-per-row noise).
+  GlancePreviewNormal       = { bg = "#262019" },
+  GlancePreviewCursorLine   = { bg = "#3a3122" },
+  GlancePreviewLineNr       = { fg = "#8a7a4e" },
+  GlancePreviewSignColumn   = { fg = "#262019" },
+  GlancePreviewEndOfBuffer  = { bg = "#262019", fg = "#262019" },
+  GlancePreviewBorderBottom = { fg = "#ffd866", bg = "#262019" },
+  GlancePreviewMatch        = { bg = "#57451a", bold = true },
+  GlanceListNormal          = { bg = "#1c1712", fg = "#e8ddc0" },
+  GlanceListCursorLine      = { bg = "#3a3122" },
+  GlanceListFilename        = { fg = "#ffd866", bold = true },
+  GlanceListFilepath        = { fg = "#8a7a4e" },
+  GlanceListCount           = { fg = "#c7a94f" },
+  GlanceListMatch           = { fg = "#ffd866", bold = true },
+  GlanceListEndOfBuffer     = { bg = "#1c1712", fg = "#1c1712" },
+  GlanceListBorderBottom    = { fg = "#ffd866", bg = "#1c1712" },
+  GlanceFoldIcon            = { fg = "#8a7a4e" },
+  GlanceIndent              = { fg = "#3a3122" },
+  GlanceWinBarFilename      = { fg = "#1a150c", bg = "#ffd866", bold = true },
+  GlanceWinBarFilepath      = { fg = "#1a150c", bg = "#ffd866" },
+  GlanceWinBarTitle         = { fg = "#1a150c", bg = "#ffd866", bold = true },
+  GlanceBorderTop           = { fg = "#ffd866", bg = "#262019" },
+  -- K hover float — the "ember" identity: rust-brown base + saturated Monokai
+  -- orange. Its own hue family so the hover reads apart from the editor, the
+  -- teal generic panels, AND the amber glance peek. Not set via NormalFloat
+  -- (that would recolor every float): lsp/lspconfig.lua wraps
+  -- vim.lsp.util.open_floating_preview and stamps hover floats (by focus_id)
+  -- with a winhighlight mapping NormalFloat/FloatBorder/FloatTitle to these.
+  SdHoverNormal = { bg = "#231610" },
+  SdHoverBorder = { fg = "#fc9867", bg = "#231610" },
+  SdHoverTitle  = { fg = "#231610", bg = "#fc9867", bold = true },
+  -- Diagnostics — one saturated Monokai accent set on EVERY scheme (the
+  -- pastel per-scheme defaults washed out on the dark editor bg, and each
+  -- styler filetype shipped different reds). Explicit Sign/Floating links
+  -- because several schemes define those groups directly — a fg on the base
+  -- group alone wouldn't reach them. Virtual text sits in dark same-hue pills
+  -- so it reads as annotation, not code; underlines are undercurls colored
+  -- via sp only, so syntax highlighting under them survives.
+  DiagnosticError            = { fg = "#ff6188" },
+  DiagnosticWarn             = { fg = "#ffd866" },
+  DiagnosticInfo             = { fg = "#78dce8" },
+  DiagnosticHint             = { fg = "#a9dc76" },
+  DiagnosticSignError        = { link = "DiagnosticError" },
+  DiagnosticSignWarn         = { link = "DiagnosticWarn" },
+  DiagnosticSignInfo         = { link = "DiagnosticInfo" },
+  DiagnosticSignHint         = { link = "DiagnosticHint" },
+  DiagnosticFloatingError    = { link = "DiagnosticError" },
+  DiagnosticFloatingWarn     = { link = "DiagnosticWarn" },
+  DiagnosticFloatingInfo     = { link = "DiagnosticInfo" },
+  DiagnosticFloatingHint     = { link = "DiagnosticHint" },
+  DiagnosticVirtualTextError = { fg = "#ff6188", bg = "#33161d" },
+  DiagnosticVirtualTextWarn  = { fg = "#ffd866", bg = "#332b14" },
+  DiagnosticVirtualTextInfo  = { fg = "#78dce8", bg = "#142b30" },
+  DiagnosticVirtualTextHint  = { fg = "#a9dc76", bg = "#1c2e14" },
+  DiagnosticUnderlineError   = { undercurl = true, sp = "#ff6188" },
+  DiagnosticUnderlineWarn    = { undercurl = true, sp = "#ffd866" },
+  DiagnosticUnderlineInfo    = { undercurl = true, sp = "#78dce8" },
+  DiagnosticUnderlineHint    = { undercurl = true, sp = "#a9dc76" },
+  -- Git hunk signs (gitsigns, own statuscol column) — same saturated Monokai
+  -- family, consistent across schemes: green add / amber change / red delete.
+  -- Matches the diagnostic accents by design (one "signal color" vocabulary
+  -- in the gutter); gitsigns derives its Staged* variants from these.
+  GitSignsAdd          = { fg = "#a9dc76" },
+  GitSignsChange       = { fg = "#ffd866" },
+  GitSignsDelete       = { fg = "#ff6188" },
+  GitSignsTopdelete    = { fg = "#ff6188" },
+  GitSignsChangedelete = { fg = "#fc9867" },
+  GitSignsUntracked    = { fg = "#78dce8" },
 }
 
 -- Per-scheme cursor / line-number / cursorline. Ordered list: the FIRST entry
