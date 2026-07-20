@@ -276,8 +276,11 @@ they hold on every scheme + styler namespace): generic floats/panels =
 rust-brown bg + saturated Monokai orange border (`SdHover*` groups, stamped
 onto hover floats by a one-time `vim.lsp.util.open_floating_preview` wrapper
 in `lspconfig.lua` keyed on hover `focus_id`s — stock K and the slang macro K
-both pass through it; diagnostics/signature floats keep teal); glance peek =
-**"dune"** amber (see Peek below); gitsigns popups (`preview_hunk`,
+both pass through it; signature/which-key floats keep teal); diagnostic floats
+(`<leader>d`, the auto-float after `]d`/`[d`) = **"alert"** — near-black plum
+bg + rounded border and solid title pill tinted by the float's worst severity
+(`SdDiag*`, same wrapper, keyed on the scope `focus_id`s vim.diagnostic uses);
+glance peek = **"dune"** amber (see Peek below); gitsigns popups (`preview_hunk`,
 `blame_line`) = **"neon"** noice.nvim-inspired electric-cyan rounded border +
 solid neon title pill (`SdGitPopup*`, applied by a `gitsigns.popup.create`
 wrap in `gitsigns.lua`) with neon green/red diff rows. Surfaces also restyle

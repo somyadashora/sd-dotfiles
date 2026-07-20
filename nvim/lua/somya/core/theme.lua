@@ -101,15 +101,16 @@ M.overrides_common = {
   -- scheme. (Native quickfix already uses Normal, so it needs nothing.)
   TroubleNormal   = { link = "Normal" },
   TroubleNormalNC = { link = "Normal" },
-  -- Generic floating panels (diagnostics float, previews, which-key, …) share
+  -- Generic floating panels (previews, which-key, signature help, …) share
   -- the TERMINAL's "mint" identity (see toggleterm.lua): dark TEAL-tinted
   -- background + teal accents. Surface0 grey was tried first but reads too
   -- close to the editor bg — the teal hue makes "this is a panel, not the
   -- buffer" obvious at a glance, echoing the established convention that
   -- teal surfaces are "not the editor". Forced on every scheme + styler
   -- namespace. (Deliberately not mauve — that's the mark/label accent.
-  -- The K hover and the glance peek opt OUT of this family — they get their
-  -- own "ember" / "dune" identities below so each surface is recognizable.)
+  -- The K hover, the glance peek, and the diagnostic float opt OUT of this
+  -- family — they get their own "ember" / "dune" / "alert" identities below
+  -- so each surface is recognizable.)
   NormalFloat = { bg = "#15241f" },
   FloatBorder = { fg = "#94e2d5", bg = "#15241f" },
   FloatTitle  = { fg = "#94e2d5", bg = "#15241f", bold = true },
@@ -166,6 +167,22 @@ M.overrides_common = {
   SdGitPopupNormal = { bg = "#0b1221" },
   SdGitPopupBorder = { fg = "#0db9d7", bg = "#0b1221" },
   SdGitPopupTitle  = { fg = "#0b1221", bg = "#0db9d7", bold = true },
+  -- Diagnostic floats (<leader>d, the auto-float after ]d/[d) — the "alert"
+  -- identity, same design language as the neon gitsigns popups: near-black
+  -- plum base + border and solid title pill tinted by the WORST severity in
+  -- the float (colors from the unified diagnostic accent set below), stamped
+  -- by the open_floating_preview wrapper in lsp/lspconfig.lua. The message
+  -- lines themselves are colored per-severity via the DiagnosticFloating*
+  -- links, so the whole float reads "alert", not "editor".
+  SdDiagNormal      = { bg = "#180f1d" },
+  SdDiagBorderError = { fg = "#ff6188", bg = "#180f1d" },
+  SdDiagBorderWarn  = { fg = "#ffd866", bg = "#180f1d" },
+  SdDiagBorderInfo  = { fg = "#78dce8", bg = "#180f1d" },
+  SdDiagBorderHint  = { fg = "#a9dc76", bg = "#180f1d" },
+  SdDiagTitleError  = { fg = "#180f1d", bg = "#ff6188", bold = true },
+  SdDiagTitleWarn   = { fg = "#180f1d", bg = "#ffd866", bold = true },
+  SdDiagTitleInfo   = { fg = "#180f1d", bg = "#78dce8", bold = true },
+  SdDiagTitleHint   = { fg = "#180f1d", bg = "#a9dc76", bold = true },
   GitSignsAddPreview    = { fg = "#50fa7b", bg = "#0d2818" },
   GitSignsDeletePreview = { fg = "#ff6188", bg = "#2d1220" },
   -- Diagnostics — one saturated Monokai accent set on EVERY scheme (the

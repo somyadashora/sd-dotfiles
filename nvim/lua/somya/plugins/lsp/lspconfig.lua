@@ -26,10 +26,39 @@ return {
     -- keying off focus_id leaves diagnostic/signature floats on the teal
     -- panel look. Wrapped once here — this config() runs a single time.
     local hover_focus_ids = { ["textDocument/hover"] = true, ["slang-hover"] = true }
+    -- vim.diagnostic.open_float sets focus_id to its scope; these mark a
+    -- float as a diagnostic float in the same wrapper.
+    local diag_focus_ids = { line = true, cursor = true, buffer = true }
+    local diag_sev_names = { "Error", "Warn", "Info", "Hint" }
     local open_floating_preview = vim.lsp.util.open_floating_preview
     vim.lsp.util.open_floating_preview = function(contents, syntax, fopts, ...)
       local fbuf, fwin = open_floating_preview(contents, syntax, fopts, ...)
-      if fopts and hover_focus_ids[fopts.focus_id]
+      if fopts and diag_focus_ids[fopts.focus_id]
+        and fwin and vim.api.nvim_win_is_valid(fwin) then
+        -- "Alert" identity (SdDiag* in core/theme.lua): border + solid title
+        -- pill tinted by the worst severity the float is reporting. The
+        -- current window is still the source window here (the float opens
+        -- unfocused), so cursor-line diagnostics are the float's contents
+        -- for line/cursor scope; buffer scope takes the whole buffer.
+        local get_opts = fopts.focus_id ~= "buffer"
+          and { lnum = vim.api.nvim_win_get_cursor(0)[1] - 1 } or nil
+        local sev
+        for _, d in ipairs(vim.diagnostic.get(0, get_opts)) do
+          if not sev or d.severity < sev then sev = d.severity end
+        end
+        local name = diag_sev_names[sev] or "Info"
+        local winhl = vim.wo[fwin].winhighlight
+        if not winhl:find("SdDiagNormal", 1, true) then
+          vim.wo[fwin].winhighlight = (winhl ~= "" and winhl .. "," or "")
+            .. "NormalFloat:SdDiagNormal,FloatBorder:SdDiagBorder" .. name
+        end
+        -- Title needs a border to hang on — vim.diagnostic.config below sets
+        -- rounded for all diagnostic floats; pcall covers border=none paths.
+        pcall(vim.api.nvim_win_set_config, fwin, {
+          title = { { " 󰒡 " .. name:lower() .. " ", "SdDiagTitle" .. name } },
+          title_pos = "center",
+        })
+      elseif fopts and hover_focus_ids[fopts.focus_id]
         and fwin and vim.api.nvim_win_is_valid(fwin) then
         -- Pin the float's CONTENT to the ember scheme (monokai-pro-classic
         -- via theme.surface_schemes.hover) so the markdown + code fences stop
@@ -264,6 +293,13 @@ return {
     }
     vim.lsp.config("*", {
       capabilities = capabilities,
+    })
+
+    -- Diagnostic floats: rounded border (the frame the alert identity's
+    -- border color + title pill hang on — see the wrapper above); show the
+    -- producing server's name when more than one reports (verible vs slang).
+    vim.diagnostic.config({
+      float = { border = "rounded", source = "if_many" },
     })
 
     -- Change the Diagnostic symbols in the sign column (gutter)
