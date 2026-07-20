@@ -31,6 +31,13 @@ return {
       local fbuf, fwin = open_floating_preview(contents, syntax, fopts, ...)
       if fopts and hover_focus_ids[fopts.focus_id]
         and fwin and vim.api.nvim_win_is_valid(fwin) then
+        -- Pin the float's CONTENT to the ember scheme (monokai-pro-classic
+        -- via theme.surface_schemes.hover) so the markdown + code fences stop
+        -- rendering in the editor's pastels. Must happen BEFORE the
+        -- winhighlight set below: styler reacts to OptionSet-winhighlight
+        -- synchronously, and the sd_surface mark pin_surface plants is what
+        -- stops it repinning this window to the pastel markdown theme.
+        require("somya.core.theme").pin_surface(fwin, "hover")
         -- Append to (not replace) the winhighlight the float opened with —
         -- open_floating_preview sets its own entries (e.g. EndOfBuffer). A
         -- repeat K reuses the float and re-enters here; don't append twice.

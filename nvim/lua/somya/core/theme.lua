@@ -157,6 +157,17 @@ M.overrides_common = {
   SdHoverNormal = { bg = "#231610" },
   SdHoverBorder = { fg = "#fc9867", bg = "#231610" },
   SdHoverTitle  = { fg = "#231610", bg = "#fc9867", bold = true },
+  -- gitsigns floating popups (preview_hunk, blame_line) — the "neon" identity,
+  -- noice.nvim-inspired: electric cyan border + a solid neon title pill
+  -- (noice's cmdline-popup look) on a near-black blue base, stamped onto the
+  -- popup windows by the popup.create wrap in plugins/gitsigns.lua. The diff
+  -- rows inside the hunk preview go neon too: saturated green/red text on
+  -- same-hue tinted row bands instead of the scheme's washed DiffAdd/Delete.
+  SdGitPopupNormal = { bg = "#0b1221" },
+  SdGitPopupBorder = { fg = "#0db9d7", bg = "#0b1221" },
+  SdGitPopupTitle  = { fg = "#0b1221", bg = "#0db9d7", bold = true },
+  GitSignsAddPreview    = { fg = "#50fa7b", bg = "#0d2818" },
+  GitSignsDeletePreview = { fg = "#ff6188", bg = "#2d1220" },
   -- Diagnostics — one saturated Monokai accent set on EVERY scheme (the
   -- pastel per-scheme defaults washed out on the dark editor bg, and each
   -- styler filetype shipped different reds). Explicit Sign/Floating links
@@ -277,6 +288,42 @@ function M.bootstrap()
   M.wire_overrides()
 end
 
+-- ── Overlay-surface CONTENT schemes ─────────────────────────────────────────
+-- The Glance*/SdHover* chrome above colors a surface's frame, but the CONTENT
+-- (the .sv code in a glance preview, the markdown in a K hover) is highlighted
+-- by whatever namespace the window uses — by default the pastel editor scheme
+-- (styler even re-pins the peek window to the per-filetype pastel theme). To
+-- make the content itself read "different mode", pin_surface() loads a real
+-- NON-pastel colorscheme into a window-local namespace — reusing styler's own
+-- loader, so the ns is built once and cached — and marks the window with
+-- w.sd_surface so styler's per-filetype repinning (and clear) skips it (see
+-- the guard in enable_styler). Saturated Monokai Pro variants, matching each
+-- surface's chrome: ristretto's warm coffee tones under the dune amber,
+-- classic's vivid accents under the ember orange.
+M.surface_schemes = {
+  glance = "monokai-pro-ristretto",
+  hover  = "monokai-pro-classic",
+}
+
+-- Pin `win` to the content scheme for `surface` ("glance" | "hover").
+-- Degrades gracefully: without styler.nvim the surface keeps its chrome
+-- identity and the content simply stays on the active scheme.
+function M.pin_surface(win, surface)
+  local scheme = M.surface_schemes[surface]
+  if not scheme or not win or not vim.api.nvim_win_is_valid(win) then return end
+  if vim.w[win].sd_surface == surface then return end
+  local ok, loader = pcall(require, "styler.theme")
+  if not ok then return end
+  local lok, ns = pcall(loader.load, { colorscheme = scheme })
+  if not lok or type(ns) ~= "number" then return end
+  -- The chrome groups (Glance*, SdHover*, …) must exist INSIDE this ns too —
+  -- winhighlight remaps resolve in the window's namespace first. Idempotent
+  -- and cheap (a few dozen set_hl), and only runs on surface open.
+  M.apply_overrides(ns, scheme)
+  vim.w[win].sd_surface = surface
+  vim.api.nvim_win_set_hl_ns(win, ns)
+end
+
 -- Live styler state. Initialized false because styler genuinely isn't running
 -- until its plugin loads — plugins/styler.lua calls enable_styler() at VeryLazy,
 -- so per-filetype themes are ON by default moments after launch. <leader>uy /
@@ -285,7 +332,27 @@ M.styler_enabled = false
 
 -- Resume styler: (re)register its autocmds and re-pin every open window.
 function M.enable_styler()
-  require("styler").setup({ themes = M.styler_themes })
+  local styler = require("styler")
+  -- One-time guard: surface-pinned windows (w.sd_surface, set by pin_surface)
+  -- are off-limits to styler — its update() runs on FileType/BufWinEnter/
+  -- WinNew/OptionSet-winhighlight and would repin the glance preview to the
+  -- per-filetype pastel theme (and clear() would unpin surfaces whose ft has
+  -- no styler entry) moments after we pin it.
+  if not M._styler_guarded then
+    local set_theme, clear = styler.set_theme, styler.clear
+    styler.set_theme = function(win, theme)
+      local w = (not win or win == 0) and vim.api.nvim_get_current_win() or win
+      if vim.w[w].sd_surface then return end
+      return set_theme(win, theme)
+    end
+    styler.clear = function(win)
+      local w = (not win or win == 0) and vim.api.nvim_get_current_win() or win
+      if vim.w[w].sd_surface then return end
+      return clear(win)
+    end
+    M._styler_guarded = true
+  end
+  styler.setup({ themes = M.styler_themes })
   M.styler_enabled = true
 end
 
@@ -295,8 +362,13 @@ end
 function M.disable_styler()
   pcall(vim.api.nvim_clear_autocmds, { group = "styler" })
   for _, win in ipairs(vim.api.nvim_list_wins()) do
-    pcall(vim.api.nvim_win_set_hl_ns, win, 0)
-    if vim.w[win].theme then vim.w[win].theme = nil end
+    -- Surface windows (glance peek, hover float) keep their pinned content
+    -- scheme — they're overlay surfaces, not part of the per-filetype theming
+    -- this toggle controls.
+    if not vim.w[win].sd_surface then
+      pcall(vim.api.nvim_win_set_hl_ns, win, 0)
+      if vim.w[win].theme then vim.w[win].theme = nil end
+    end
   end
   M.styler_enabled = false
 end

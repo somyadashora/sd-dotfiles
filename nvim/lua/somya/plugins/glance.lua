@@ -53,6 +53,19 @@ return {
     local mappings = require("glance.config").options.mappings
     mappings.list["<leader>l"] = nil
     mappings.preview["<leader>l"] = nil
+    -- Pin the preview window to the dune CONTENT scheme (theme.lua's
+    -- surface_schemes.glance — monokai-pro-ristretto): the preview shows the
+    -- real buffer, so without this its code keeps the editor's pastel
+    -- highlighting (styler even re-pins it per filetype — pin_surface marks
+    -- the window so styler skips it). Preview.create is the one place the
+    -- window is made; the same window is reused as you <Tab> through results.
+    local Preview = require("glance.preview")
+    local preview_create = Preview.create
+    Preview.create = function(popts)
+      local preview = preview_create(popts)
+      require("somya.core.theme").pin_surface(preview.winnr, "glance")
+      return preview
+    end
     -- Preview winbar: filename only. Glance hardcodes filename + ABSOLUTE
     -- dir (:p:~:h) with no option to trim, and deep RTL hierarchies push the
     -- name off-screen. Strip the filepath section in the render hook — the

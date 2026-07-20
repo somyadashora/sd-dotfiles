@@ -1,7 +1,35 @@
 return {
 	"lewis6991/gitsigns.nvim",
 	event = { "BufReadPre", "BufNewFile" },
+	config = function(_, opts)
+		require("gitsigns").setup(opts)
+		-- Neon chrome for gitsigns' floating popups (preview_hunk, blame_line),
+		-- noice.nvim-inspired: electric-cyan rounded border + a solid neon title
+		-- pill on a near-black base (SdGitPopup* in core/theme.lua), plus neon
+		-- green/red diff rows via GitSignsAdd/DeletePreview there. popup.create
+		-- is the single choke point every gitsigns popup goes through; gitsigns
+		-- has no styling hook, so wrap it once. The title survives the plugin's
+		-- own WinScrolled reposition (set_config with absent keys keeps them).
+		local titles = { hunk = " 󰊢 hunk ", blame = " 󰊢 blame " }
+		local popup = require("gitsigns.popup")
+		local popup_create = popup.create
+		popup.create = function(lines_spec, wopts, id)
+			local winid, bufnr = popup_create(lines_spec, wopts, id)
+			if winid and vim.api.nvim_win_is_valid(winid) then
+				vim.wo[winid].winhighlight =
+					"NormalFloat:SdGitPopupNormal,FloatBorder:SdGitPopupBorder"
+				pcall(vim.api.nvim_win_set_config, winid, {
+					title = { { titles[id] or " 󰊢 git ", "SdGitPopupTitle" } },
+					title_pos = "center",
+				})
+			end
+			return winid, bufnr
+		end
+	end,
 	opts = {
+		-- Rounded border so the neon frame (see config above) reads like the
+		-- noice popups; merged over gitsigns' default cursor-relative placement.
+		preview_config = { border = "rounded" },
 		-- Git signs render in their own dedicated gutter column (right of the
 		-- line number) via statuscol.nvim, so sign_priority no longer affects
 		-- placement — see plugins/statuscol.lua.

@@ -270,17 +270,28 @@ maps are guarded by client name: the slang cone-tracing maps (`<leader>vd` drive
 `vl` loads, via LSP call-hierarchy) attach only when `slang-server` is the client, so
 they appear/disappear as you `:UseSlang` / `:UseVerible` (which re-attach the buffer).
 
-**Surface identities** (all in `theme.lua`'s `overrides_common`, so they hold on
-every scheme + styler namespace): generic floats/panels = **mint/teal**
-(NormalFloat, matching the terminal); `K` hover = **"ember"** rust-brown bg +
-saturated Monokai orange border (`SdHover*` groups, stamped onto hover floats
-by a one-time `vim.lsp.util.open_floating_preview` wrapper in `lspconfig.lua`
-keyed on hover `focus_id`s — stock K and the slang macro K both pass through
-it; diagnostics/signature floats keep teal); glance peek = **"dune"** amber
-(see Peek below). Diagnostic colors (base/sign/floating/virtual-text/undercurl)
-and gitsigns hunk colors are likewise forced to one saturated Monokai accent
-set — red `#ff6188` / amber `#ffd866` / cyan `#78dce8` / green `#a9dc76` — on
-every scheme, replacing the washed-out per-scheme pastels.
+**Surface identities** (chrome groups in `theme.lua`'s `overrides_common`, so
+they hold on every scheme + styler namespace): generic floats/panels =
+**mint/teal** (NormalFloat, matching the terminal); `K` hover = **"ember"**
+rust-brown bg + saturated Monokai orange border (`SdHover*` groups, stamped
+onto hover floats by a one-time `vim.lsp.util.open_floating_preview` wrapper
+in `lspconfig.lua` keyed on hover `focus_id`s — stock K and the slang macro K
+both pass through it; diagnostics/signature floats keep teal); glance peek =
+**"dune"** amber (see Peek below); gitsigns popups (`preview_hunk`,
+`blame_line`) = **"neon"** noice.nvim-inspired electric-cyan rounded border +
+solid neon title pill (`SdGitPopup*`, applied by a `gitsigns.popup.create`
+wrap in `gitsigns.lua`) with neon green/red diff rows. Surfaces also restyle
+their **content**, not just the frame: `theme.pin_surface(win, surface)` loads
+a real non-pastel colorscheme (`M.surface_schemes`: glance →
+`monokai-pro-ristretto`, hover → `monokai-pro-classic`) into a cached
+window-local namespace via styler's loader and marks the window `w.sd_surface`
+— styler's `set_theme`/`clear` are guarded (in `enable_styler`) to skip such
+windows, since its per-filetype repinning would otherwise snap the peek/hover
+back to the pastel schemes. Degrades gracefully without styler (chrome-only).
+Diagnostic colors (base/sign/floating/virtual-text/undercurl) and gitsigns
+hunk colors are likewise forced to one saturated Monokai accent set — red
+`#ff6188` / amber `#ffd866` / cyan `#78dce8` / green `#a9dc76` — on every
+scheme, replacing the washed-out per-scheme pastels.
 
 **Peek** (`nvim/lua/somya/plugins/glance.lua`): glance.nvim — VSCode-style
 embedded preview under the `gl` prefix ("gl-ance"; `gld`/`glr`/`gli`/`glt` =
