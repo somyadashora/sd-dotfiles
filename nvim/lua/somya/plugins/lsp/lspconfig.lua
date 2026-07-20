@@ -60,8 +60,8 @@ return {
         })
       elseif fopts and hover_focus_ids[fopts.focus_id]
         and fwin and vim.api.nvim_win_is_valid(fwin) then
-        -- Pin the float's CONTENT to the ember scheme (monokai-pro-classic
-        -- via theme.surface_schemes.hover) so the markdown + code fences stop
+        -- Pin the float's CONTENT to the ember scheme (kanagawa-dragon via
+        -- theme.surface_schemes.hover) so the markdown + code fences stop
         -- rendering in the editor's pastels. Must happen BEFORE the
         -- winhighlight set below: styler reacts to OptionSet-winhighlight
         -- synchronously, and the sd_surface mark pin_surface plants is what

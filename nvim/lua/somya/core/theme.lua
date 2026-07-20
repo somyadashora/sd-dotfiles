@@ -149,15 +149,17 @@ M.overrides_common = {
   GlanceWinBarFilepath      = { fg = "#1a150c", bg = "#ffd866" },
   GlanceWinBarTitle         = { fg = "#1a150c", bg = "#ffd866", bold = true },
   GlanceBorderTop           = { fg = "#ffd866", bg = "#262019" },
-  -- K hover float — the "ember" identity: rust-brown base + saturated Monokai
-  -- orange. Its own hue family so the hover reads apart from the editor, the
-  -- teal generic panels, AND the amber glance peek. Not set via NormalFloat
-  -- (that would recolor every float): lsp/lspconfig.lua wraps
-  -- vim.lsp.util.open_floating_preview and stamps hover floats (by focus_id)
-  -- with a winhighlight mapping NormalFloat/FloatBorder/FloatTitle to these.
-  SdHoverNormal = { bg = "#231610" },
-  SdHoverBorder = { fg = "#fc9867", bg = "#231610" },
-  SdHoverTitle  = { fg = "#231610", bg = "#fc9867", bold = true },
+  -- K hover float — the "ember" identity: warm charcoal base + glowing gold
+  -- (kanagawa roninYellow) border, over kanagawa-dragon ink-toned content
+  -- (surface_schemes.hover below — chosen because it has NO neon/teal or
+  -- pastel accents anywhere, so a hover can never echo the editor or the
+  -- other surfaces). Not set via NormalFloat (that would recolor every
+  -- float): lsp/lspconfig.lua wraps vim.lsp.util.open_floating_preview and
+  -- stamps hover floats (by focus_id) with a winhighlight mapping
+  -- NormalFloat/FloatBorder/FloatTitle to these.
+  SdHoverNormal = { bg = "#191414" },
+  SdHoverBorder = { fg = "#ff9e3b", bg = "#191414" },
+  SdHoverTitle  = { fg = "#191414", bg = "#ff9e3b", bold = true },
   -- gitsigns floating popups (preview_hunk, blame_line) — the "neon" identity,
   -- noice.nvim-inspired: electric cyan border + a solid neon title pill
   -- (noice's cmdline-popup look) on a near-black blue base, stamped onto the
@@ -319,8 +321,89 @@ end
 -- classic's vivid accents under the ember orange.
 M.surface_schemes = {
   glance = "monokai-pro-ristretto",
-  hover  = "monokai-pro-classic",
+  -- kanagawa-dragon for the hover: muted warm "ink" syntax with no teal/neon
+  -- and no pastels — monokai-pro-classic was tried first, but its cyan
+  -- accent on types/functions read as "teal neon" inside the code fences.
+  hover  = "kanagawa-dragon",
 }
+
+-- Extra per-surface polish applied INTO the surface's namespace on top of the
+-- content scheme — for groups where the scheme's own choice isn't tuned for a
+-- small floating panel. Keyed like surface_schemes.
+M.surface_overrides = {
+  hover = {
+    -- Markdown structure in gold, echoing the ember border; inline code on a
+    -- lifted chip so identifiers pop out of prose. (Hover floats highlight
+    -- via treesitter markdown — @markup.* — with Title as the legacy path.)
+    ["@markup.heading"] = { fg = "#ff9e3b", bold = true },
+    Title               = { fg = "#ff9e3b", bold = true },
+    ["@markup.raw"]     = { fg = "#c4b28a", bg = "#242020" },
+    ["@markup.link"]    = { fg = "#b6927b", underline = true },
+  },
+}
+
+-- Treesitter captures resolve in the window's namespace FIRST — but schemes
+-- like kanagawa define only the @groups they restyle and lean on nvim's
+-- default links (@keyword → Keyword, @keyword.return → @keyword, …) for the
+-- rest. Those defaults live in the GLOBAL namespace, so inside a pinned
+-- surface any undefined capture falls back to the pastel editor scheme.
+-- Backfill: for this common capture set, define an in-ns link to the first
+-- listed target the scheme DID define, so resolution never leaves the ns.
+-- Ordered parents-before-children (children may link to the parent capture).
+-- No-ops for schemes that define every capture themselves (monokai-pro).
+M.capture_backfill = {
+  { "@comment", "Comment" },
+  { "@keyword", "Keyword", "Statement" },
+  { "@keyword.conditional", "Conditional", "@keyword" },
+  { "@keyword.repeat", "Repeat", "@keyword" },
+  { "@keyword.return", "@keyword" },
+  { "@keyword.function", "@keyword" },
+  { "@keyword.operator", "Operator", "@keyword" },
+  { "@keyword.import", "Include", "@keyword" },
+  { "@keyword.exception", "Exception", "@keyword" },
+  { "@keyword.modifier", "@keyword" },
+  { "@keyword.type", "@keyword" },
+  { "@keyword.directive", "PreProc" },
+  { "@keyword.directive.define", "Define", "PreProc" },
+  { "@type", "Type" },
+  { "@type.builtin", "@type" },
+  { "@type.definition", "Typedef", "@type" },
+  { "@function", "Function" },
+  { "@function.builtin", "Special", "@function" },
+  { "@function.call", "@function" },
+  { "@function.macro", "Macro", "@function" },
+  { "@function.method", "@function" },
+  { "@function.method.call", "@function" },
+  { "@constructor", "Special" },
+  { "@variable", "Identifier" },
+  { "@variable.builtin", "Special", "@variable" },
+  { "@variable.parameter", "@variable" },
+  { "@variable.member", "@variable" },
+  { "@property", "Identifier" },
+  { "@constant", "Constant" },
+  { "@constant.builtin", "Special", "@constant" },
+  { "@constant.macro", "Macro", "@constant" },
+  { "@module", "Include", "Identifier" },
+  { "@label", "Label" },
+  { "@string", "String" },
+  { "@string.escape", "SpecialChar", "@string" },
+  { "@string.special", "SpecialChar", "@string" },
+  { "@string.regexp", "@string" },
+  { "@character", "Character", "@string" },
+  { "@number", "Number" },
+  { "@number.float", "Float", "@number" },
+  { "@boolean", "Boolean", "Constant" },
+  { "@operator", "Operator" },
+  { "@punctuation.bracket", "Delimiter" },
+  { "@punctuation.delimiter", "Delimiter" },
+  { "@punctuation.special", "Special" },
+  { "@attribute", "PreProc" },
+  { "@tag", "Tag" },
+}
+
+-- Namespaces already backfilled (keyed by ns id) — the work is per-ns, not
+-- per-window, so it runs once per content scheme per session.
+M._ns_backfilled = {}
 
 -- Pin `win` to the content scheme for `surface` ("glance" | "hover").
 -- Degrades gracefully: without styler.nvim the surface keeps its chrome
@@ -337,6 +420,31 @@ function M.pin_surface(win, surface)
   -- winhighlight remaps resolve in the window's namespace first. Idempotent
   -- and cheap (a few dozen set_hl), and only runs on surface open.
   M.apply_overrides(ns, scheme)
+  if not M._ns_backfilled[ns] then
+    -- Copy the target's CONCRETE attrs (following in-ns link chains) rather
+    -- than planting a link: draw-time link resolution inside a namespace can
+    -- escape to the global scheme, which is the leak being fixed.
+    local function ns_attrs(name, depth)
+      local hl = vim.api.nvim_get_hl(ns, { name = name })
+      if hl.link and depth < 10 then return ns_attrs(hl.link, depth + 1) end
+      return (not hl.link and not vim.tbl_isempty(hl)) and hl or nil
+    end
+    for _, spec in ipairs(M.capture_backfill) do
+      if vim.tbl_isempty(vim.api.nvim_get_hl(ns, { name = spec[1] })) then
+        for i = 2, #spec do
+          local attrs = ns_attrs(spec[i], 0)
+          if attrs then
+            vim.api.nvim_set_hl(ns, spec[1], attrs)
+            break
+          end
+        end
+      end
+    end
+    M._ns_backfilled[ns] = true
+  end
+  for group, spec in pairs(M.surface_overrides[surface] or {}) do
+    vim.api.nvim_set_hl(ns, group, spec)
+  end
   vim.w[win].sd_surface = surface
   vim.api.nvim_win_set_hl_ns(win, ns)
 end
