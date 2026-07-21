@@ -376,6 +376,7 @@ Config: `tmux/.tmux.conf`. Prefix: `Ctrl+Space`.
 | `tmux-weather city` | wttr.in weather, 30-min cache in `~/.cache/tmux/` (`.v2` files). Fetches plain `condition\|temp\|wind` and renders with nf-md weather glyphs — wttr's emoji format misaligns in tmux. Unparseable cache prints as-is |
 | `tmux-tz-time tz`   | current time in given timezone                        |
 | `tmux-open-file`    | open file under cursor in nvim (bound to `prefix+gf`) |
+| `tmux-pane-pid tty` | PID of the FOREGROUND process on a pane's tty (the running program, e.g. nvim — not `pane_pid`, the root shell). Used by `pane-border-format` to show `1/2 nvim 87629`. Prints ` <pid>`, or nothing on error so the pill degrades to the command name |
 | `tmux-paste`        | paste tmux buffer without trailing newline            |
 | `tmux-getdotfiles`  | pull latest dotfiles in a popup                       |
 | `tmux-watch`        | watch window for the command running in / last fired from the current pane (`prefix+W`; shell: `watchlast`, `watchthis CMD`): htop scoped to the job's process tree + `ps -f --forest` (watchtty format) + a vitals pane that announces when the job exits. Targets the pane tty's foreground process, falling back to the newest non-shell child of the pane's shell (prompt helpers are skipped), `-g` for newest user process machine-wide |

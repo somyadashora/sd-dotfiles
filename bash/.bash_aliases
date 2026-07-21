@@ -134,7 +134,15 @@ help() {
 # nvim-reg: print the contents of an nvim register from the shell. Registers
 # persist in the shada file when nvim exits, so this shows them from your last
 # session. -u NONE skips your config so plugin/startup noise stays out of the
-# output; the $(...)+printf gives exactly one trailing newline. Examples:
+# output; the $(...)+printf gives exactly one trailing newline.
+#   NOTE — this reads the shada FILE, not any live nvim. It does not query a
+#   running instance's in-memory register. With two nvim instances open, each
+#   holding its own value in reg a, nvim-reg shows neither current value — only
+#   what was last written to shada (on a prior exit / :wshada). Once both close,
+#   nvim merges shada by timestamp, so the reg a from whichever instance wrote
+#   most recently (usually the last to quit) wins. To capture a live instance's
+#   register first, run :wshada in it (or query it with a --remote-expr call).
+# Examples:
 #   nvim-reg        # the unnamed register "  (last yank/delete)
 #   nvim-reg 0      # the yank register
 #   nvim-reg a      # named register a
