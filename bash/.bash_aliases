@@ -186,6 +186,127 @@ watchthis() {
     wait "$pid"
 }
 
+# __proc_descendants PID -> "PID,child,grandchild,…" (BFS over the process tree);
+# used for the tree view when pstree is missing.
+__proc_descendants() {
+    local queue="$1" all="$1" kids
+    while [ -n "$queue" ]; do
+        kids=$(ps -o pid= --ppid "${queue// /,}" 2>/dev/null | tr -s ' \n' ' ')
+        kids="${kids# }"; kids="${kids% }"
+        queue="$kids"
+        [ -n "$kids" ] && all="$all $kids"
+    done
+    echo "${all// /,}"
+}
+
+# __watch_ps_frame PID -> one screenful for watch-ps: what the process is doing
+# plus its CPU / RAM / disk-I/O and other vitals in plain words, then its ps tree.
+# Kept as a function (exported) so watch and the fallback loop share one renderer.
+__watch_ps_frame() {
+    local pid="$1"
+    if ! kill -0 "$pid" 2>/dev/null; then
+        printf '  process %s is not running (it exited)\n' "$pid"
+        return 0
+    fi
+    local cores user st pcpu pmem rss etime nlwp ni name
+    cores=$(nproc 2>/dev/null || echo '?')
+    # comm can (rarely) contain spaces, so read it LAST into $name.
+    read -r user st pcpu pmem rss etime nlwp ni name < <(
+        ps -o user=,stat=,pcpu=,pmem=,rss=,etime=,nlwp=,ni=,comm= -p "$pid" 2>/dev/null)
+
+    # State letter -> plain words (see ps(1) PROCESS STATE CODES).
+    local state
+    case "${st:0:1}" in
+        R) state="running (using the CPU now)" ;;
+        S) state="sleeping (idle, waiting for work)" ;;
+        D) state="stuck (uninterruptible — usually waiting on disk/IO)" ;;
+        I) state="idle (kernel thread)" ;;
+        T) state="stopped (suspended)" ;;
+        t) state="stopped (paused by a debugger)" ;;
+        Z) state="zombie (finished, waiting to be reaped)" ;;
+        X) state="dead" ;;
+        *) state="${st:-?}" ;;
+    esac
+    case "$st" in *+*) state="$state · in the foreground" ;; esac
+
+    # Live CPU%: ps %cpu is a lifetime average (misleading for long-lived apps
+    # like nvim), so sample utime+stime from /proc across a short window instead.
+    # Falls back to ps %cpu where /proc is absent (non-Linux).
+    local cpu_now="$pcpu"
+    if [ -r "/proc/$pid/stat" ]; then
+        local hz t1 t2
+        hz=$(getconf CLK_TCK 2>/dev/null || echo 100)
+        t1=$(awk '{print $14+$15}' "/proc/$pid/stat" 2>/dev/null)
+        sleep 0.2
+        t2=$(awk '{print $14+$15}' "/proc/$pid/stat" 2>/dev/null)
+        if [ -n "$t1" ] && [ -n "$t2" ]; then
+            cpu_now=$(awk -v d="$((t2 - t1))" -v hz="$hz" 'BEGIN{printf "%.0f", (d/hz)/0.2*100}')
+        fi
+    fi
+
+    local rss_mb cmdline rbytes wbytes fds cwd
+    rss_mb=$(awk -v k="${rss:-0}" 'BEGIN{printf "%.0f", k/1024}')
+    cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null); cmdline="${cmdline% }"
+    [ -n "$cmdline" ] || cmdline="$name"
+    rbytes=$(awk '/^read_bytes/  {printf "%.1f", $2/1048576}' "/proc/$pid/io" 2>/dev/null)
+    wbytes=$(awk '/^write_bytes/ {printf "%.1f", $2/1048576}' "/proc/$pid/io" 2>/dev/null)
+    fds=$(ls "/proc/$pid/fd" 2>/dev/null | wc -l | tr -d ' ')
+    cwd=$(readlink "/proc/$pid/cwd" 2>/dev/null)
+
+    printf '  %s  (pid %s, owner %s)   updated %s\n' "${name:-?}" "$pid" "${user:-?}" "$(date +%H:%M:%S)"
+    printf '  ────────────────────────────────────────────────────────────\n'
+    printf '  doing:   %s\n' "$state"
+    printf '  CPU:     %s%% of one core   (this machine has %s cores)\n' "${cpu_now:-?}" "$cores"
+    printf '  RAM:     %s MB held         (%s%% of this machine'\''s memory)\n' "${rss_mb:-?}" "${pmem:-?}"
+    printf '  running: %s (h:m:s / d-h:m:s)   niceness %s (lower = higher priority)\n' "${etime:-?}" "${ni:-?}"
+    printf '  threads: %s worker thread(s)   ·   %s open file(s)/socket(s)\n' "${nlwp:-?}" "${fds:-?}"
+    [ -n "$rbytes$wbytes" ] && \
+    printf '  disk:    read %s MB · written %s MB  (since it started)\n' "${rbytes:-0}" "${wbytes:-0}"
+    [ -n "$cwd" ] && printf '  in dir:  %s\n' "$cwd"
+    printf '  command: %s\n' "$cmdline"
+    printf '\n  process tree\n  ────────────────────────────────────────────────────────────\n'
+    if command -v pstree >/dev/null 2>&1; then
+        pstree -ap "$pid" 2>/dev/null | head -n 40
+    else
+        ps -f --forest -p "$(__proc_descendants "$pid")" 2>/dev/null | head -n 40
+    fi
+}
+
+# watch-ps: a live one-process dashboard in the CURRENT terminal — no tmux
+# needed (unlike watchlast/watchsys). Shows the process's ps tree plus its CPU,
+# RAM, disk I/O and other vitals in plain words, refreshed each second by
+# `watch -d` so whatever changed is highlighted. Target by pid or name; with no
+# argument it picks the newest interesting (non-shell) process you own. Examples:
+#   watch-ps 12345    # that pid
+#   watch-ps nvim     # newest process of yours named nvim
+#   watch-ps          # newest interesting process you own
+watch-ps() {
+    local target="${1:-}"
+    case "$target" in
+        -h|--help) echo "usage: watch-ps [pid|name]   (no arg = newest process you own)"; return 0 ;;
+        '')
+            target=$(ps -u "$USER" --sort=-start_time -o pid=,comm= 2>/dev/null \
+                | awk '$2 !~ /^(bash|zsh|sh|tmux|ps|awk|sshd|watch|sleep|watch-ps)$/ {print $1; exit}')
+            [ -n "$target" ] || { echo "watch-ps: no candidate process found" >&2; return 1; } ;;
+        *[!0-9]*)
+            target=$(pgrep -n -u "$USER" -x "$target" 2>/dev/null || pgrep -n -u "$USER" "$target" 2>/dev/null)
+            [ -n "$target" ] || { echo "watch-ps: no process of $USER matches '$1'" >&2; return 1; } ;;
+        *)
+            kill -0 "$target" 2>/dev/null || { echo "watch-ps: pid $target is not running" >&2; return 1; } ;;
+    esac
+    # Export the renderer so watch's `bash -c` subshell can call it. Wrapping in
+    # `bash -c` (rather than watch -x) means it works whether watch uses sh or
+    # bash internally, since the exported function rides in via the environment.
+    export -f __watch_ps_frame __proc_descendants
+    if command -v watch >/dev/null 2>&1; then
+        watch -d -n 1 "bash -c '__watch_ps_frame $target'"
+    else
+        # No watch(1): plain clear+sleep loop (same info, no change-highlighting).
+        while kill -0 "$target" 2>/dev/null; do clear; __watch_ps_frame "$target"; sleep 1; done
+        __watch_ps_frame "$target"
+    fi
+}
+
 prompt-check() {
   printf '\nNerd Font glyph test\n'
   printf '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'

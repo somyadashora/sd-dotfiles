@@ -504,4 +504,7 @@ fzf-cs        # print fzf keybindings/syntax cheatsheet
 rg-cs         # print ripgrep usage cheatsheet
 getdotfiles   # git pull --rebase on this repo
 prompt-check  # verify Nerd Font glyphs render correctly
+watch-ps PROC # live one-process dashboard in the CURRENT terminal (no tmux):
+              # ps tree + CPU/RAM/disk-I/O vitals in plain words under watch -d
+              # -n 1. Target by pid/name, or no arg = newest process you own
 ```
