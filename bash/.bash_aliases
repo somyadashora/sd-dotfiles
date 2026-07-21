@@ -152,6 +152,18 @@ nvim-reg() {
     printf '%s\n' "$val"
 }
 
+# nvim-regs: dump ALL registers in one go — the `:registers` table (name +
+# preview, control chars shown readably), same shada-file semantics as nvim-reg
+# above (last saved session, not any live instance). Optional args restrict it to
+# specific registers, exactly like :reg does. Examples:
+#   nvim-regs        # every register
+#   nvim-regs a0"    # only registers a, 0, and the unnamed "
+nvim-regs() {
+    local out
+    out=$(nvim --headless -u NONE -c "echo execute('registers $*')" -c 'q' 2>&1)
+    printf '%s\n' "$out"
+}
+
 batdiff() {
     git diff --name-only --relative --diff-filter=d -z | xargs -0 bat --diff
 }
