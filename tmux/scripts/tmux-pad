@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+# tmux-pad -- toggle a blank left margin ("padding") in the CURRENT window.
+#
+# On a wide monitor a full-width pane pins the shell to the extreme left edge,
+# which is a neck-turn away from where you're actually looking. tmux has no
+# native margin/padding setting, so this fakes one the only way tmux allows:
+# it splits off a narrow pane on the left running nothing but a sleep loop.
+# The content pane keeps the rest of the window, so text starts further in.
+#
+#   +----+--------------------------------------------------+
+#   |    | $ your shell, pushed right by the margin          |
+#   |pad |                                                   |
+#   |    |                                                   |
+#   +----+--------------------------------------------------+
+#
+# Scope is deliberately per-window and single-pane-only: a window you've
+# already split is one where you want every column you can get, so `on`
+# refuses to run there. Splitting AFTER padding is fine -- the margin just
+# stays put, and the same key removes it.
+#
+# The pad pane is tagged with a pane-local @sd_pad_pane option, which is what
+# makes it distinguishable from a real pane. Everything else keys off that tag:
+# the pane counter in the status bar subtracts it, pane-border-format renders
+# it blank, and an after-select-pane hook bounces focus back out of it so
+# M-h / select-pane never strands you in an empty box.
+#
+# Width comes from $1, else the @sd_pad_width window option, else 15%.
+# Percentages are resolved to absolute columns here rather than passed to
+# `split-window -l 15%` (3.1+ only), so this keeps working on older tmux.
+#
+# Usage:
+#   tmux-pad              # toggle the margin in the current window
+#   tmux-pad on 20%       # force on, 20% of the window width
+#   tmux-pad on 30        # force on, exactly 30 columns
+#   tmux-pad off          # force off
+#
+# Bound to prefix + P in .tmux.conf.
+set -u
+
+DEFAULT_WIDTH="15%"
+# leave at least this many columns for the shell, whatever width was asked for
+MIN_CONTENT=20
+
+die() {
+	tmux display-message "tmux-pad: $*"
+	exit 1
+}
+
+# pane id of this window's margin pane, empty if there isn't one
+pad_pane() {
+	tmux list-panes -F '#{pane_id} #{@sd_pad_pane}' 2>/dev/null |
+		awk '$2 == "1" { print $1; exit }'
+}
+
+# how many panes are actually yours (i.e. not the margin)
+real_panes() {
+	tmux list-panes -F '#{@sd_pad_pane}' 2>/dev/null | grep -cv '^1$'
+}
+
+# "15%" or "30" -> absolute columns, clamped so the shell stays usable
+resolve_width() {
+	local spec="$1" win pct cols max
+	win=$(tmux display-message -p '#{window_width}') || return 1
+	case "$spec" in
+	*%)
+		pct="${spec%\%}"
+		case "$pct" in
+		'' | *[!0-9]*) die "bad width '$spec' (want N or N%)" ;;
+		esac
+		cols=$((win * pct / 100))
+		;;
+	*)
+		case "$spec" in
+		'' | *[!0-9]*) die "bad width '$spec' (want N or N%)" ;;
+		esac
+		cols="$spec"
+		;;
+	esac
+	[ "$cols" -lt 1 ] && cols=1
+	max=$((win - MIN_CONTENT))
+	[ "$max" -lt 1 ] && die "window is only ${win} columns -- too narrow to pad"
+	[ "$cols" -gt "$max" ] && cols="$max"
+	printf '%s\n' "$cols"
+}
+
+pad_on() {
+	local width="$1" cols n new
+
+	[ -n "$(pad_pane)" ] && return 0
+
+	n=$(real_panes)
+	if [ "$n" -gt 1 ]; then
+		die "window has $n panes -- margin is for single-pane windows only"
+	fi
+
+	cols=$(resolve_width "$width") || exit 1
+
+	# -b: new pane goes BEFORE (left of) the current one. -d: don't focus it.
+	# The sleep loop keeps the pane alive and empty; there's no shell in there
+	# to accidentally type into.
+	new=$(tmux split-window -hb -d -l "$cols" -P -F '#{pane_id}' \
+		'while :; do sleep 86400; done' 2>/dev/null) ||
+		die "could not split off a margin pane"
+
+	tmux set -p -t "$new" @sd_pad_pane 1
+	tmux set -w @sd_pad 1
+	tmux set -w @sd_pad_width "$width"
+
+	# Bounce focus out of the margin if anything selects it. Window-scoped so
+	# it dies with the window; ignored on tmux too old for `set-hook -w`.
+	tmux set-hook -w after-select-pane \
+		'if -F "#{@sd_pad_pane}" "select-pane -R"' 2>/dev/null || true
+}
+
+pad_off() {
+	local p
+	p=$(pad_pane)
+	[ -n "$p" ] && tmux kill-pane -t "$p" 2>/dev/null
+	tmux set -uw @sd_pad 2>/dev/null || true
+	tmux set-hook -uw after-select-pane 2>/dev/null || true
+}
+
+action="${1:-toggle}"
+width="${2:-}"
+if [ -z "$width" ]; then
+	width=$(tmux show-option -wqv @sd_pad_width 2>/dev/null)
+	[ -z "$width" ] && width="$DEFAULT_WIDTH"
+fi
+
+case "$action" in
+on) pad_on "$width" ;;
+off) pad_off ;;
+toggle)
+	if [ -n "$(pad_pane)" ]; then pad_off; else pad_on "$width"; fi
+	;;
+*) die "unknown action '$action' (want on, off or toggle)" ;;
+esac
