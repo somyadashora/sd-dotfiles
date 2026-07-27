@@ -206,8 +206,8 @@ local sections = {
       { "]t  /  [t",   "next / prev todo (echoes \"TODO 3 of 4\")" },
       { "<leader>fT",  "telescope todos" },
       { "<leader>xT",  "trouble todos (workspace)" },
-      { "warm (wrong):", "FIX  HACK  WARN  PERF  REVIEW" },
-      { "cool (planned):", "TODO  FUTURE  SPEC  NOTE  TEST" },
+      { "classes:",    "FIX  HACK  PERF  REVIEW  TODO  FUTURE  NOTE" },
+      { "folded in:",  "SPEC→NOTE   WARN/TEST→REVIEW   IMPORTANT→PERF" },
     },
   },
   {

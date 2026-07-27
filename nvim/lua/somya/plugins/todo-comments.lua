@@ -32,28 +32,27 @@ return {
         -- rule so rg doesn't drag in every prose mention.
         pattern = [[(?://|#|--|/\*)\s*(KEYWORDS)(?::|\s|$)]],
       },
-      -- Every class carries a deliberate colour from the SV scheme's own
-      -- palette (colors/sd-monokai-catppuccin.lua — Catppuccin Mocha dropped
-      -- into Monokai's slots, which is what a .sv buffer actually wears), so a
-      -- keyword never lands on the plugin's "default" colour: that resolves to
-      -- Identifier, i.e. plain foreground, which is how PERF/SPEC/TEST used to
-      -- render — invisible as a category. The split is hue-coded: WARM means
-      -- something is wrong with the code, COOL means something is planned,
-      -- referenced or merely explained.
+      -- SEVEN classes, not ten. SPEC folded into NOTE (both are "here is why /
+      -- here is where it is written", neither asks you to do anything), and
+      -- WARN + TEST folded into REVIEW (all three mean "a human has to look at
+      -- this before you trust it"). Fewer classes is the point: the palette
+      -- below has to stay clear of the syntax colours AND of itself, and every
+      -- class removed is elbow room for the ones that are left.
+      --
+      -- merge_keywords = false makes this table REPLACE the plugin's defaults
+      -- instead of merging with them. Without it the defaults keep WARN, TEST
+      -- and NOTE alive as canonical keywords of their own, so a word listed as
+      -- an alias here would map to two different classes depending on table
+      -- iteration order — the colour would change between sessions.
+      merge_keywords = false,
       keywords = {
-        -- ── warm: something is wrong ─────────────────────────────────────
         FIX    = { icon = " ", color = "bug",  alt = { "FIXME", "BUG", "FIXIT", "ISSUE" } },
         HACK   = { icon = " ", color = "hack" },
-        WARN   = { icon = " ", color = "warn", alt = { "WARNING", "XXX" } },
-        PERF   = { icon = " ", color = "perf", alt = { "IMPORTANT", "OPTIM", "PERFORMANCE", "OPTIMIZE" } },
-        -- ── needs another pair of eyes ───────────────────────────────────
-        REVIEW = { icon = " ", color = "review" },
-        -- ── cool: planned, referenced, explained ─────────────────────────
+        PERF   = { icon = " ", color = "perf", alt = { "IMPORTANT", "OPTIM", "OPTIMIZE", "PERFORMANCE" } },
+        REVIEW = { icon = " ", color = "review", alt = { "WARN", "WARNING", "XXX", "TEST", "TESTING", "PASSED", "FAILED" } },
         TODO   = { icon = " ", color = "todo" },
         FUTURE = { icon = "󰥔 ", color = "future" },
-        SPEC   = { icon = "󰦨 ", color = "spec" },
-        NOTE   = { icon = " ", color = "note", alt = { "INFO" } },
-        TEST   = { icon = "⏲ ", color = "test", alt = { "TESTING", "PASSED", "FAILED" } },
+        NOTE   = { icon = " ", color = "note", alt = { "INFO", "SPEC" } },
       },
       -- Only CUSTOM colours need listing; the built-ins (error/warning/info/
       -- hint/default/test) are merged in by the plugin. Each entry is a
@@ -61,9 +60,9 @@ return {
       -- here so the categories stay stable when styler swaps colorschemes per
       -- filetype (todo's highlight groups are global, not per-window).
       --
-      -- These are MUTED on purpose. The obvious move is to reuse the SV
-      -- scheme's accent slots, but those are exactly what the code already
-      -- wears — measured in a .sv buffer, the vivid versions collide outright:
+      -- Reusing the SV scheme's accent slots is the obvious move and the wrong
+      -- one: those slots are exactly what the code already wears. Measured in a
+      -- .sv buffer, the vivid versions collided outright —
       --
       --   #f38ba8  Macro, Define, Keyword, Operator
       --   #fab387  @variable.parameter
@@ -72,26 +71,26 @@ return {
       --   #a6e3a1  Function
       --   #cba6f7  Constant, Number, @constant.macro  (also the repo accent)
       --
-      -- so a todo read as just another identifier. Each colour below keeps its
-      -- hue but drops to roughly comment luminance (Comment is #7f849c): far
-      -- enough from every syntax colour to be a different thing (min RGB
-      -- distance 0.22, was 0.00), close enough to the comment gray to sit back
-      -- in the text instead of competing with the code. Lightness is the second
-      -- axis, so hues that sit near each other (sky/teal, blue/lavender) still
-      -- separate. The keyword pill stays readable on its own: the plugin picks
-      -- its foreground with maximize_contrast against Normal, so a dimmer
-      -- colour just flips the badge text lighter.
+      -- so a todo read as just another identifier. Note those syntax colours
+      -- are THEMSELVES pastels (the scheme is Catppuccin), which is the whole
+      -- difficulty: go pale and you converge on them, go dark and green/orange
+      -- turn muddy (olive, brown) where blues and violets still read clean.
+      -- Pastel teal for NOTE, for instance, lands 0.13 from Function.
+      --
+      -- So every class sits at moderate saturation and mid-high lightness —
+      -- roughly S .30-.44, L .60-.72 — which is far enough from the syntax to
+      -- be a different thing (min RGB distance 0.20, was 0.00) and near enough
+      -- to Comment (#7f849c) to sit back in the text. Pill contrast stays
+      -- 5.1-10.3; the plugin picks badge foreground with maximize_contrast
+      -- against Normal, so it can't become unreadable.
       colors = {
-        bug    = { "#ca7281" }, -- rose     — broken, must fix
-        hack   = { "#a86757" }, -- brick    — works, but wrong: workaround/smell
-        perf   = { "#bd946b" }, -- ochre    — timing / area / throughput
-        warn   = { "#c2b170" }, -- old gold — gotcha, tread carefully
-        review = { "#bd7fa8" }, -- plum     — wants a second opinion
-        note   = { "#74ab69" }, -- moss     — explanation, no action
-        test   = { "#529887" }, -- pine     — verification / coverage
-        todo   = { "#80b3c6" }, -- slate blue — queued work
-        spec   = { "#5d7aac" }, -- denim    — anchor into the spec
-        future = { "#9995c6" }, -- dusk     — deferred by choice, next revision
+        bug    = { "#c66c6f" }, -- rose    — broken, must fix
+        hack   = { "#bb9c81" }, -- tan     — works, but wrong: workaround/smell
+        perf   = { "#cec1a1" }, -- sand    — timing / area / throughput
+        review = { "#bf7dad" }, -- plum    — a human must check: warn/verify/review
+        todo   = { "#7eb7c8" }, -- slate   — queued work
+        future = { "#9287c9" }, -- dusk    — deferred by choice, next revision
+        note   = { "#7dbf7d" }, -- green   — reference + explanation, no action
       },
     })
 
