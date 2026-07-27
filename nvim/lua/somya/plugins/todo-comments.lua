@@ -75,7 +75,15 @@ return {
       -- are THEMSELVES pastels (the scheme is Catppuccin), which is the whole
       -- difficulty: go pale and you converge on them, go dark and green/orange
       -- turn muddy (olive, brown) where blues and violets still read clean.
-      -- Pastel teal for NOTE, for instance, lands 0.13 from Function.
+      --
+      -- NOTE is deliberately the odd one out: SILVER, not a hue. It is by far
+      -- the most common keyword, and the least actionable — it should recede,
+      -- not compete. Green is what a "note" wants to be and is the one thing it
+      -- cannot be here: Function is #a6e3a1, so green NOTE fights the code on
+      -- the most crowded axis in the buffer. Muted sky-blue (the other obvious
+      -- candidate) lands 0.15 from TODO's slate. A near-neutral clears both —
+      -- 0.22 from the nearest syntax colour, 0.19 from the nearest class — and
+      -- reads as "just a comment, but tagged", which is exactly what it is.
       --
       -- So every class sits at moderate saturation and mid-high lightness —
       -- roughly S .30-.44, L .60-.72 — which is far enough from the syntax to
@@ -90,7 +98,7 @@ return {
         review = { "#bf7dad" }, -- plum    — a human must check: warn/verify/review
         todo   = { "#7eb7c8" }, -- slate   — queued work
         future = { "#9287c9" }, -- dusk    — deferred by choice, next revision
-        note   = { "#7dbf7d" }, -- green   — reference + explanation, no action
+        note   = { "#aeb6c2" }, -- silver  — reference + explanation, no action
       },
     })
 
