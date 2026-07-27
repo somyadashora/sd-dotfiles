@@ -61,20 +61,37 @@ return {
       -- here so the categories stay stable when styler swaps colorschemes per
       -- filetype (todo's highlight groups are global, not per-window).
       --
-      -- Straight from the scheme's palette table, with two rules: no mauve
-      -- (#cba6f7 — bookmarks and sneak labels own the repo accent), and no two
-      -- neighbouring hues on classes that mean different things.
+      -- These are MUTED on purpose. The obvious move is to reuse the SV
+      -- scheme's accent slots, but those are exactly what the code already
+      -- wears — measured in a .sv buffer, the vivid versions collide outright:
+      --
+      --   #f38ba8  Macro, Define, Keyword, Operator
+      --   #fab387  @variable.parameter
+      --   #f9e2af  PreProc, String
+      --   #89dceb  @type
+      --   #a6e3a1  Function
+      --   #cba6f7  Constant, Number, @constant.macro  (also the repo accent)
+      --
+      -- so a todo read as just another identifier. Each colour below keeps its
+      -- hue but drops to roughly comment luminance (Comment is #7f849c): far
+      -- enough from every syntax colour to be a different thing (min RGB
+      -- distance 0.22, was 0.00), close enough to the comment gray to sit back
+      -- in the text instead of competing with the code. Lightness is the second
+      -- axis, so hues that sit near each other (sky/teal, blue/lavender) still
+      -- separate. The keyword pill stays readable on its own: the plugin picks
+      -- its foreground with maximize_contrast against Normal, so a dimmer
+      -- colour just flips the badge text lighter.
       colors = {
-        bug    = { "#f38ba8" }, -- red      accent1 — broken, must fix
-        hack   = { "#eba0ac" }, -- maroon   — works, but wrong: workaround/smell
-        warn   = { "#f9e2af" }, -- yellow   accent3 — gotcha, tread carefully
-        perf   = { "#fab387" }, -- peach    accent2 — timing / area / throughput
-        review = { "#f5c2e7" }, -- pink     — wants a second opinion
-        todo   = { "#89dceb" }, -- sky      accent5 — queued work
-        future = { "#b4befe" }, -- lavender — deferred by choice, next revision
-        spec   = { "#89b4fa" }, -- blue     — anchor into the spec (link-ish)
-        note   = { "#a6e3a1" }, -- green    accent4 — explanation, no action
-        test   = { "#94e2d5" }, -- teal     — verification / coverage
+        bug    = { "#ca7281" }, -- rose     — broken, must fix
+        hack   = { "#a86757" }, -- brick    — works, but wrong: workaround/smell
+        perf   = { "#bd946b" }, -- ochre    — timing / area / throughput
+        warn   = { "#c2b170" }, -- old gold — gotcha, tread carefully
+        review = { "#bd7fa8" }, -- plum     — wants a second opinion
+        note   = { "#74ab69" }, -- moss     — explanation, no action
+        test   = { "#529887" }, -- pine     — verification / coverage
+        todo   = { "#80b3c6" }, -- slate blue — queued work
+        spec   = { "#5d7aac" }, -- denim    — anchor into the spec
+        future = { "#9995c6" }, -- dusk     — deferred by choice, next revision
       },
     })
 
