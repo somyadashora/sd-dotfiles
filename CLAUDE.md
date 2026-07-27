@@ -41,6 +41,34 @@ image.nvim picks a backend per machine and no-ops on dumb terminals,
 Entry point: `nvim/init.lua` → `somya.core` + `somya.lazy`
 
 - `nvim/lua/somya/core/` — options, keymaps (leader = `<Space>`)
+- `nvim/lua/somya/core/navmsg.lua` — the shared "you are here" counter echoed
+  after a list jump, modelled on gitsigns' own `Hunk 1 of 5`. All three
+  navigation pairs speak in one voice, each labelled by **what** it landed on
+  and coloured to match: `]d`/`[d` → `Warn 2 of 7` (severity name, severity
+  colour), `]h`/`[h` → `Change 1 of 5` (hunk type, GitSigns colour), `]t`/`[t`
+  → `TODO 3 of 4` (keyword, its Todo colour). `M.echo(label, index, total, hl)`
+  is the whole API; callers compute their own index (each list has its own
+  order) and pass `nil` when the landing spot can't be located, so a miss stays
+  silent instead of printing a wrong number. Suppressed by `shortmess+=S` —
+  gitsigns' own opt-out, so one setting silences every counter. Each caller
+  computes the index over exactly the set its jump walked: diagnostics sort
+  `vim.diagnostic.get()` by position (it only sorts per namespace) and match on
+  fields since `get()` returns deepcopies; hunks come from `gitsigns.get_hunks`
+  via `nav_hunk`'s async callback with `navigation_message = false` suppressing
+  gitsigns' own uncoloured message; todos re-scan the buffer with
+  todo-comments' own matcher (its pickers shell out to ripgrep, which answers a
+  workspace question, not "where am I in this file") — passing a real bufnr,
+  never `0`, since its `is_comment` looks the buffer up in
+  `treesitter.highlighter.active[buf]` and a `0` silently matches nothing.
+  `]d`/`[d` also moved off the deprecated `vim.diagnostic.goto_next/prev`
+  (removal in 0.13, and their `float=true` default tripped a second
+  deprecation) onto `vim.diagnostic.jump`, which returns the diagnostic it
+  landed on; the float those two used to open is now configured once as
+  `jump.on_jump` in `lspconfig.lua`, where `scope = "cursor"` is load-bearing —
+  `open_float` derives `focus_id` from the scope and the `SdDiag*` alert
+  styling only fires for `line`/`cursor`/`buffer`. `]h`/`[h` likewise moved off
+  gitsigns' deprecated `next_hunk`/`prev_hunk` onto `nav_hunk`. All three
+  honour a count (`3]d`).
 - `nvim/lua/somya/core/abbreviations.lua` — insert-mode `:iabbrev`s for notes +
   SV. Three groups, each shaped so they never expand against you: global **prose
   typo fixes** (`teh→the`, …; safe because triggers are misspellings), global

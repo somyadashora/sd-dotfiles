@@ -113,7 +113,7 @@ local sections = {
   {
     title = "GIT  (gitsigns + lazygit)",
     entries = {
-      { "]h  /  [h",          "next / prev hunk" },
+      { "]h  /  [h",          "next / prev hunk (echoes \"Change 1 of 5\")" },
       { "<leader>hs  /  hr",  "stage / reset hunk" },
       { "<leader>hp",         "preview hunk inline" },
       { "<leader>hb",         "blame line (full)" },
@@ -203,7 +203,7 @@ local sections = {
   {
     title = "TODO COMMENTS",
     entries = {
-      { "]t  /  [t",   "next / prev todo" },
+      { "]t  /  [t",   "next / prev todo (echoes \"TODO 3 of 4\")" },
       { "<leader>fT",  "telescope todos" },
       { "<leader>xT",  "trouble todos (workspace)" },
       { "keywords:",   "TODO  FIXME  REVIEW  PERF  SPEC  NOTE" },
@@ -223,7 +223,7 @@ local sections = {
       { "<leader>vR",    "restart LSP" },
       { "<leader>vF",    "format file/range (auto formatter, LSP fallback)" },
       { "<leader>vf",    "format & align with Verible (SystemVerilog)" },
-      { "[d  /  ]d",     "prev / next diagnostic" },
+      { "[d  /  ]d",     "prev / next diagnostic (echoes \"Warn 2 of 7\")" },
       { "<leader>d",     "line diagnostic float" },
     },
   },

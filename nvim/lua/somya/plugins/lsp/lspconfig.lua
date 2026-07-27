@@ -18,6 +18,9 @@ return {
 
     local keymap = vim.keymap -- for conciseness
 
+    -- "Warn 2 of 7" after ]d, in the same voice as ]h / ]t
+    local navmsg = require("somya.core.navmsg")
+
     -- Hover floats wear their own "ember" rust/orange identity (SdHover* in
     -- core/theme.lua) instead of the teal generic-panel NormalFloat, so a K
     -- box is instantly distinguishable from diagnostics/which-key floats and
@@ -119,11 +122,57 @@ return {
         opts.desc = "Show line diagnostics"
         keymap.set("n", "<leader>d", vim.diagnostic.open_float, opts) -- show diagnostics for line
 
+        -- ]d / [d jump AND report where they landed: "Warn 2 of 7", coloured
+        -- by severity — the same counter gitsigns gives ]h (see
+        -- core/navmsg.lua for the shared shape).
+        --
+        -- vim.diagnostic.goto_next/prev are deprecated (removal in 0.13), and
+        -- their float=true default trips a SECOND deprecation internally, so
+        -- this uses vim.diagnostic.jump — which conveniently returns the
+        -- diagnostic it landed on, making the index exact instead of inferred
+        -- from the cursor. The float those two used to open is now configured
+        -- once via jump.on_jump (see vim.diagnostic.config below).
+        local function diag_jump(dir)
+          return function()
+            -- Older nvim has no jump(); keep ]d working there (the counter is
+            -- the extra, the jump is the point).
+            if not vim.diagnostic.jump then
+              return dir > 0 and vim.diagnostic.goto_next() or vim.diagnostic.goto_prev()
+            end
+            local d = vim.diagnostic.jump({ count = dir * vim.v.count1 })
+            -- nil = nothing to move to; core already printed why.
+            if not d then return end
+            -- Count over the whole buffer in position order — the same set and
+            -- order jump() walked, so the numbers can't drift from the
+            -- navigation. (get() sorts per namespace, not across them.)
+            local all = vim.diagnostic.get(d.bufnr or 0)
+            table.sort(all, function(a, b)
+              if a.lnum ~= b.lnum then return a.lnum < b.lnum end
+              return a.col < b.col
+            end)
+            local idx
+            for i, x in ipairs(all) do
+              -- get() hands back deepcopies, so identity comparison is out.
+              if x.lnum == d.lnum and x.col == d.col
+                and x.severity == d.severity and x.message == d.message then
+                idx = i
+                break
+              end
+            end
+            local name = diag_sev_names[d.severity] or "Diagnostic"
+            -- on_jump (the float) is scheduled from inside jump(); schedule the
+            -- echo too so it lands after the float instead of under it.
+            vim.schedule(function()
+              navmsg.echo(name, idx, #all, "Diagnostic" .. name)
+            end)
+          end
+        end
+
         opts.desc = "Go to previous diagnostic"
-        keymap.set("n", "[d", vim.diagnostic.goto_prev, opts) -- jump to previous diagnostic in buffer
+        keymap.set("n", "[d", diag_jump(-1), opts) -- jump to previous diagnostic in buffer
 
         opts.desc = "Go to next diagnostic"
-        keymap.set("n", "]d", vim.diagnostic.goto_next, opts) -- jump to next diagnostic in buffer
+        keymap.set("n", "]d", diag_jump(1), opts) -- jump to next diagnostic in buffer
 
         -- Hover float styling, shared by both K mappings below. The border +
         -- the SdHover* "ember" overrides in core/theme.lua (applied via the
@@ -486,6 +535,18 @@ return {
     -- producing server's name when more than one reports (verible vs slang).
     vim.diagnostic.config({
       float = { border = "rounded", source = "if_many" },
+      -- The float that pops up after ]d / [d. goto_next/prev used to open it
+      -- via their float=true default (itself deprecated in favour of this
+      -- hook); configuring it here keeps that behaviour for every jump path,
+      -- not just the two keymaps. scope = "cursor" is load-bearing:
+      -- open_float derives focus_id from the scope, and the SdDiag* "alert"
+      -- styling above only fires for line/cursor/buffer — any other scope
+      -- silently loses the ember border and the severity title pill.
+      jump = {
+        on_jump = function(_, bufnr)
+          vim.diagnostic.open_float({ bufnr = bufnr, scope = "cursor", focus = false })
+        end,
+      },
     })
 
     -- Change the Diagnostic symbols in the sign column (gutter)

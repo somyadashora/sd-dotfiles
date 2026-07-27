@@ -40,9 +40,59 @@ return {
 				vim.keymap.set(mode, l, r, { buffer = bufnr, desc = desc })
 			end
 
-			-- Navigation
-			map("n", "]h", gs.next_hunk, "Next Hunk")
-			map("n", "[h", gs.prev_hunk, "Prev Hunk")
+			-- Navigation. gitsigns' own "Hunk 1 of 5" counter is suppressed
+			-- (navigation_message = false) and re-echoed through
+			-- core/navmsg.lua, so ]h reads in the same voice as ]d and ]t:
+			-- labelled by hunk TYPE and coloured by the matching GitSigns
+			-- group ("Change 1 of 5"), rather than an uncoloured "Hunk".
+			-- Also moves off next_hunk/prev_hunk, which gitsigns deprecated
+			-- in favour of nav_hunk.
+			local navmsg = require("somya.core.navmsg")
+			local hunk_hl = {
+				add = "GitSignsAdd",
+				change = "GitSignsChange",
+				delete = "GitSignsDelete",
+			}
+			local function nav_hunk(direction)
+				return function()
+					-- nav_hunk is async; its callback fires once the cursor has
+					-- moved and any hunk preview has been drawn.
+					gs.nav_hunk(direction, {
+						count = vim.v.count1,
+						navigation_message = false,
+					}, function()
+						vim.schedule(function()
+							local hunks = gs.get_hunks(bufnr) or {}
+							local line = vim.api.nvim_win_get_cursor(0)[1]
+							local idx, best
+							for i, h in ipairs(hunks) do
+								-- A delete hunk adds no lines, so it collapses to
+								-- the single row it sits on.
+								local first = h.added.start
+								local last = first + math.max(h.added.count - 1, 0)
+								if line >= first and line <= last then
+									idx = i
+									break
+								end
+								-- EOF deletes get their cursor row clamped into
+								-- the buffer, landing outside the hunk; fall back
+								-- to whichever hunk is nearest.
+								local dist = math.min(math.abs(line - first), math.abs(line - last))
+								if not best or dist < best then
+									best, idx = dist, i
+								end
+							end
+							local h = idx and hunks[idx]
+							if not h then return end
+							local label = h.type:sub(1, 1):upper() .. h.type:sub(2)
+							navmsg.echo(label, idx, #hunks, hunk_hl[h.type])
+						end)
+					end)
+				end
+			end
+
+			map("n", "]h", nav_hunk("next"), "Next Hunk")
+			map("n", "[h", nav_hunk("prev"), "Prev Hunk")
 
 			-- Actions
 			map("n", "<leader>hs", gs.stage_hunk, "Stage hunk")
