@@ -32,17 +32,49 @@ return {
         -- rule so rg doesn't drag in every prose mention.
         pattern = [[(?://|#|--|/\*)\s*(KEYWORDS)(?::|\s|$)]],
       },
+      -- Every class carries a deliberate colour from the SV scheme's own
+      -- palette (colors/sd-monokai-catppuccin.lua — Catppuccin Mocha dropped
+      -- into Monokai's slots, which is what a .sv buffer actually wears), so a
+      -- keyword never lands on the plugin's "default" colour: that resolves to
+      -- Identifier, i.e. plain foreground, which is how PERF/SPEC/TEST used to
+      -- render — invisible as a category. The split is hue-coded: WARM means
+      -- something is wrong with the code, COOL means something is planned,
+      -- referenced or merely explained.
       keywords = {
-        FIXME = {
-          color = "error",
-          alt = { "FIX" },
-          icon = " ",
-        },
-        TODO = { icon = " ", color = "info" },
-        REVIEW = { icon = " ", color = "warning", alt = { "WARNING" } },
-        PERF = { icon = " ", alt = { "IMPORTANT" } },
-        SPEC = { icon = "󰦨 " },
-        NOTE = { icon = " ", color = "hint", alt = { "INFO" } },
+        -- ── warm: something is wrong ─────────────────────────────────────
+        FIX    = { icon = " ", color = "bug",  alt = { "FIXME", "BUG", "FIXIT", "ISSUE" } },
+        HACK   = { icon = " ", color = "hack" },
+        WARN   = { icon = " ", color = "warn", alt = { "WARNING", "XXX" } },
+        PERF   = { icon = " ", color = "perf", alt = { "IMPORTANT", "OPTIM", "PERFORMANCE", "OPTIMIZE" } },
+        -- ── needs another pair of eyes ───────────────────────────────────
+        REVIEW = { icon = " ", color = "review" },
+        -- ── cool: planned, referenced, explained ─────────────────────────
+        TODO   = { icon = " ", color = "todo" },
+        FUTURE = { icon = "󰥔 ", color = "future" },
+        SPEC   = { icon = "󰦨 ", color = "spec" },
+        NOTE   = { icon = " ", color = "note", alt = { "INFO" } },
+        TEST   = { icon = "⏲ ", color = "test", alt = { "TESTING", "PASSED", "FAILED" } },
+      },
+      -- Only CUSTOM colours need listing; the built-ins (error/warning/info/
+      -- hint/default/test) are merged in by the plugin. Each entry is a
+      -- fallback chain: hl group names first, then a literal hex — literal
+      -- here so the categories stay stable when styler swaps colorschemes per
+      -- filetype (todo's highlight groups are global, not per-window).
+      --
+      -- Straight from the scheme's palette table, with two rules: no mauve
+      -- (#cba6f7 — bookmarks and sneak labels own the repo accent), and no two
+      -- neighbouring hues on classes that mean different things.
+      colors = {
+        bug    = { "#f38ba8" }, -- red      accent1 — broken, must fix
+        hack   = { "#eba0ac" }, -- maroon   — works, but wrong: workaround/smell
+        warn   = { "#f9e2af" }, -- yellow   accent3 — gotcha, tread carefully
+        perf   = { "#fab387" }, -- peach    accent2 — timing / area / throughput
+        review = { "#f5c2e7" }, -- pink     — wants a second opinion
+        todo   = { "#89dceb" }, -- sky      accent5 — queued work
+        future = { "#b4befe" }, -- lavender — deferred by choice, next revision
+        spec   = { "#89b4fa" }, -- blue     — anchor into the spec (link-ish)
+        note   = { "#a6e3a1" }, -- green    accent4 — explanation, no action
+        test   = { "#94e2d5" }, -- teal     — verification / coverage
       },
     })
 
