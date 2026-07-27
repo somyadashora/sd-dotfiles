@@ -87,20 +87,22 @@ return {
         local opts = { buffer = ev.buf, silent = true }
 
         -- set keybinds
+        --
+        -- Only definition + references get a g* map. Both SystemVerilog servers
+        -- advertise exactly those two (checked via the initialize handshake):
+        -- slang-server and verible-verilog-ls implement definition/references/
+        -- documentSymbol/rename/codeAction and NOT declaration, implementation,
+        -- or typeDefinition. Mapping the missing three would shadow real native
+        -- motions (gD global-declaration search, gi insert-at-last-insert,
+        -- gt next-tab) just to raise "no client supports" — so they are left
+        -- alone here. Neovim 0.11+ already ships gri/grt/grn/gra/grr/gO as
+        -- built-in LSP defaults for the servers that DO support them (lua_ls),
+        -- and glance's gli/glt peek the same things.
         opts.desc = "Show LSP references"
         keymap.set("n", "gR", "<cmd>Telescope lsp_references<CR>", opts) -- show definition, references
 
-        opts.desc = "Go to declaration"
-        keymap.set("n", "gD", vim.lsp.buf.declaration, opts) -- go to declaration
-
         opts.desc = "Show LSP definitions"
         keymap.set("n", "gd", "<cmd>Telescope lsp_definitions<CR>", opts) -- show lsp definitions
-
-        opts.desc = "Show LSP implementations"
-        keymap.set("n", "gi", "<cmd>Telescope lsp_implementations<CR>", opts) -- show lsp implementations
-
-        opts.desc = "Show LSP type definitions"
-        keymap.set("n", "gt", "<cmd>Telescope lsp_type_definitions<CR>", opts) -- show lsp type definitions
 
         -- Generic LSP actions live under <leader>v ("LSP / Code"). These work
         -- with ANY attached server (verible, slang-server, lua_ls) — they are not
@@ -167,6 +169,58 @@ return {
         -- re-attaches the buffer, so these maps appear/disappear accordingly.
         local client = vim.lsp.get_client_by_id(ev.data.client_id)
         if client and client.name == "slang-server" then
+          -- Every slang map below ends in "a list of places in the design",
+          -- so they all render through Trouble's qflist the same way.
+          local function qf_open(title, items)
+            vim.fn.setqflist({}, " ", { title = title, items = items })
+            vim.cmd("Trouble qflist open")
+          end
+
+          -- An LSP Location -> quickfix entry. slang hands back {uri, range}
+          -- under different field names per command, so callers pass the loc.
+          local function qf_entry(loc, text)
+            loc = loc or {}
+            local r = loc.range and loc.range.start
+            return {
+              filename = loc.uri and vim.uri_to_fname(loc.uri) or "",
+              lnum = r and r.line + 1 or 1,
+              col = r and r.character + 1 or 1,
+              text = text,
+            }
+          end
+
+          -- slang exposes design queries through workspace/executeCommand.
+          -- The argument shapes are undocumented AND inconsistent between
+          -- commands — these were verified by probing slang-server 0.2.x over
+          -- stdio, so don't "normalize" them to the LSP conventions:
+          --   getInstancesOfModule  {"ModuleName"}              -> {{instPath, instLoc}}
+          --   getInstances          {<TextDocumentPosition>}    -> {"top.u_inst", ...}
+          --   getScope              {"top.u_inst"}              -> {{kind, instName, instLoc, type, value?}}
+          --   expandMacros          {{src=<path>, dst=<path>}}  -> true (writes dst)
+          -- getInstancesOfModule/getScope take a BARE STRING (an object errors
+          -- with "could not cast to a string"), and expandMacros takes plain
+          -- filesystem PATHS — a file:// URI gets "No such file or directory".
+          local function slang_cmd(name, args, on_ok)
+            local cl = vim.lsp.get_clients({ bufnr = 0, name = "slang-server" })[1]
+            if not cl then return end
+            cl:request("workspace/executeCommand",
+              { command = "slang." .. name, arguments = args },
+              function(err, res)
+                if err then
+                  vim.notify("Slang: " .. name .. " failed — "
+                    .. (err.message or "unknown error"), vim.log.levels.ERROR)
+                  return
+                end
+                on_ok(res)
+              end)
+          end
+
+          -- Cursor position in the shape slang's position-taking commands want.
+          local function cursor_params()
+            local cl = vim.lsp.get_clients({ bufnr = 0, name = "slang-server" })[1]
+            return cl and vim.lsp.util.make_position_params(0, cl.offset_encoding)
+          end
+
           -- Cone traces go through a custom request, not Trouble's own
           -- lsp_incoming_calls source. slang-server (0.2.x) returns call items
           -- with only name+uri — range/selectionRange default to (0,0) — and one
@@ -210,11 +264,8 @@ return {
                       }
                     end
                   end
-                  vim.fn.setqflist({}, " ", {
-                    title = (incoming and "Drivers of " or "Loads of ") .. prep[1].name,
-                    items = qf,
-                  })
-                  vim.cmd("Trouble qflist open")
+                  qf_open((incoming and "Drivers of " or "Loads of ")
+                    .. prep[1].name, qf)
                 end)
               end)
             end
@@ -225,6 +276,132 @@ return {
 
           opts.desc = "Slang: trace signal loads"
           keymap.set("n", "<leader>vl", slang_cone(false), opts)
+
+          -- Where is this module INSTANTIATED? gR/references answers "where is
+          -- this name written" (declaration + every textual mention); this
+          -- answers "where does it sit in the elaborated hierarchy", which is
+          -- the question that actually comes up in bring-up. Rows are labelled
+          -- with the hier path (top.u_core.u_fifo), not the file text.
+          opts.desc = "Slang: instances of module under cursor"
+          keymap.set("n", "<leader>vm", function()
+            local mod = vim.fn.expand("<cword>")
+            if mod == "" then return end
+            slang_cmd("getInstancesOfModule", { mod }, function(res)
+              if not res or #res == 0 then
+                vim.notify("Slang: no instances of " .. mod
+                  .. " (is it elaborated under the current top?)", vim.log.levels.WARN)
+                return
+              end
+              local qf = {}
+              for _, inst in ipairs(res) do
+                qf[#qf + 1] = qf_entry(inst.instLoc, inst.instPath or "?")
+              end
+              qf_open("Instances of " .. mod, qf)
+            end)
+          end, opts)
+
+          -- The inverse: what is the hierarchical path of the code I'm looking
+          -- at? Yanked to + and " so it can be pasted straight into a waveform
+          -- viewer search, a UVM config_db path, or a +plusarg.
+          opts.desc = "Slang: yank hierarchical path of instance under cursor"
+          keymap.set("n", "<leader>vp", function()
+            local pos = cursor_params()
+            if not pos then return end
+            slang_cmd("getInstances", { pos }, function(res)
+              if not res or #res == 0 then
+                vim.notify("Slang: no elaborated instance under cursor",
+                  vim.log.levels.WARN)
+                return
+              end
+              local function yank(path)
+                vim.fn.setreg("+", path)
+                vim.fn.setreg('"', path)
+                vim.notify("Slang: " .. path .. "  (yanked)")
+              end
+              -- One generic module can be instantiated many times; each is a
+              -- distinct path, so let the user pick which one they meant.
+              if #res == 1 then
+                yank(res[1])
+              else
+                vim.ui.select(res, { prompt = "Instance path:" }, function(choice)
+                  if choice then yank(choice) end
+                end)
+              end
+            end)
+          end, opts)
+
+          -- Scope browser: every port/param/net in an elaborated scope, with
+          -- its type and — for params — the RESOLVED value. Beats reading the
+          -- source, which only shows the parameter expression.
+          opts.desc = "Slang: browse scope (ports/params/nets)"
+          keymap.set("n", "<leader>vs", function()
+            local function show(path)
+              slang_cmd("getScope", { path }, function(res)
+                if not res or #res == 0 then
+                  vim.notify("Slang: nothing in scope " .. path, vim.log.levels.WARN)
+                  return
+                end
+                local qf = {}
+                for _, sym in ipairs(res) do
+                  local label = string.format("%-6s %s", sym.kind or "?",
+                    sym.instName or "?")
+                  if sym.type then label = label .. " : " .. sym.type end
+                  if sym.value then label = label .. " = " .. sym.value end
+                  qf[#qf + 1] = qf_entry(sym.instLoc, label)
+                end
+                qf_open("Scope " .. path, qf)
+              end)
+            end
+            -- Default to the scope the cursor is actually in; fall back to
+            -- asking, so any path in the design can be browsed from anywhere.
+            local pos = cursor_params()
+            if not pos then return end
+            slang_cmd("getInstances", { pos }, function(res)
+              if res and res[1] then
+                show(res[1])
+              else
+                vim.ui.input({ prompt = "Slang scope path: ",
+                  default = vim.fn.expand("<cword>") }, function(input)
+                  if input and input ~= "" then show(input) end
+                end)
+              end
+            end)
+          end, opts)
+
+          -- Fully macro-expanded view of the current file, side by side with
+          -- the source. slang expands the file ON DISK into a temp file; we
+          -- read it into a scratch buffer and drop the temp, so no stray file
+          -- is left behind and no LSP client attaches to the expansion.
+          opts.desc = "Slang: expand macros in this file"
+          keymap.set("n", "<leader>vx", function()
+            local src = vim.api.nvim_buf_get_name(0)
+            if src == "" then return end
+            if vim.bo.modified then
+              vim.notify("Slang: expanding the file ON DISK — unsaved changes "
+                .. "are not included", vim.log.levels.WARN)
+            end
+            local dst = vim.fn.tempname() .. "_" .. vim.fn.fnamemodify(src, ":t")
+            slang_cmd("expandMacros", { { src = src, dst = dst } }, function()
+              if vim.fn.filereadable(dst) == 0 then
+                vim.notify("Slang: macro expansion produced no output",
+                  vim.log.levels.ERROR)
+                return
+              end
+              local lines = vim.fn.readfile(dst)
+              vim.fn.delete(dst)
+              local buf = vim.api.nvim_create_buf(false, true)
+              vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+              vim.bo[buf].filetype = "systemverilog"
+              vim.bo[buf].modifiable = false
+              vim.bo[buf].bufhidden = "wipe"
+              -- Names collide if the same file is expanded twice while the
+              -- first view is still open — the name is cosmetic, so ignore it.
+              pcall(vim.api.nvim_buf_set_name, buf,
+                "slang://expanded/" .. vim.fn.fnamemodify(src, ":t"))
+              vim.cmd("vsplit")
+              vim.api.nvim_win_set_buf(0, buf)
+            end)
+          end, opts)
 
           -- Macro-aware hover. slang-server's macro hover works and includes
           -- the expansion ("Expands to <value>"), but two things make stock K

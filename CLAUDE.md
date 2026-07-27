@@ -265,10 +265,29 @@ switch with `:UseVerible` / `:UseSlang`.
 **LSP keymaps** (set on `LspAttach` in `lsp/lspconfig.lua`): generic actions — usable
 with any server — live under the `<leader>v` ("LSP / Code") group: `va` code action,
 `vr` smart rename, `vi` active-client info, `vR` restart. Navigation stays on `g*`
-(`gd/gD/gR/gi/gt`), `K` hover, `<leader>d`/`D` and `[d`/`]d` diagnostics. Server-specific
-maps are guarded by client name: the slang cone-tracing maps (`<leader>vd` drivers /
-`vl` loads, via LSP call-hierarchy) attach only when `slang-server` is the client, so
-they appear/disappear as you `:UseSlang` / `:UseVerible` (which re-attach the buffer).
+— but **only `gd` (definitions) and `gR` (references)**, the two methods both SV
+servers actually implement. `gD`/`gi`/`gt` are deliberately NOT mapped: neither
+slang-server nor verible advertises declaration/implementation/typeDefinition, so
+mapping them would shadow the native `gD` (global-declaration search), `gi`
+(insert at last insert) and `gt` (next tab) motions just to raise "no client
+supports". Neovim 0.11+ already ships `gri`/`grt`/`grn`/`gra`/`grr`/`gO` as
+built-in LSP defaults for servers that do support them (lua_ls), and glance's
+`gli`/`glt` peek the same things. Plus `K` hover, `<leader>d`/`D` and `[d`/`]d`
+diagnostics. Server-specific
+maps are guarded by client name: the slang-only maps attach only when `slang-server`
+is the client, so they appear/disappear as you `:UseSlang` / `:UseVerible` (which
+re-attach the buffer). Those are the cone traces (`<leader>vd` drivers / `vl` loads,
+via LSP call-hierarchy) plus four **design queries** built on slang's
+`workspace/executeCommand` entry points: `vm` instances of the module under the
+cursor (hier paths → Trouble), `vp` yank the hierarchical path of the instance under
+the cursor (for waveform search / config_db / plusargs), `vs` browse an elaborated
+scope (ports/params/nets with types and **resolved** param values), `vx` expand this
+file's macros into a side-by-side scratch buffer. All five render through one
+`qf_open` helper (setqflist → `Trouble qflist open`). **slang's command argument
+shapes are undocumented and inconsistent** — `getInstancesOfModule`/`getScope` take a
+bare string, `getInstances` takes TextDocumentPosition params, and `expandMacros`
+takes plain filesystem paths (a `file://` URI fails); the shapes were verified by
+probing the server over stdio and are recorded in a comment above `slang_cmd`.
 
 **Surface identities** (chrome groups in `theme.lua`'s `overrides_common`, so
 they hold on every scheme + styler namespace): generic floats/panels =

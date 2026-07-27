@@ -212,8 +212,10 @@ local sections = {
   {
     title = "LSP / DIAGNOSTICS",
     entries = {
-      { "gd  /  gD",    "definition / declaration" },
+      { "gd",            "definition (telescope)" },
       { "gR",            "references (telescope)" },
+      { "gO",            "document symbols (nvim built-in)" },
+      { "gri / grt / grn", "impl / type-def / rename (nvim built-in defaults)" },
       { "K",             "hover docs" },
       { "<leader>va",    "code action" },
       { "<leader>vr",    "smart rename" },
@@ -231,6 +233,10 @@ local sections = {
       { ":UseSlang / :UseVerible", "switch active SV language server" },
       { "<leader>vd",   "trace signal drivers (slang only, incoming calls → Trouble)" },
       { "<leader>vl",   "trace signal loads (slang only, outgoing calls → Trouble)" },
+      { "<leader>vm",   "instances of module under cursor (hier paths → Trouble)" },
+      { "<leader>vp",   "yank hier path of instance under cursor (top.u_a.u_b)" },
+      { "<leader>vs",   "browse scope: ports/params/nets + resolved values" },
+      { "<leader>vx",   "expand macros in this file (scratch buffer, side by side)" },
     },
   },
   {
