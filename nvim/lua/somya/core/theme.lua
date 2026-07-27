@@ -232,6 +232,17 @@ M.overrides_common = {
 -- patterns before broad ones (e.g. "^catppuccin%-latte" before "^catppuccin").
 -- One entry covers a whole family of variants (all monokai-pro-* names, …).
 M.overrides = {
+  -- sd-monokai-catppuccin (M.default, and the styler theme for verilog/vhdl).
+  -- The scheme pushes its background well below stock Catppuccin (#13131d) to
+  -- make the pastels pop, but monokai-pro's CursorLine slot doesn't scale with
+  -- it: it lands on #1c1d28, only ~+10 per channel above the background, which
+  -- disappears on a dark panel. Every other scheme here clears +12 (catppuccin)
+  -- to +42 (tokyonight). This lifts it to ~+17 — still a quiet band, not a
+  -- highlight bar, but findable when you glance back at the editor.
+  { pat = "^sd%-monokai%-catppuccin", hl = {
+    CursorLine = { bg = "#232433" },
+  } },
+
   -- Monokai Pro — yellow accents (accent3 #ffd866) on warm bg #2d2a2e.
   { pat = "^monokai%-pro", hl = {
     Cursor       = { fg = "#2d2a2e", bg = "#ffd866" },
