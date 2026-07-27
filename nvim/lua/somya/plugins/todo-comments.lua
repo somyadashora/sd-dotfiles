@@ -76,6 +76,18 @@ return {
       -- difficulty: go pale and you converge on them, go dark and green/orange
       -- turn muddy (olive, brown) where blues and violets still read clean.
       --
+      -- Distance is necessary but not sufficient: the eye groups by HUE FAMILY
+      -- first. The old FIX rose sat 0.31 from the syntax red — the widest gap
+      -- in the whole palette — and still read as "more red" in a buffer where
+      -- keywords, operators and macros are all #f38ba8. Same trap caught the
+      -- old REVIEW plum against that pinkish red. So both moved family, not
+      -- just distance: FIX to terracotta (deep enough to leave the pastel-red
+      -- band, saturated enough not to turn muddy the way a desaturated orange
+      -- would) and REVIEW to jade — its own family, neither Function green nor
+      -- @type sky, and blue-greens stay clean when deepened where green and
+      -- orange go olive/brown. Muted magenta is NOT an option for either: in
+      -- this lightness band it converges on the plum that was already rejected.
+      --
       -- NOTE is deliberately the odd one out: SILVER, not a hue. It is by far
       -- the most common keyword, and the least actionable — it should recede,
       -- not compete. Green is what a "note" wants to be and is the one thing it
@@ -92,10 +104,10 @@ return {
       -- 5.1-10.3; the plugin picks badge foreground with maximize_contrast
       -- against Normal, so it can't become unreadable.
       colors = {
-        bug    = { "#c66c6f" }, -- rose    — broken, must fix
+        bug    = { "#bd674c" }, -- terracotta — broken, must fix
         hack   = { "#bb9c81" }, -- tan     — works, but wrong: workaround/smell
         perf   = { "#cec1a1" }, -- sand    — timing / area / throughput
-        review = { "#bf7dad" }, -- plum    — a human must check: warn/verify/review
+        review = { "#64b996" }, -- jade    — a human must check: warn/verify/review
         todo   = { "#7eb7c8" }, -- slate   — queued work
         future = { "#9287c9" }, -- dusk    — deferred by choice, next revision
         note   = { "#aeb6c2" }, -- silver  — reference + explanation, no action
