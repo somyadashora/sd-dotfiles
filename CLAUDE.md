@@ -97,6 +97,16 @@ Entry point: `nvim/init.lua` → `somya.core` + `somya.lazy`
   out into multiple keys via `opts.spec` (e.g. `c → +Cursor`, `t → +Terminal`), so
   the popup labels groups instead of showing a bare count. Add a row when a new
   prefix grows a second binding.
+- `nvim/lua/somya/plugins/bufferline.lua` — the buffer tabline. Its `name_formatter`
+  exists because bufferline's own truncation keeps the **head** of a name, which is
+  the useless half in a big SV project where every file is `<ProjectTag><Module>.sv`
+  (`MyProjectM..`). `shorten()` strips the longest basename prefix **shared by all
+  listed buffers** (cached, invalidated on `BufAdd`/`BufDelete`/`BufFilePost`/
+  `TabEnter`, since it runs per buffer per tabline redraw; scope.nvim unlists
+  out-of-tab buffers so it follows the tab's own set), then left-cuts anything still
+  over `MAX_NAME` — either way the distinguishing tail survives: `…ModuleLRU.sv`.
+  `truncate_names = false` + `max_name_length = MAX_NAME` keep bufferline from
+  re-cutting the head off the result.
 - `nvim/lua/somya/lazy.lua` — bootstraps [lazy.nvim](https://github.com/folke/lazy.nvim);
   imports `somya.plugins`, `somya.plugins.lsp`, and `somya.plugins.colorschemes`
   (subdirs need their own import entry — they aren't auto-recursed)
