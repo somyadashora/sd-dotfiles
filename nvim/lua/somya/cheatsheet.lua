@@ -50,7 +50,8 @@ local sections = {
   {
     title = "TROUBLE  (keys below work inside the Trouble window)",
     entries = {
-      { "<leader>xw",  "diagnostics (workspace)" },
+      { "<leader>xw",  "diagnostics (workspace — files under cwd)" },
+      { "<leader>xW",  "diagnostics (every buffer, incl. outside cwd)" },
       { "<leader>xd",  "diagnostics (document)" },
       { "<leader>xs",  "symbols outline (right sidebar)" },
       { "<leader>xr",  "LSP defs/refs/impls for symbol (right)" },

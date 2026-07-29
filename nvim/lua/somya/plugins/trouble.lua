@@ -73,10 +73,39 @@ return {
           "lsp_declarations",
         },
       },
+      -- "Workspace" diagnostics (<leader>xw), scoped to the cwd.
+      --
+      -- Neovim's diagnostic store is BUFFER-scoped — vim.diagnostic.get() with
+      -- no bufnr returns every diagnostic nvim currently holds, and Trouble's
+      -- source is a straight union over that. Nothing walks the project. So the
+      -- stock `diagnostics` mode lists files that merely have a buffer HANDLE,
+      -- which includes files you never opened: publishDiagnostics for any URI
+      -- makes nvim vim.uri_to_bufnr() it into existence, so slang elaborating a
+      -- whole .f filelist (or a gd jump into ~/.local/share/nvim/lazy/…) fills
+      -- the list with paths nowhere near the tree. Upstream ships a cwd filter
+      -- for exactly this, but commented out (sources/diagnostics.lua).
+      --
+      -- getcwd() (not uv.cwd()) so tab-local dirs win — :TabProject and the
+      -- notes tab both tcd, and there the tab's project IS the workspace.
+      -- Caveat this filter can't fix: a file with no diagnostics loaded is
+      -- still invisible. Coverage equals whatever the LSP has analyzed, not
+      -- everything under the cwd. <leader>xW drops the filter.
+      diagnostics_cwd = {
+        mode = "diagnostics",
+        filter = function(items)
+          local cwd = vim.fs.normalize(vim.fn.getcwd())
+          local prefix = cwd:gsub("/$", "") .. "/"
+          return vim.tbl_filter(function(item)
+            local file = item.filename and vim.fs.normalize(item.filename)
+            return file ~= nil and file:sub(1, #prefix) == prefix
+          end, items)
+        end,
+      },
     },
   },
   keys = {
-    { "<leader>xw", "<cmd>Trouble diagnostics toggle<cr>", desc = "Diagnostics (workspace)" },
+    { "<leader>xw", "<cmd>Trouble diagnostics_cwd toggle<cr>", desc = "Diagnostics (workspace/cwd)" },
+    { "<leader>xW", "<cmd>Trouble diagnostics toggle<cr>", desc = "Diagnostics (all buffers, unscoped)" },
     { "<leader>xd", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", desc = "Diagnostics (document)" },
     { "<leader>xs", "<cmd>Trouble symbols toggle<cr>", desc = "Symbols outline (right)" },
     { "<leader>xr", "<cmd>Trouble lsp toggle focus=false<cr>", desc = "LSP defs/refs/impls (right)" },
