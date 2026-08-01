@@ -23,6 +23,8 @@ Options:
 Notes:
   - Installs native Termux packages for nvim, lazygit, fzf, rg, tmux, git,
     fd, tree-sitter, lua-language-server, clang/make, and fontconfig.
+  - Installs python + poppler, and pip-installs pyyaml/gdown, so sd-vlsi's
+    scripts/fetch-refs.py can rehydrate and extract reference PDFs.
   - slang-server and Verible do not currently have official Android/Termux
     release binaries handled by this script.
 USAGE
@@ -100,7 +102,25 @@ install_packages() {
     xz-utils \
     unzip \
     fontconfig \
-    termux-api
+    termux-api \
+    python \
+    python-pip \
+    poppler
+}
+
+# sd-vlsi keeps reference PDFs out of git and rehydrates them from a manifest
+# with scripts/fetch-refs.py, which is Python. poppler supplies the three
+# binaries that script shells out to: pdftotext (--extract), pdfimages
+# (--extract-images) and pdftoppm (--render-pages). pip is a separate Termux
+# package from python, hence both above.
+install_refs_python_deps() {
+  log "Installing Python packages for the sd-vlsi refs pipeline"
+  have python3 || die "python3 not found after installing the python package."
+  # Neither has a Termux package -- there is no python-pyyaml in
+  # termux-packages, and gdown is pip-only. PyYAML has no Android wheel on
+  # PyPI and compiles from source, which is what clang above is for.
+  python3 -m pip install --upgrade pyyaml gdown
+  ok "pyyaml and gdown installed."
 }
 
 install_meslo_font() {
@@ -150,7 +170,18 @@ Useful checks:
   git --version
   tree-sitter --version
   lua-language-server --version
+  pdftotext -v
+  python3 -c 'import yaml, gdown; print("refs deps OK")'
 EOF_STATUS
+
+  cat <<'EOF_REFS'
+
+sd-vlsi refs pipeline: fetch-refs.py is Python, and Termux has no /usr/bin
+for its shebang to resolve against, so call the interpreter explicitly:
+
+  python3 scripts/fetch-refs.py --check
+  python3 scripts/fetch-refs.py --extract
+EOF_REFS
 
   warn "slang-server is skipped on Termux: no official Android/Termux release asset is handled here."
   warn "verible is skipped on Termux: no native Termux package or official Android release asset is handled here."
@@ -209,6 +240,7 @@ run_step() {
 main() {
   require_termux
   install_packages
+  run_step install_refs_python_deps
   run_step install_fzf_git
   run_step install_tpm
   run_step install_meslo_font
