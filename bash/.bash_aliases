@@ -15,6 +15,12 @@ abbrev-alias git-cs="grep -E '^\s*[a-z]+\s*=' \$DOTFILES_DIR/git/git-aliases.git
 # contiguous comment block), not at a prose comment that may get reworded.
 abbrev-alias fzf-cs="sed -n '/FZF CHEATSHEET/,/^\$/p' \$DOTFILES_DIR/fzf/fzf.bash | sed '\$d'"
 
+# The range runs to EOF and quits at the first closing rule — a plain
+# /start/,/end/ range would RESTART on the second "VIM CHEATSHEET" (the string
+# appears again inside the vimrc's own :VimCS function) and print the rest of
+# the file. Inside vim the same block renders in a scratch split via :VimCS.
+abbrev-alias vim-cs="sed -n '/VIM CHEATSHEET/,\${p;/^\" -\{20,\}\$/q}' \$DOTFILES_DIR/vim/.vimrc | sed 's/^\" \?//' | sed '\$d'"
+
 abbrev-alias rg-cs="sed -n '/RG CHEATSHEET/,/# Case-insensitive/p' \$DOTFILES_DIR/rg/ripgreprc | sed '\$d'"
 
 abbrev-alias watchtty="watch -d -n 1 'ps -f --forest --tty $1'"

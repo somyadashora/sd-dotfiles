@@ -9,6 +9,7 @@ VLSI/SystemVerilog development. `install.sh` creates the necessary symlinks:
 
 ```
 nvim/               → ~/.config/nvim
+vim/.vimrc          → ~/.vimrc
 tmux/.tmux.conf     → ~/.tmux.conf
 tmux/scripts/       → ~/.config/tmux/scripts
 lazygit/config.yml  → ~/.config/lazygit/config.yml
@@ -396,6 +397,71 @@ hardcodes an absolute path; its `Winbar.render` is wrapped to drop it).
 X CLIPBOARD selection, used on ETX/SLES environments without xclip/xsel/wl-copy. It is
 auto-detected and only activated when those native tools are absent.
 
+## Vim (`vim/.vimrc`)
+
+The companion to the nvim config, **not a copy of it**: nvim is the editor,
+plain vim is what you reach for to open a multi-GB simulation log on a machine
+you don't control. Deliberately **zero plugins, one self-contained file** —
+nothing to install, nothing to update, nothing to break on a locked-down box.
+Floor is vim 8.0 (guarded), and it `finish`es immediately without `+eval` so
+vim-tiny still starts. Machine-specific settings go in `~/.vimrc.local`, which
+the vimrc sources and this repo never contains (same per-machine philosophy as
+the telekasten vault and the bookmarks DB).
+
+Shared muscle memory with nvim where it's free: `<Space>` leader, `jk` to
+escape, `<leader>s*` splits, `<leader>T*` tabs, `]q`/`[q` quickfix,
+`<C-hjkl>` window moves, `<leader>u*` UI toggles.
+
+**Big-file mode** — a `BufReadPre` size check (`g:sd_bigfile_mb`, default 10)
+strips everything that is O(file size) before the read: syntax, undo/swap,
+relativenumber, cursorline, folding. `BufRead` and `BufReadPost` are the SAME
+event, so the log-filetype autocmd would otherwise fire `FileType` *after*
+big-file mode and let vim's own `syntaxset` group turn syntax back on — the
+`SdBigFileSyntax` augroup is defined last precisely to have the final word.
+
+**Log highlighting** uses `matchadd()`, not a syntax file: it survives
+big-file mode's `syntax=off` and only costs anything for lines on screen.
+Priorities are negative so `hlsearch` still paints over it — searching is the
+point of opening the log. Colours are the repo's Monokai accents (red
+`#ff6188` / amber `#ffd866` / cyan `#78dce8` / green `#a9dc76`), so an error
+looks like an error in both editors.
+
+**Patterns are stored twice, on purpose.** The combined `\v`-alternation
+regexes are for `matchadd()` only (screen-local, so precision is free). Search
+and counting use *lists of alternation-free patterns* instead, because vim can
+only take its fast literal-search path when a pattern has no top-level
+alternation: measured on a 400k-line, 34 MB log, one combined alternation costs
+**~74 µs/line vs ~1.7 µs/line** for the same set split up — 3.7 s vs 0.05 s for
+a single `]e`. `s:ScanPats` bounds each successive search by the best hit so
+far, tries the pattern that won last time in this buffer first (one log's
+markers are overwhelmingly all of one kind), and `s:NearestMatch` checks a
+nearby window (`g:sd_log_window`, 5000 lines) before falling back to the whole
+buffer — a pattern that matches *nowhere* has to reach EOF before it can say so.
+
+**`]e`/`[e`, `]w`/`[w`** echo a navmsg-style counter (`Error 3 of 12`), and
+follow the same rule as the nvim side: counting is O(lines), so above
+`g:sd_log_count_max` (20000) the label prints **without** an index rather than
+a guessed one. The jump moves to the far edge of the current line first, so a
+marker sitting right of the cursor can't make the next `]e` re-find the same
+line. `<leader>le` builds a quickfix list from the *same* pattern lists, so it
+can never disagree with the jumps.
+
+Also: `<leader>lf` follow/tail (timer + `checktime`, per-buffer), `<leader>lt`
+timestamp deltas, `<leader>gf` smart open of `file:12` / `file(12)` /
+`"file", line 12` refs, rg-backed `:grep`, and `<leader>y` OSC-52 yank (the vim
+answer to nvim-clip: hands the text to the terminal emulator, the only
+clipboard a `-clipboard` vim over ssh can reach).
+
+**Vimscript trap to remember:** `:execute` treats a following `|` as part of
+its expression, so `if x | execute x | normal! zz | endif` silently does the
+wrong thing (it cost a real bug here — the cursor jump and a following `echohl`
+both got swallowed). `:echo` does *not* have this problem. Split any line with
+`execute` onto its own statement.
+
+`:VimCS` renders the cheatsheet block in a scratch split (30 lines of `:echo`
+runs straight into the more-prompt); `vim-cs` prints the same block in the
+shell.
+
 ## AI coding skills
 
 `ai/skills/` holds portable skills shared with AI coding agents (Claude Code,
@@ -560,6 +626,7 @@ tmux-cs       # print tmux keybinding cheatsheet
 git-cs        # print git aliases
 fzf-cs        # print fzf keybindings/syntax cheatsheet
 rg-cs         # print ripgrep usage cheatsheet
+vim-cs        # print the plain-vim (~/.vimrc) cheatsheet
 getdotfiles   # git pull --rebase on this repo
 prompt-check  # verify Nerd Font glyphs render correctly
 watch-ps PROC # live one-process dashboard in the CURRENT terminal (no tmux):

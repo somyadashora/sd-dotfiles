@@ -38,6 +38,11 @@ echo "Installing dotfiles..."
 mkdir -p "$HOME/.config"
 create_symlink "$DOTFILES_DIR/nvim" "$HOME/.config/nvim"
 
+# Vim configuration (the plugin-free ~/.vimrc for logs / run dirs — the
+# companion to nvim/, not a copy of it). Machine-specific overrides belong in
+# ~/.vimrc.local, which the vimrc sources and this repo never touches.
+create_symlink "$DOTFILES_DIR/vim/.vimrc" "$HOME/.vimrc"
+
 # Tmux configuration
 create_symlink "$DOTFILES_DIR/tmux/.tmux.conf" "$HOME/.tmux.conf"
 mkdir -p "$HOME/.config/tmux"

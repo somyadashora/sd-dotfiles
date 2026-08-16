@@ -36,6 +36,7 @@ onboarding cheat-card, and there's a full keymap cheatsheet a `<leader>fH` away.
 | Path              | What it is                                                            |
 |-------------------|----------------------------------------------------------------------|
 | `nvim/`           | Neovim config (lazy.nvim, one file per plugin) → `~/.config/nvim`     |
+| `vim/`            | plugin-free `~/.vimrc` for large logs & run dirs (companion to nvim)  |
 | `tmux/`           | tmux config + status-bar scripts → `~/.tmux.conf`, `~/.config/tmux`   |
 | `bash/`           | aliases & two switchable prompt styles                                |
 | `git/`            | git aliases + [delta](https://github.com/dandavison/delta) pager      |
@@ -209,6 +210,8 @@ nvim/
   lua/somya/plugins/lsp/        # mason + lspconfig
   lua/somya/cheatsheet.lua      # :Cheatsheet / :QfHelp windows
   scripts/                      # slang-init, verible-init, init-ai, nvim-clip
+vim/
+  .vimrc                        # zero-plugin vim: big-file mode, log nav, tail
 tmux/
   .tmux.conf
   scripts/                      # status-bar widgets
