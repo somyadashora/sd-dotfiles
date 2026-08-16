@@ -422,9 +422,21 @@ big-file mode and let vim's own `syntaxset` group turn syntax back on — the
 **Log highlighting** uses `matchadd()`, not a syntax file: it survives
 big-file mode's `syntax=off` and only costs anything for lines on screen.
 Priorities are negative so `hlsearch` still paints over it — searching is the
-point of opening the log. Colours are the repo's Monokai accents (red
-`#ff6188` / amber `#ffd866` / cyan `#78dce8` / green `#a9dc76`), so an error
-looks like an error in both editors.
+point of opening the log. Colours are the repo's Monokai accents (amber
+`#ffd866` / cyan `#78dce8` / green `#a9dc76`), except **error**, which is a
+deeper crimson `#d20f39` (catppuccin Latte red) rather than nvim's pinkish
+`#ff6188` — on a wall of log text the pink reads as decoration, the crimson
+reads as a stop sign.
+
+The **file-path** pattern has three constraints that are easy to get wrong and
+were each hit in practice. Alternatives must be **longest-first**, because
+vim's alternation is leftmost-first rather than longest-match — listing `c`
+before `cpp` rendered every real `x.cpp` as `x.c`. The extension needs a `>`
+word-end anchor, or an elaborated instance path like `model.lru.common.cell`
+matches its own middle as `model.lru.c`. And a `(\.\w)@!` guard is needed on
+top of that, so a hierarchy component that happens to *be* an extension
+(`model.lru.v.cell`) isn't treated as a file either. Net effect: real files
+highlight, hierarchy paths stay plain.
 
 **Patterns are stored twice, on purpose.** The combined `\v`-alternation
 regexes are for `matchadd()` only (screen-local, so precision is free). Search

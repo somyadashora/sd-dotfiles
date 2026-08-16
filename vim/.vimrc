@@ -157,7 +157,7 @@ endif
 " The repo accent set — the same saturated Monokai colours the nvim config
 " forces onto every scheme for diagnostics and git signs, so an error looks
 " like an error in both editors.
-let s:red    = '#ff6188' | let s:c_red    = 204
+let s:red    = '#d20f39' | let s:c_red    = 160
 let s:amber  = '#ffd866' | let s:c_amber  = 221
 let s:cyan   = '#78dce8' | let s:c_cyan   = 117
 let s:green  = '#a9dc76' | let s:c_green  = 150
@@ -336,7 +336,16 @@ let s:log_warn  = '\v\c(<warn(ing)?>|\*\*\s*warning|\*W[,:]|<UVM_WARNING>|<Warni
 let s:log_info  = '\v\c(<(info|note|notice)>|\*\*\s*note|\*N[,:]|<UVM_INFO>)'
 let s:log_pass  = '\v\c(<(pass(ed)?|success(ful)?|clean)>|TEST PASSED|<0 errors>)'
 let s:log_time  = '\v(\d+(\.\d+)?\s*(fs|ps|ns|us|ms)>|\d{2}:\d{2}:\d{2})'
-let s:log_path  = '\v<[[:alnum:]_./+-]+\.(sv|svh|v|vh|vhd|c|cpp|h|hpp|py|pl|tcl|f|do|log|rpt)(:\d+)?'
+" Three things this pattern has to get right, all of them learned the hard way:
+"   * alternatives are LONGEST-FIRST. Vim's alternation is leftmost-first, not
+"     longest-match, so listing `c` before `cpp` made every real x.cpp render as
+"     x.c — same for v/vh/vhd and h/hpp.
+"   * `>` anchors the extension at a word end, so an instance path like
+"     model.lru.common.cell stops matching its own middle as "model.lru.c".
+"   * the (\.\w)@! guard covers the rest of that case: a hierarchy component
+"     that happens to BE an extension (model.lru.v.cell) is not a file either.
+" Net effect: files highlight, elaborated hierarchy paths do not.
+let s:log_path  = '\v<[[:alnum:]_./+-]+\.(svh|sv|vhd|vh|v|cpp|cc|c|hpp|h|py|pl|tcl|json|md|txt|log|rpt|do|f)>(\.[[:alnum:]_])@!(:\d+){0,2}'
 
 " Search/count patterns. Each one is alternation-free. \<error\> deliberately
 " does NOT match UVM_ERROR (an underscore is a word character), so the UVM
