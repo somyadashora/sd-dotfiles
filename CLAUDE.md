@@ -446,6 +446,26 @@ marker sitting right of the cursor can't make the next `]e` re-find the same
 line. `<leader>le` builds a quickfix list from the *same* pattern lists, so it
 can never disagree with the jumps.
 
+**Fuzzy finding** (`<leader>ff` files, `fb` lines in this buffer, `fB` buffers,
+`fg` live ripgrep) drives the **fzf binary** the installers already ship — and
+deliberately **not** fzf's vim plugin. fzf is the fastest option precisely
+because the matching runs in an external Go process, which also means a
+terminal plus a temp file is the entire interface: `s:FzfRun` pipes a source
+into `fzf` under `term_start()`, and `exit_cb` reads the pick back. So the file
+stays zero-plugin (nothing sourced, nothing on the runtimepath) and startup
+cost stays at ~0.5 ms for the whole section. `--height=100%` is passed **last**
+so it overrides the `--height` in the shell's `FZF_DEFAULT_OPTS`, which vim
+inherits — that inheritance is what makes these pickers match the catppuccin
+theming in `fzf/fzf.bash`, and `$FZF_DEFAULT_COMMAND` is reused for the file
+list so it agrees with bash's `Ctrl+T`. `fg` is a **live** picker (`--disabled`
++ `change:reload:rg {q}`: rg searches, fzf only draws) seeded from an empty
+list rather than fzf's `start:` binding, which older fzf lacks; `<C-q>` there
+sends the whole result set to quickfix, which is the persistent list a live
+picker otherwise costs you. `<leader>fw` stays non-interactive (word under
+cursor → quickfix) on purpose. Every picker degrades to the stock command it
+replaced (`:find`, `/`, `:ls`+`:buffer`, `:grep`) when fzf or `+terminal` is
+missing.
+
 Also: `<leader>lf` follow/tail (timer + `checktime`, per-buffer), `<leader>lt`
 timestamp deltas, `<leader>gf` smart open of `file:12` / `file(12)` /
 `"file", line 12` refs, rg-backed `:grep`, and `<leader>y` OSC-52 yank (the vim

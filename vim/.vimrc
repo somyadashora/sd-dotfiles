@@ -29,9 +29,10 @@
 "
 "   RUN DIRS
 "   <leader>e     file explorer (netrw tree)
-"   <leader>fg    grep the tree (rg if present, else grep) then ]q / [q
-"   <leader>fw    grep the word under the cursor
-"   <leader>ff    :find (path includes **)
+"   <leader>ff    fuzzy FILES            <leader>fb   fuzzy LINES in this buffer
+"   <leader>fB    fuzzy BUFFERS          <leader>fg   live rg search (type to grep)
+"                 in a picker: <CR> open, <Tab> multi-select, <C-q> -> quickfix
+"   <leader>fw    grep word under cursor -> quickfix, walk it with ]q / [q
 "   gf   gF       open file under cursor / at its line:col
 "   <leader>gf    smart open: file:12, file(12), "file", line 12
 "
@@ -628,9 +629,9 @@ elseif executable('grep')
   set grepprg=grep\ -rn\ --exclude-dir=.git\ $*\ .
 endif
 
-nnoremap <leader>fg :silent grep! ""<Left>
+" <leader>fw stays non-interactive on purpose: you already know the word, so it
+" goes straight to a persistent quickfix list. The fuzzy pickers are below.
 nnoremap <leader>fw :silent grep! "<C-r><C-w>"<CR>:copen<CR>
-nnoremap <leader>ff :find 
 
 " Smart open of a file reference under the cursor. Log lines quote files in
 " every shape but the one gf expects, so parse the common ones: path:12,
@@ -675,6 +676,208 @@ function! s:SmartGf() abort
 endfunction
 
 nnoremap <leader>gf :call <SID>SmartGf()<CR>
+
+" ============================================================================
+" Fuzzy finding — the fzf BINARY, no plugin
+" ============================================================================
+"
+" fzf is the fastest option available precisely BECAUSE the work happens in an
+" external program: the matching runs in Go, asynchronously, while vim sits
+" idle. That also means none of fzf's vim plugin is needed here — a terminal
+" and a temp file are the whole interface. So this stays a zero-plugin file:
+" nothing to source at startup, nothing on the runtimepath, nothing to update.
+"
+" Everything degrades: without the fzf binary (or without +terminal, e.g. an
+" old vim), each map falls back to the stock command it replaced.
+"
+" Requires: fzf on PATH. Optional: rg or fd for the file list, bat for previews.
+
+let g:sd_fzf_height = get(g:, 'sd_fzf_height', 15)
+
+function! s:HasFzf() abort
+  return executable('fzf') && has('terminal')
+endfunction
+
+" Preview pane, only when bat is installed to draw it.
+function! s:Preview(spec) abort
+  return executable('bat') ? ' --preview ' . shellescape(a:spec) : ''
+endfunction
+
+" Run `source | fzf opts` in a terminal split, then hand the chosen line(s) to
+" a:sink. Nothing blocks: the picker is a real process with its own tty.
+function! s:FzfRun(source, opts, sink) abort
+  let l:out = tempname()
+  " --height last so it wins over any --height in the shell's FZF_DEFAULT_OPTS
+  " (which vim inherits, and which is what makes this match the bash pickers).
+  let l:cmd = a:source . ' | fzf ' . a:opts . ' --height=100% > ' . shellescape(l:out)
+  execute 'botright' g:sd_fzf_height . 'split'
+  call term_start([&shell, &shellcmdflag, l:cmd], {
+        \ 'curwin': 1,
+        \ 'term_finish': 'close',
+        \ 'exit_cb': function('s:FzfExit', [l:out, a:sink]),
+        \ })
+  setlocal nonumber norelativenumber signcolumn=no
+endfunction
+
+function! s:FzfExit(out, sink, job, status) abort
+  " The terminal window is still being torn down when exit_cb fires, so defer:
+  " the sink must run in the window you started from, not in a dying terminal.
+  call timer_start(0, function('s:FzfApply', [a:out, a:sink]))
+endfunction
+
+function! s:FzfApply(out, sink, timer) abort
+  if !filereadable(a:out)
+    return
+  endif
+  let l:lines = readfile(a:out)
+  call delete(a:out)
+  " Strip any ANSI left over from --ansi sources before anything parses these.
+  call map(l:lines, "substitute(v:val, '\\e\\[[0-9;]*m', '', 'g')")
+  if empty(filter(copy(l:lines), '!empty(v:val)'))
+    return
+  endif
+  call call(a:sink, [l:lines])
+endfunction
+
+" --- files ------------------------------------------------------------------
+
+function! s:FzfFiles() abort
+  if !s:HasFzf()
+    call feedkeys(':find ', 'n')
+    return
+  endif
+  " Reuse the shell's own command when vim inherited it, so this list is
+  " exactly what Ctrl+T gives you in bash (see fzf/fzf.bash).
+  if !empty($FZF_DEFAULT_COMMAND)
+    let l:src = $FZF_DEFAULT_COMMAND
+  elseif executable('fd')
+    let l:src = 'fd --type f --hidden --follow --exclude .git'
+  elseif executable('rg')
+    let l:src = 'rg --files --hidden --glob "!.git"'
+  else
+    let l:src = 'find . -type f -not -path "*/.git/*"'
+  endif
+  call s:FzfRun(l:src, '--prompt="Files> " --multi'
+        \ . s:Preview('bat --style=numbers --color=always {}'),
+        \ function('s:SinkFiles'))
+endfunction
+
+function! s:SinkFiles(lines) abort
+  execute 'edit' fnameescape(a:lines[0])
+  " Multi-select adds the rest as buffers rather than fighting over the window.
+  for l:f in a:lines[1:]
+    execute 'badd' fnameescape(l:f)
+  endfor
+endfunction
+
+" --- lines in this buffer ---------------------------------------------------
+
+function! s:FzfBLines() abort
+  if !s:HasFzf()
+    call feedkeys('/', 'n')
+    return
+  endif
+  if !&modified && filereadable(expand('%'))
+    " Stream the file itself. Never copy a multi-GB log just to search it —
+    " grep -n numbers the lines for free and fzf reads it as it comes.
+    let l:src = 'grep -n "" ' . shellescape(expand('%:p'))
+  else
+    let l:tmp = tempname()
+    call writefile(map(getline(1, '$'), 'printf("%d:%s", v:key + 1, v:val)'), l:tmp)
+    let l:src = 'cat ' . shellescape(l:tmp)
+  endif
+  " --nth=2.. so the line NUMBER is displayed but never matched against.
+  call s:FzfRun(l:src, '--prompt="Lines> " --delimiter=: --nth=2..',
+        \ function('s:SinkBLine'))
+endfunction
+
+function! s:SinkBLine(lines) abort
+  let l:n = str2nr(matchstr(a:lines[0], '^\d\+'))
+  if l:n > 0
+    execute l:n
+    normal! zz
+  endif
+endfunction
+
+" --- open buffers -----------------------------------------------------------
+
+function! s:FzfBuffers() abort
+  if !s:HasFzf()
+    call feedkeys(":ls\<CR>:buffer ", 'n')
+    return
+  endif
+  let l:list = []
+  for l:b in getbufinfo({'buflisted': 1})
+    call add(l:list, printf('%d: %s', l:b.bufnr,
+          \ empty(l:b.name) ? '[No Name]' : fnamemodify(l:b.name, ':~:.')))
+  endfor
+  let l:tmp = tempname()
+  call writefile(l:list, l:tmp)
+  call s:FzfRun('cat ' . shellescape(l:tmp),
+        \ '--prompt="Buffers> " --delimiter=: --nth=2..', function('s:SinkBuffer'))
+endfunction
+
+function! s:SinkBuffer(lines) abort
+  let l:n = str2nr(matchstr(a:lines[0], '^\d\+'))
+  if l:n > 0
+    execute 'buffer' l:n
+  endif
+endfunction
+
+" --- live ripgrep -----------------------------------------------------------
+
+function! s:FzfRg() abort
+  if !s:HasFzf() || !executable('rg')
+    call feedkeys(':silent grep! ""' . "\<Left>", 'n')
+    return
+  endif
+  let l:rg = 'rg --column --line-number --no-heading --color=always --smart-case -- '
+  " rg does the searching, fzf only draws: --disabled turns fzf's own matching
+  " off and every keystroke re-runs rg with the current query. Starting from an
+  " empty list keeps this off the `start:` binding, which older fzf lacks.
+  let l:opts = '--ansi --disabled --multi --delimiter=: --prompt="rg> "'
+        \ . ' --bind ' . shellescape('change:reload:' . l:rg . '{q} || true')
+        \ . ' --expect=ctrl-q'
+        \ . s:Preview('bat --style=numbers --color=always --highlight-line {2} {1}')
+  call s:FzfRun(':', l:opts, function('s:SinkRg'))
+endfunction
+
+function! s:SinkRg(lines) abort
+  " --expect puts the key that was pressed on the FIRST line (empty for <CR>).
+  let l:key = a:lines[0]
+  let l:hits = filter(a:lines[1:], '!empty(v:val)')
+  if empty(l:hits)
+    return
+  endif
+  if l:key ==# 'ctrl-q'
+    " The persistent list a live picker otherwise costs you, handed back.
+    let l:qf = []
+    for l:h in l:hits
+      let l:m = matchlist(l:h, '\v^([^:]+):(\d+):(\d+):(.*)$')
+      if !empty(l:m)
+        call add(l:qf, {'filename': l:m[1], 'lnum': str2nr(l:m[2]),
+              \ 'col': str2nr(l:m[3]), 'text': l:m[4]})
+      endif
+    endfor
+    if !empty(l:qf)
+      call setqflist(l:qf, 'r')
+      copen
+    endif
+    return
+  endif
+  let l:m = matchlist(l:hits[0], '\v^([^:]+):(\d+):(\d+):')
+  if empty(l:m)
+    return
+  endif
+  execute 'edit' fnameescape(l:m[1])
+  call cursor(str2nr(l:m[2]), str2nr(l:m[3]))
+  normal! zz
+endfunction
+
+nnoremap <silent> <leader>ff :call <SID>FzfFiles()<CR>
+nnoremap <silent> <leader>fb :call <SID>FzfBLines()<CR>
+nnoremap <silent> <leader>fB :call <SID>FzfBuffers()<CR>
+nnoremap <silent> <leader>fg :call <SID>FzfRg()<CR>
 
 " ============================================================================
 " Clipboard — OSC 52
