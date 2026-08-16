@@ -55,14 +55,18 @@ return {
       -- entry, so the default sidebar width truncates almost everything —
       -- unlike symbols (<leader>xs), which is just names. Rows are squeezed to
       -- one line (no wrap; whitespace runs collapsed by formatters.text above).
-      -- TEMPORARILY disabled: the default sections also include incoming/
-      -- outgoing calls, but slang-server (<= 0.2.8) fills call-hierarchy items
-      -- with (0,0) range/selectionRange, so Trouble renders line 1 of the file
-      -- (a ///// banner) for every entry. Waiting on an upstream bugfix
-      -- (hudson-trading/slang-server — "Call hierarchy items have (0,0)
-      -- range/selectionRange and undeduplicated cone leaves"); once fixed,
-      -- re-add "lsp_incoming_calls" / "lsp_outgoing_calls" below. Until then
-      -- <leader>vd/vl cover cone tracing properly (lsp/lspconfig.lua).
+      -- Disabled: the default sections also include incoming/outgoing calls,
+      -- but slang-server (through 0.2.10) fills call-hierarchy items with
+      -- (0,0) range/selectionRange, so Trouble renders line 1 of the file
+      -- (a ///// banner) for every entry. Reported as slang-server#425's
+      -- sibling, #423 ("Call hierarchy items have (0,0) range/selectionRange
+      -- and undeduplicated cone leaves") — still open, and upstream's answer
+      -- is NOT a straight fix: drivers/loads don't map onto call hierarchy
+      -- (outgoing reuses the query's URI), so they plan to support only the
+      -- incoming/drivers direction, return nothing for outgoing/loads, and
+      -- move to custom client views. So don't expect to re-add both sections;
+      -- <leader>vd/vl already cover cone tracing properly (lsp/lspconfig.lua)
+      -- and are the shape upstream is heading toward.
       lsp = {
         win = { position = "right", size = 0.25 },
         sections = {

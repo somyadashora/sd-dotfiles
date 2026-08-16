@@ -479,16 +479,24 @@ return {
                 or res.contents
               if type(md) ~= "string" then return vim.lsp.buf.hover(hover_cfg) end
               if md:match("^DefineDirective") then
-                -- Keep only sections that are really about the macro. slang's
-                -- selectDisplayNode promotes a node to its parent when that
-                -- parent is a TypedefDeclaration — and a `define's "parent" is
+                -- Keep only sections that are really about the macro. slang
+                -- harvests the ENTIRE comment block preceding a `define as its
+                -- doc comment, so a macro under a ///// banner hovers as a wall
+                -- of separator characters with the definition + expansion
+                -- pushed off the bottom of the float. The real definition fence
+                -- always contains "`define" and the expansion sections announce
+                -- themselves ("Expands to" / "Expanded from"); everything else
+                -- is dropped.
+                --
+                -- This also used to rescue a wrong definition fence: slang's
+                -- selectDisplayNode promoted a node to its parent when that
+                -- parent was a TypedefDeclaration, and a `define's "parent" is
                 -- whatever declaration FOLLOWS it (directives are trivia on the
-                -- next token), so the "definition" fence often shows an
-                -- unrelated typedef/struct from below the `define. The real
-                -- definition fence always contains "`define", and the
-                -- expansion sections announce themselves ("Expands to" /
-                -- "Expanded from") — everything else (comment dumps, neighbor
-                -- typedefs) is dropped.
+                -- next token), so the fence showed an unrelated typedef from
+                -- below the `define. Reported as slang-server#425 and fixed in
+                -- v0.2.10 — the keep-rule below is what makes the fix visible
+                -- (pre-fix the typedef fence was dropped, post-fix the `define
+                -- fence is kept), so it needs no change either way.
                 local sections = vim.split(md, "\n+%-%-%-\n+")
                 local keep = { sections[1] }
                 for i = 2, #sections do
