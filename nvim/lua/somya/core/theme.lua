@@ -273,11 +273,51 @@ function M.overrides_for(scheme)
   return nil
 end
 
+-- ── Italic comments: off ────────────────────────────────────────────────────
+-- Most colorschemes here italicise comments (monokai-pro's styles.comment,
+-- catppuccin/tokyonight/kanagawa defaults). That is a *rendering* hazard in a
+-- terminal, not just a taste call: when the terminal font ships no true italic
+-- face the emulator fakes one by slanting the upright glyphs. The slant
+-- overhangs the right edge of the character cell, and whatever repaints the
+-- next cell clips it — so the tail of a comment looks cut off, and it shifts
+-- or flickers as the cursor moves across the line and forces redraws.
+--
+-- Rather than restate every scheme's comment colour, apply_overrides strips the
+-- italic attribute back off whatever the scheme set — into ns 0 AND into every
+-- styler per-filetype namespace, so .sv buffers obey too. Flip this to true if
+-- you're on a terminal + font with a real italic face and want them back.
+M.italic_comments = false
+
+-- Groups de-italicised when M.italic_comments is false.
+M.deitalic_groups = {
+  "Comment", "SpecialComment",
+  "@comment", "@comment.documentation",
+  "@comment.error", "@comment.warning", "@comment.todo", "@comment.note",
+  "@lsp.type.comment",
+}
+
+-- Strip `italic` from `group` in namespace `ns`, preserving every other attr.
+-- nvim_get_hl on a non-zero ns returns only what that ns actually defines, so a
+-- group the scheme left alone comes back empty and is skipped (ns 0 covers it).
+local function deitalic(ns, group)
+  local ok, hl = pcall(vim.api.nvim_get_hl, ns, { name = group, link = false })
+  if not ok or type(hl) ~= "table" or next(hl) == nil then return end
+  if not (hl.italic or (hl.cterm and hl.cterm.italic)) then return end
+  hl.italic = false
+  if hl.cterm then hl.cterm.italic = false end
+  vim.api.nvim_set_hl(ns, group, hl)
+end
+
 -- Apply common + per-scheme overrides into highlight namespace `ns` for `scheme`.
 function M.apply_overrides(ns, scheme)
   ns = ns or 0
   for group, spec in pairs(M.overrides_common) do
     vim.api.nvim_set_hl(ns, group, spec)
+  end
+  if not M.italic_comments then
+    for _, group in ipairs(M.deitalic_groups) do
+      deitalic(ns, group)
+    end
   end
   local hl = M.overrides_for(scheme)
   if hl then

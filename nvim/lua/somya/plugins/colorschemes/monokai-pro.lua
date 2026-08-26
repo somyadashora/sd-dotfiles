@@ -10,7 +10,10 @@ return {
    opts = {
      filter = 'pro', -- classic | octagon | pro | machine | ristretto | spectrum
      styles = {
-       comment = { italic = true },
+       -- Off at the source too (core/theme.lua's de-italic pass would strip it
+       -- anyway): faked italics overhang the character cell and get clipped on
+       -- terminals without a real italic face. See theme.M.italic_comments.
+       comment = { italic = false },
        keyword = { italic = false }, -- any other keyword
        type = { italic = false }, -- (preferred) int, long, char, etc
        storageclass = { italic = false }, -- static, register, volatile, etc

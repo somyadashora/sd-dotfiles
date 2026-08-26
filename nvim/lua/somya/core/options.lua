@@ -21,7 +21,14 @@ vim.g.sd_text_width = 100
 opt.textwidth = vim.g.sd_text_width -- base default; per-filetype override in autocmds.lua
 
 opt.scrolloff = 5
-opt.sidescrolloff = 36
+-- Horizontal context kept either side of the cursor on 'nowrap' buffers. Keep
+-- this SMALL: with nowrap, every cursor step inside the outer `sidescrolloff`
+-- columns scrolls the whole buffer sideways by a column, so a big value makes
+-- the text visibly slide under the cursor on ordinary h/l/w motions — and it
+-- burns that many columns on blank space once you reach the end of a long line.
+-- (36 lived here for neominimap's floating minimap, which overlays the right
+-- edge; plugins/neominimap.lua now raises it only while that float is up.)
+opt.sidescrolloff = 8
 
 -- Let the cursor go anywhere — past end-of-line and into the "virtual" space
 -- inside tabs / beyond short lines — instead of snapping to real characters.
