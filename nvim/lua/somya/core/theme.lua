@@ -285,18 +285,20 @@ end
 -- italicise @keyword.function, @keyword.type, @type.builtin and
 -- @variable.builtin — i.e. function/task, typedef, logic/bit/int, this.
 --
--- Resolution order (first hit wins):
---   1. vim.g.sd_italics       — this session (what <leader>ui sets)
---   2. $SD_ITALICS = 0 | 1    — the machine's shell rc
---   3. the state file          — this machine, remembered from the last <leader>ui
---   4. M.italics = true|false — an explicit, checked-in choice for every machine
---   5. M.italics = "auto"     — ask the terminal (see M.italic_supported)
+-- There is deliberately NO auto-detection. terminfo's `sitm` capability, the
+-- only signal reachable from inside nvim, describes the TERMINAL and not the
+-- FONT: VTE (GNOME Terminal) advertises sitm and then synthesises the slant
+-- from an upright face anyway, so a probe answers "supported" on exactly the
+-- machines where italics are unreadable. A detector that is wrong precisely
+-- when it matters is worse than none, so this is a human decision:
 --
--- 3 is what makes the answer survive a restart WITHOUT committing a
--- machine-specific decision to this repo — same per-machine philosophy as
--- ~/.vimrc.local, the telekasten vault and the bookmarks DB. So the flow on a
--- terminal whose font fakes italics is: hit <leader>ui once, done forever here.
-M.italics = "auto"
+--   <leader>ui / :ItalicsToggle  — look at the buffer, decide, done.
+--
+-- The choice is remembered per machine in M.italics_state_file, so it survives
+-- restarts without committing a machine-specific answer to this repo (same
+-- philosophy as ~/.vimrc.local, the telekasten vault, the bookmarks DB).
+-- M.italics below is only the default for a machine that has never been told.
+M.italics = false
 
 -- Where the remembered per-machine answer lives (never committed).
 M.italics_state_file = vim.fn.stdpath("state") .. "/sd-italics"
@@ -306,36 +308,6 @@ M.italics_state_file = vim.fn.stdpath("state") .. "/sd-italics"
 -- cleanly then markdown emphasis clips exactly like everything else. Add
 -- "@markup.italic" / "@markup.emphasis" here if you would rather keep those.
 M.italic_keep = {}
-
--- Does the TERMINAL claim it can render italics? Reads terminfo's `sitm`
--- ("enter italics mode") capability through tput — the only portable signal
--- reachable from inside nvim. Cached: probing forks a process.
---
--- This is deliberately only ONE of the four inputs above, because terminfo
--- describes the TERMINAL, not the FONT. VTE (GNOME Terminal) advertises sitm
--- and then synthesises the slant from an upright face when the configured font
--- has no italic — which is precisely the case this whole section exists for. So
--- "auto" reliably catches "this terminal cannot do italics at all"; it cannot
--- catch "this terminal fakes them badly". For that, use <leader>ui, or pin the
--- answer with $SD_ITALICS on that machine.
---
--- Inside tmux this reads tmux's own TERM. .tmux.conf sets tmux-256color, which
--- has sitm; the older screen-256color does NOT, and would report no italics.
-local supported_cache = nil
-function M.italic_supported()
-  if supported_cache ~= nil then return supported_cache end
-  local term = vim.env.TERM or ""
-  if term == "" or term == "dumb" or term == "linux" then
-    supported_cache = false
-  elseif vim.fn.executable("tput") == 1 then
-    vim.fn.system({ "tput", "sitm" })
-    supported_cache = vim.v.shell_error == 0
-  else
-    -- No way to ask. Assume yes — the toggle is one keystroke away.
-    supported_cache = true
-  end
-  return supported_cache
-end
 
 -- Read the remembered per-machine answer; nil when nothing was ever pinned.
 local function italics_stored()
@@ -358,19 +330,17 @@ local function italics_store(on)
   f:close()
 end
 
--- The resolved answer: should italics render right now?
+-- The resolved answer: should italics render right now? g:sd_italics is the
+-- live session value (set by the toggle); otherwise this machine's remembered
+-- choice; otherwise the M.italics default above.
 function M.italics_on()
   local g = vim.g.sd_italics
   if g ~= nil then
     if type(g) == "number" then return g ~= 0 end
     return g and true or false
   end
-  local env = vim.env.SD_ITALICS
-  if env == "0" then return false end
-  if env == "1" then return true end
   local stored = italics_stored()
   if stored ~= nil then return stored end
-  if M.italics == "auto" then return M.italic_supported() end
   return M.italics and true or false
 end
 
@@ -393,14 +363,12 @@ local function strip_italics(ns)
 end
 M.strip_italics = strip_italics
 
--- Apply an italics decision live, and remember it in g:sd_italics so it wins
--- over auto-detection for the rest of the session. Turning italics OFF is just
--- a strip; turning them back ON needs the original attributes, which stripping
--- destroyed — so the colorscheme is reloaded (and styler re-pinned, and the
--- surface namespace cache dropped) to rebuild them from source.
+-- Apply an italics decision live and remember it for this machine. Turning
+-- italics OFF is just a strip; turning them back ON needs the original
+-- attributes, which stripping destroyed — so the colorscheme is reloaded (and
+-- styler re-pinned, and the surface namespace cache dropped) to rebuild them.
 function M.set_italics(on)
   on = on and true or false
-  M.italics = on
   vim.g.sd_italics = on
   italics_store(on)
   if on then
@@ -421,12 +389,8 @@ end
 
 function M.toggle_italics()
   M.set_italics(not M.italics_on())
-  vim.notify(
-    "italics: " .. (M.italics_on() and "ON" or "OFF")
-      .. (M.italic_supported() and "" or "  (terminal reports no italic support)"),
-    vim.log.levels.INFO,
-    { title = "UI" }
-  )
+  vim.notify("italics: " .. (M.italics_on() and "ON" or "OFF"),
+    vim.log.levels.INFO, { title = "UI" })
 end
 
 -- Apply common + per-scheme overrides into highlight namespace `ns` for `scheme`.

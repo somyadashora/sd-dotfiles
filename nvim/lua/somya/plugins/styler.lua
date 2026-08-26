@@ -32,9 +32,9 @@ return {
 
     -- Italics on/off across every scheme + styler namespace. Terminals whose
     -- font has no real italic face fake the slant and clip it at the cell edge
-    -- (see the Italics section in core/theme.lua); theme.italics defaults to
-    -- "auto", which asks terminfo, but terminfo can't see the FONT — so this is
-    -- the key you reach for when the auto answer is wrong.
+    -- (see the Italics section in core/theme.lua). There is no auto-detection —
+    -- terminfo can't see the font — so this is a look-and-decide call, and the
+    -- answer is remembered per machine.
     vim.api.nvim_create_user_command("ItalicsToggle", theme.toggle_italics, {
       desc = "Toggle italic highlights on/off (terminal italic rendering)",
     })

@@ -149,20 +149,19 @@ styler first if it's on (re-enable with `<leader>uy` after picking). The
 rendering question, not a taste one — a font with no real italic face makes the
 emulator fake the slant, which overhangs the character cell and gets clipped
 when the neighbouring cell repaints (comment/keyword tails look cut off and
-flicker as the cursor moves). `M.italics` resolves in order: `g:sd_italics`
-(session, set by the toggle) → `$SD_ITALICS` (0/1) → a per-machine state file at
-`stdpath("state")/sd-italics` (never committed, same philosophy as
-`~/.vimrc.local`) → an explicit `true`/`false` here → `"auto"` (the default),
-which probes terminfo's `sitm` via `tput`. **terminfo describes the TERMINAL,
-not the FONT** — VTE/GNOME Terminal advertises `sitm` and then synthesises the
-slant anyway — so `auto` catches "can't do italics at all" but not "fakes them
-badly". `<leader>ui` / `:ItalicsToggle` is the answer for that: it strips the
-attribute from ns 0 and every styler namespace (turning italics back ON reloads
-the scheme, since stripping destroyed the originals) and pins the choice to the
-state file, so one keypress settles a machine permanently. `M.italic_keep`
+flicker as the cursor moves). **There is deliberately no auto-detection**:
+terminfo's `sitm` — the only signal reachable from inside nvim — describes the
+TERMINAL, not the FONT, and VTE/GNOME Terminal advertises it and then
+synthesises the slant anyway, so a probe answers "supported" on exactly the
+machines where italics are unreadable. It's a look-and-decide call:
+`<leader>ui` / `:ItalicsToggle` strips the italic attribute from ns 0 and every
+styler namespace (turning italics back ON reloads the scheme and re-pins styler,
+since stripping destroyed the originals) and remembers the answer per machine in
+`stdpath("state")/sd-italics` — never committed, same philosophy as
+`~/.vimrc.local` — so it survives restarts. `M.italics` (default `false`) is
+only the fallback for a machine that has never been told; `M.italic_keep`
 exempts groups where italic is the content (empty by default). The shell-side
-`italic-check` alias prints an upright/italic pair to judge by eye — the only
-way to see what the font actually does.
+`italic-check` alias prints an upright/italic pair to judge by eye.
 
 **Completion & snippets** (`nvim/lua/somya/plugins/nvim-cmp.lua`): nvim-cmp with
 LuaSnip as the snippet engine. `<Tab>`/`<S-Tab>` expand a snippet or jump between
@@ -680,8 +679,8 @@ rg-cs         # print ripgrep usage cheatsheet
 vim-cs        # print the plain-vim (~/.vimrc) cheatsheet
 getdotfiles   # git pull --rebase on this repo
 prompt-check  # verify Nerd Font glyphs render correctly
-italic-check  # does this terminal render italics, or fake+clip them? prints
-              # terminfo's verdict plus an upright/italic pair to judge by eye
+italic-check  # print an upright/italic pair — does this terminal really
+              # slant italics, or fake and clip them? (no probe exists)
 watch-ps PROC # live one-process dashboard in the CURRENT terminal (no tmux):
               # ps tree + CPU/RAM/disk-I/O vitals in plain words under watch -d
               # -n 1. Target by pid/name, or no arg = newest process you own
