@@ -313,6 +313,32 @@ watch-ps() {
     fi
 }
 
+# Does this terminal render italics, or fake them? terminfo (what nvim's
+# theme.italic_supported reads) only says whether the TERMINAL claims support —
+# it cannot see whether the FONT has a real italic face. VTE/GNOME Terminal
+# advertises support and then synthesises the slant from the upright glyphs; the
+# slant overhangs the character cell and gets clipped, which is what eats the
+# tail of a comment in nvim. So: print both and look.
+# If the two lines are indistinguishable, or the italic one looks smeared/clipped
+# at the right, turn italics off in nvim with <leader>ui (pinned per machine).
+italic-check() {
+  printf '\nItalic rendering test\n'
+  printf '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+  if command -v tput >/dev/null 2>&1 && tput sitm >/dev/null 2>&1; then
+    printf '  terminfo (TERM=%s): sitm present — terminal CLAIMS italic support\n' "$TERM"
+  else
+    printf '  terminfo (TERM=%s): no sitm — terminal claims NO italic support\n' "$TERM"
+  fi
+  [ -n "$VTE_VERSION" ] && printf '  VTE_VERSION=%s — VTE fakes italics when the font lacks a face\n' "$VTE_VERSION"
+  printf '\n'
+  printf '  upright:  // logic [31:0] data_q; typedef enum { A, B } state_e;\n'
+  printf '  \e[3mitalic :  // logic [31:0] data_q; typedef enum { A, B } state_e;\e[0m\n'
+  printf '\n'
+  printf 'Look at the ITALIC line: is it actually slanted, and is the final\n'
+  printf 'semicolon fully drawn? Clipped/smeared tail => turn italics off in\n'
+  printf 'nvim with <leader>ui (or export SD_ITALICS=0 here).\n\n'
+}
+
 prompt-check() {
   printf '\nNerd Font glyph test\n'
   printf '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'

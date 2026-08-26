@@ -30,9 +30,20 @@ return {
       desc = "Browse colorschemes (styler off + live full-window preview)",
     })
 
+    -- Italics on/off across every scheme + styler namespace. Terminals whose
+    -- font has no real italic face fake the slant and clip it at the cell edge
+    -- (see the Italics section in core/theme.lua); theme.italics defaults to
+    -- "auto", which asks terminfo, but terminfo can't see the FONT — so this is
+    -- the key you reach for when the auto answer is wrong.
+    vim.api.nvim_create_user_command("ItalicsToggle", theme.toggle_italics, {
+      desc = "Toggle italic highlights on/off (terminal italic rendering)",
+    })
+
     vim.keymap.set("n", "<leader>uy", theme.toggle_styler,
       { desc = "Toggle styler per-filetype themes" })
     vim.keymap.set("n", "<leader>uc", theme.browse,
       { desc = "Browse colorschemes (full-window preview)" })
+    vim.keymap.set("n", "<leader>ui", theme.toggle_italics,
+      { desc = "Toggle italics (terminal rendering)" })
   end,
 }

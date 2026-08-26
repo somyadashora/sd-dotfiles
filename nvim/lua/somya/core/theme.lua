@@ -273,39 +273,160 @@ function M.overrides_for(scheme)
   return nil
 end
 
--- ── Italic comments: off ────────────────────────────────────────────────────
--- Most colorschemes here italicise comments (monokai-pro's styles.comment,
--- catppuccin/tokyonight/kanagawa defaults). That is a *rendering* hazard in a
--- terminal, not just a taste call: when the terminal font ships no true italic
--- face the emulator fakes one by slanting the upright glyphs. The slant
--- overhangs the right edge of the character cell, and whatever repaints the
--- next cell clips it — so the tail of a comment looks cut off, and it shifts
--- or flickers as the cursor moves across the line and forces redraws.
+-- ── Italics ────────────────────────────────────────────────────────────────
+-- Italics in a terminal are a RENDERING question, not a taste one. When the
+-- terminal font ships no true italic face the emulator fakes one by slanting
+-- the upright glyphs; the slant overhangs the right edge of the character cell
+-- and gets clipped when the neighbouring cell repaints — so the tail of an
+-- italic run looks cut off, and it shifts or flickers as the cursor moves along
+-- the line and forces redraws.
 --
--- Rather than restate every scheme's comment colour, apply_overrides strips the
--- italic attribute back off whatever the scheme set — into ns 0 AND into every
--- styler per-filetype namespace, so .sv buffers obey too. Flip this to true if
--- you're on a terminal + font with a real italic face and want them back.
-M.italic_comments = false
+-- That hit SystemVerilog hard here, and not only in comments: the schemes also
+-- italicise @keyword.function, @keyword.type, @type.builtin and
+-- @variable.builtin — i.e. function/task, typedef, logic/bit/int, this.
+--
+-- Resolution order (first hit wins):
+--   1. vim.g.sd_italics       — this session (what <leader>ui sets)
+--   2. $SD_ITALICS = 0 | 1    — the machine's shell rc
+--   3. the state file          — this machine, remembered from the last <leader>ui
+--   4. M.italics = true|false — an explicit, checked-in choice for every machine
+--   5. M.italics = "auto"     — ask the terminal (see M.italic_supported)
+--
+-- 3 is what makes the answer survive a restart WITHOUT committing a
+-- machine-specific decision to this repo — same per-machine philosophy as
+-- ~/.vimrc.local, the telekasten vault and the bookmarks DB. So the flow on a
+-- terminal whose font fakes italics is: hit <leader>ui once, done forever here.
+M.italics = "auto"
 
--- Groups de-italicised when M.italic_comments is false.
-M.deitalic_groups = {
-  "Comment", "SpecialComment",
-  "@comment", "@comment.documentation",
-  "@comment.error", "@comment.warning", "@comment.todo", "@comment.note",
-  "@lsp.type.comment",
-}
+-- Where the remembered per-machine answer lives (never committed).
+M.italics_state_file = vim.fn.stdpath("state") .. "/sd-italics"
 
--- Strip `italic` from `group` in namespace `ns`, preserving every other attr.
--- nvim_get_hl on a non-zero ns returns only what that ns actually defines, so a
--- group the scheme left alone comes back empty and is skipped (ns 0 covers it).
-local function deitalic(ns, group)
-  local ok, hl = pcall(vim.api.nvim_get_hl, ns, { name = group, link = false })
-  if not ok or type(hl) ~= "table" or next(hl) == nil then return end
-  if not (hl.italic or (hl.cterm and hl.cterm.italic)) then return end
-  hl.italic = false
-  if hl.cterm then hl.cterm.italic = false end
-  vim.api.nvim_set_hl(ns, group, hl)
+-- Groups where italic is the CONTENT rather than decoration, left slanted even
+-- when italics are off. Empty on purpose: if the terminal can't render italics
+-- cleanly then markdown emphasis clips exactly like everything else. Add
+-- "@markup.italic" / "@markup.emphasis" here if you would rather keep those.
+M.italic_keep = {}
+
+-- Does the TERMINAL claim it can render italics? Reads terminfo's `sitm`
+-- ("enter italics mode") capability through tput — the only portable signal
+-- reachable from inside nvim. Cached: probing forks a process.
+--
+-- This is deliberately only ONE of the four inputs above, because terminfo
+-- describes the TERMINAL, not the FONT. VTE (GNOME Terminal) advertises sitm
+-- and then synthesises the slant from an upright face when the configured font
+-- has no italic — which is precisely the case this whole section exists for. So
+-- "auto" reliably catches "this terminal cannot do italics at all"; it cannot
+-- catch "this terminal fakes them badly". For that, use <leader>ui, or pin the
+-- answer with $SD_ITALICS on that machine.
+--
+-- Inside tmux this reads tmux's own TERM. .tmux.conf sets tmux-256color, which
+-- has sitm; the older screen-256color does NOT, and would report no italics.
+local supported_cache = nil
+function M.italic_supported()
+  if supported_cache ~= nil then return supported_cache end
+  local term = vim.env.TERM or ""
+  if term == "" or term == "dumb" or term == "linux" then
+    supported_cache = false
+  elseif vim.fn.executable("tput") == 1 then
+    vim.fn.system({ "tput", "sitm" })
+    supported_cache = vim.v.shell_error == 0
+  else
+    -- No way to ask. Assume yes — the toggle is one keystroke away.
+    supported_cache = true
+  end
+  return supported_cache
+end
+
+-- Read the remembered per-machine answer; nil when nothing was ever pinned.
+local function italics_stored()
+  local f = io.open(M.italics_state_file, "r")
+  if not f then return nil end
+  local v = f:read("l")
+  f:close()
+  if v == "0" then return false end
+  if v == "1" then return true end
+  return nil
+end
+
+-- Remember an answer for this machine. Best-effort: a read-only state dir must
+-- not break the toggle, it just means the choice lasts only for this session.
+local function italics_store(on)
+  pcall(vim.fn.mkdir, vim.fn.stdpath("state"), "p")
+  local f = io.open(M.italics_state_file, "w")
+  if not f then return end
+  f:write(on and "1\n" or "0\n")
+  f:close()
+end
+
+-- The resolved answer: should italics render right now?
+function M.italics_on()
+  local g = vim.g.sd_italics
+  if g ~= nil then
+    if type(g) == "number" then return g ~= 0 end
+    return g and true or false
+  end
+  local env = vim.env.SD_ITALICS
+  if env == "0" then return false end
+  if env == "1" then return true end
+  local stored = italics_stored()
+  if stored ~= nil then return stored end
+  if M.italics == "auto" then return M.italic_supported() end
+  return M.italics and true or false
+end
+
+-- Strip `italic` from every group defined in namespace `ns`, preserving every
+-- other attribute. nvim_get_hl(ns, {}) on a non-zero ns returns only what that
+-- ns itself defines, so a styler namespace is handled without disturbing ns 0
+-- (and vice versa). Link entries carry no attrs, so they fall through untouched.
+local function strip_italics(ns)
+  local keep = {}
+  for _, g in ipairs(M.italic_keep) do keep[g] = true end
+  local ok, all = pcall(vim.api.nvim_get_hl, ns, {})
+  if not ok or type(all) ~= "table" then return end
+  for name, hl in pairs(all) do
+    if not keep[name] and (hl.italic or (hl.cterm and hl.cterm.italic)) then
+      hl.italic = nil
+      if hl.cterm then hl.cterm.italic = nil end
+      pcall(vim.api.nvim_set_hl, ns, name, hl)
+    end
+  end
+end
+M.strip_italics = strip_italics
+
+-- Apply an italics decision live, and remember it in g:sd_italics so it wins
+-- over auto-detection for the rest of the session. Turning italics OFF is just
+-- a strip; turning them back ON needs the original attributes, which stripping
+-- destroyed — so the colorscheme is reloaded (and styler re-pinned, and the
+-- surface namespace cache dropped) to rebuild them from source.
+function M.set_italics(on)
+  on = on and true or false
+  M.italics = on
+  vim.g.sd_italics = on
+  italics_store(on)
+  if on then
+    M._ns_backfilled = {}
+    local scheme = vim.g.colors_name
+    if scheme then pcall(vim.cmd, "colorscheme " .. scheme) end
+    if M.styler_enabled then
+      M.disable_styler()
+      M.enable_styler()
+    end
+  else
+    strip_italics(0)
+    for name, ns in pairs(vim.api.nvim_get_namespaces()) do
+      if name:match("^styler_") or name:match("^sd_surface") then strip_italics(ns) end
+    end
+  end
+end
+
+function M.toggle_italics()
+  M.set_italics(not M.italics_on())
+  vim.notify(
+    "italics: " .. (M.italics_on() and "ON" or "OFF")
+      .. (M.italic_supported() and "" or "  (terminal reports no italic support)"),
+    vim.log.levels.INFO,
+    { title = "UI" }
+  )
 end
 
 -- Apply common + per-scheme overrides into highlight namespace `ns` for `scheme`.
@@ -314,17 +435,14 @@ function M.apply_overrides(ns, scheme)
   for group, spec in pairs(M.overrides_common) do
     vim.api.nvim_set_hl(ns, group, spec)
   end
-  if not M.italic_comments then
-    for _, group in ipairs(M.deitalic_groups) do
-      deitalic(ns, group)
-    end
-  end
   local hl = M.overrides_for(scheme)
   if hl then
     for group, spec in pairs(hl) do
       vim.api.nvim_set_hl(ns, group, spec)
     end
   end
+  -- Last, so neither the scheme nor the overrides above can re-italicise.
+  if not M.italics_on() then strip_italics(ns) end
 end
 
 -- Wire the overrides up: apply to the global scheme now + on every ColorScheme,
@@ -346,6 +464,11 @@ function M.wire_overrides()
           local scheme = name:match("^styler_+(.+)_[^_]*$")
           if scheme then M.apply_overrides(ns, scheme) end
         end
+        -- Also re-strip ns 0: some groups are set long after ColorScheme fires
+        -- (dashboard re-rolls SdNvimSub/SdNvimFooter on every FileType alpha,
+        -- ufo sets SomyaFoldCount, cheatsheet SdCheatDivider), so the pass in
+        -- apply_overrides alone would miss them.
+        if not M.italics_on() then M.strip_italics(0) end
       end)
     end,
   })
