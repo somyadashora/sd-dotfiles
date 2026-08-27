@@ -15,6 +15,16 @@
 --   current scope contrasts against the code yet stays toned down — brighter
 --   than the dim indent guides, not a harsh accent bar. The hl is re-applied on
 --   ColorScheme because styler.nvim reloads colorschemes per filetype.
+--
+-- DRAWING IS OFF BY DEFAULT:
+--   hlchunk.nvim (plugins/hlchunk.lua) answers the same "what block am I in"
+--   question with a full ╭│╰ bracket, and it is on by default, so it sets
+--   `vim.g.miniindentscope_disable` to silence this symbol rather than stack a
+--   second vertical line beside it. <leader>uk swaps the two back and forth —
+--   the lavender here is the same colour the bracket uses, so the indicator
+--   keeps one identity across both shapes. The MOTIONS and TEXT OBJECTS above
+--   are unaffected in either state: mini checks that flag only in its drawing
+--   path, never in `operator` / `textobject`.
 
 return {
   "echasnovski/mini.indentscope",

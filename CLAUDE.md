@@ -288,6 +288,41 @@ per-machine at `stdpath("data")/bookmarks.sqlite.db` (never pushed — same phil
 as the telekasten vault); back it up before a major-version upgrade (spec pins
 `^4.0.0`). Requires `kkharji/sqlite.lua` + the system `libsqlite3` at runtime.
 
+**Indent guides & chunk brackets** — three renderers draw in the indent
+columns, each with one job. `indent-blankline.nvim` (`indent-blankline.lua`)
+draws a dim `┊` at EVERY indent level. `hlchunk.nvim` (`hlchunk.lua`) brackets
+the block the cursor is in — `╭─` on the opening line, `│` down the side, `╰─`
+on the closing one — so `end` / `endmodule` is visibly paired with what opened
+it. `mini.indentscope` (`mini-indentscope.lua`) draws a `┊` for the current
+indent scope and owns the `[i`/`]i` motions + `ii`/`ai` text objects.
+
+The last two answer the same question at different columns, so they **take
+turns instead of stacking**: the chunk bracket is ON by default and sets
+`vim.g.miniindentscope_disable`; `<leader>uk` / `:ChunkToggle` swaps them
+(mini checks that flag only in its drawing path, so `[i`/`]i`/`ii`/`ai` keep
+working either way). Both wear catppuccin **Lavender** `#b4befe` — one
+indicator identity, two shapes. hlchunk's `ic` text object is "inner chunk"
+(`vic`, `dic`), the treesitter-block counterpart to `ii`'s indent block.
+
+Only hlchunk's `chunk` module is enabled — its `indent`/`line_num`/`blank`
+modules would duplicate indent-blankline. Two things about it are load-bearing
+for this repo: it finds the chunk via **treesitter** (its non-treesitter
+fallback is `searchpair("{", "", "}")`, which cannot see `begin`/`end` or
+`module`/`endmodule`, so on a host where parsers can't be built it silently
+draws nothing and `notify = false` keeps that quiet — the degradation), and its
+node-type table had to be **taught SystemVerilog**. hlchunk's built-in
+fallback patterns (`^func`, `^if`, `class`, …) are written for brace languages
+and miss `module_declaration`, `seq_block`, `always_construct`,
+`conditional_statement` and `case_statement` outright. `hlchunk.lua` registers
+a real node table (names taken from the pinned gmlarumbe grammar's
+`src/node-types.json`) under **both** the `systemverilog` and `verilog`
+filetypes, since one grammar serves both. Note the semantics flip once a
+filetype has a table: matching becomes **exact, with no regex fallback**, so a
+construct left out of the list simply gets no bracket. Adding a language is the
+same move. `error_sign` is deliberately off — a tier-2 grammar's parse errors
+(UVM macro soup parses badly and is legal) are not authoritative when
+slang/verible already report real syntax errors as diagnostics.
+
 **Motions** (`nvim/lua/somya/plugins/sneak.lua`): vim-sneak. `f/F/t/T` are
 remapped to `<Plug>Sneak_f`/… (n/x/o) so they — and `;`/`,` repeats — work
 across lines instead of stopping at the current one. The 2-char `s{ab}`/`S{ab}`
