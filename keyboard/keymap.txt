@@ -1,6 +1,6 @@
 SOFLE MX 58 - KEYMAP CHEATSHEET
 
-Generated from config/sofle.keymap by scripts/gen-keymap-art.
+Generated from sofle.keymap by scripts/gen-keymap-art.
 Do not edit by hand - edit the keymap and regenerate.
 
 Each key stacks up to three lines:

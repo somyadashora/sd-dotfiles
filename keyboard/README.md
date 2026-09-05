@@ -10,11 +10,20 @@ symlink. It lives here because ZMK's reusable build workflow accepts
 repository of its own.
 
 ```
-build.yaml          left (+ ZMK Studio) / right / settings_reset
-config/west.yml     ZMK source, pinned to a commit
-config/sofle.conf   encoders, OLED, sleep
-config/sofle.keymap the actual layout
+build.yaml     left (+ ZMK Studio) / right / settings_reset
+west.yml       ZMK source, pinned to a commit
+sofle.conf     encoders, OLED, sleep
+sofle.keymap   the actual layout
 ```
+
+**This directory IS the ZMK config directory**, and it has to sit exactly one
+level below the repo root. ZMK's reusable workflow runs `west update` from the
+repo root, while `west init -l <dir>` puts the west workspace topdir at the
+*parent* of `<dir>` — so nesting this any deeper (`keyboard/sofle/config`) puts
+the workspace where west cannot find it, and every build job dies at West
+Update. The flat, shield-named layout is also how a multi-board zmk-config is
+normally arranged: a second keyboard is another `<shield>.conf` /
+`<shield>.keymap` pair here, plus a `build.yaml` entry.
 
 Built by `.github/workflows/zmk-sofle.yml`, which only fires on changes under
 this directory.
@@ -53,7 +62,7 @@ somewhere to put a new one without a reflash.
 
 ## Build and flash
 
-1. Push a change under `keyboard/sofle/`. The **Sofle firmware** workflow runs.
+1. Push a change under `keyboard/`. The **Sofle firmware** workflow runs.
 2. Open the run in GitHub → download the `sofle-firmware` artifact. It contains
    `sofle_left-nice_nano_v2-zmk.uf2`, `sofle_right-…`, and `settings_reset-…`.
 3. Unzip **on the machine the keyboard is plugged into**. Flashing is a USB
@@ -147,7 +156,7 @@ keymap.txt   ASCII  — `sofle-cs` in a terminal, works over ssh
 scripts/gen-keymap-art   regenerates all three
 ```
 
-All three are **generated from `config/sofle.keymap`**, never hand-drawn, so a
+All three are **generated from `sofle.keymap`**, never hand-drawn, so a
 diagram that disagrees with the firmware is impossible rather than merely
 unlikely. Regenerate after any keymap change:
 
@@ -183,7 +192,7 @@ lists them per layer.
 
 ## Bumping ZMK
 
-Pick a `zmkfirmware/zmk` commit, put it in **both** `config/west.yml`
+Pick a `zmkfirmware/zmk` commit, put it in **both** `west.yml`
 (`revision`) and `.github/workflows/zmk-sofle.yml` (the `uses:` ref), build,
 flash both halves. Pinned rather than floating `main` for the same reason the
 bat themes and fzf-git installs are pinned: the firmware you flash should be

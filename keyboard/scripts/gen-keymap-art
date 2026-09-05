@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate the printable keymap art from config/sofle.keymap.
+"""Regenerate the printable keymap art from sofle.keymap.
 
 Three outputs, all committed so nobody needs this script just to READ them:
 
@@ -29,7 +29,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent.parent
-KEYMAP = HERE / "config" / "sofle.keymap"
+KEYMAP = HERE / "sofle.keymap"
 DRAWER_CFG = HERE / "keymap-drawer.yaml"
 
 # Sofle, 60 positions. Rows of (left indices, right indices); the two encoder
@@ -173,7 +173,7 @@ def render(km):
     lines = [
         "SOFLE MX 58 - KEYMAP CHEATSHEET",
         "",
-        "Generated from config/sofle.keymap by scripts/gen-keymap-art.",
+        "Generated from sofle.keymap by scripts/gen-keymap-art.",
         "Do not edit by hand - edit the keymap and regenerate.",
         "",
         "Each key stacks up to three lines:",

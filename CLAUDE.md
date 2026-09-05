@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Personal dotfiles for Neovim, tmux, bash, git, and Sublime Text — focused on
 VLSI/SystemVerilog development. Also carries a ZMK keyboard config
-(`keyboard/sofle/`), which is built by CI rather than symlinked.
+(`keyboard/`), which is built by CI rather than symlinked.
 `install.sh` creates the necessary symlinks:
 
 ```
@@ -706,7 +706,7 @@ files plugins write into `Packages/User` are kept out of git by
 `sublime/.gitignore`. Sublime Text itself is not installed by the installers —
 only the config is managed here.
 
-## Keyboard (`keyboard/sofle/`)
+## Keyboard (`keyboard/`)
 
 ZMK config for a Parix Sofle MX 58 (2 encoders, nice!nano v2 per half,
 wireless). **Not a dotfile** — `install.sh` ignores it, there is nothing to
@@ -714,8 +714,8 @@ symlink. It lives in this repo rather than its own because ZMK's reusable build
 workflow takes `config_path` / `build_matrix_path` inputs, so the mandated
 `config/` + `build.yaml` structure works fine in a subdirectory.
 `.github/workflows/zmk-sofle.yml` calls that workflow and is `paths:`-filtered
-to `keyboard/sofle/**` — this repo is pushed constantly for nvim work and a
-Zephyr build is minutes. ZMK source is **commit-pinned** in `config/west.yml`
+to `keyboard/**` — this repo is pushed constantly for nvim work and a
+Zephyr build is minutes. ZMK source is **commit-pinned** in `west.yml`
 AND in the workflow's `uses:` ref (bump both together) — same rule as the
 pinned bat themes / fzf-git installs.
 
@@ -758,7 +758,7 @@ hardware combo**, not an nvim mapping, so it also escapes in nvim-bash vi mode
 and in a bare `vi` on a box you don't control. Encoders are per-layer.
 `&studio_unlock` is on ADJ+`U`.
 
-Encoders need `CONFIG_EC11=y` in `config/sofle.conf` (the stock shield ships it
+Encoders need `CONFIG_EC11=y` in `sofle.conf` (the stock shield ships it
 commented out). RGB underglow is deliberately **off**: binding `&rgb_ug` without
 `CONFIG_ZMK_RGB_UNDERGLOW=y` is a hard build failure, so the config and the
 bindings must be turned on together or not at all. `build.yaml` also builds
@@ -788,7 +788,7 @@ listed in `keymap.txt` only; keymap-drawer does not draw them.
 Flashing is a USB mass-storage copy, so it **cannot happen from a Codespace**:
 download the `sofle-firmware` artifact locally, double-tap reset, drag the
 matching `.uf2` onto the `NICENANO` drive. Both halves, every keymap change.
-Details in `keyboard/sofle/README.md`.
+Details in `keyboard/README.md`.
 
 ## Useful aliases (from `.bash_aliases`)
 

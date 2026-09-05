@@ -9,6 +9,11 @@
 # To bump: pick a new zmkfirmware/zmk commit, update `revision` here AND the
 # `uses:` ref in .github/workflows/zmk-sofle.yml, then build and flash both
 # halves together.
+#
+# `self.path` must match this directory's path from the repo root. ZMK's
+# reusable workflow runs `west update` from the repo root, and `west init -l`
+# always puts the workspace topdir at the PARENT of the config directory --
+# which is why this config lives one level down and not in keyboard/.
 manifest:
   remotes:
     - name: zmkfirmware
@@ -19,4 +24,4 @@ manifest:
       revision: 641514a97db345f499dd50b0360e594270f008fe  # main @ 2026-08-21
       import: app/west.yml
   self:
-    path: config
+    path: keyboard

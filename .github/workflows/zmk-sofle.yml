@@ -2,13 +2,19 @@
 #
 # This lives in a dotfiles repo that gets pushed constantly for nvim and tmux
 # work, and a Zephyr build is minutes, not seconds — hence the paths filter.
-# Only a change under keyboard/sofle/ (or to this file) starts a build.
+# Only a change under keyboard/ (or to this file) starts a build.
 #
 # ZMK's reusable workflow defaults to build.yaml + config/ at the repo root;
-# build_matrix_path and config_path are what let the whole thing live in a
-# subdirectory instead of needing its own repository.
+# build_matrix_path and config_path are what let this live in keyboard/
+# instead of needing its own repository.
 #
-# Pinned to the same ZMK commit as keyboard/sofle/config/west.yml. Bump both
+# config_path MUST be exactly one directory below the repo root. The workflow
+# runs `west update` from the repo root, while `west init -l <dir>` puts the
+# west workspace topdir at the PARENT of <dir> -- so a nested config_path like
+# keyboard/config puts the workspace where west can no longer find it,
+# and every job dies at West Update. build_matrix_path has no such constraint.
+#
+# Pinned to the same ZMK commit as keyboard/west.yml. Bump both
 # together or the workflow and the source tree drift apart.
 
 name: Sofle firmware
@@ -16,11 +22,11 @@ name: Sofle firmware
 on:
   push:
     paths:
-      - 'keyboard/sofle/**'
+      - 'keyboard/**'
       - '.github/workflows/zmk-sofle.yml'
   pull_request:
     paths:
-      - 'keyboard/sofle/**'
+      - 'keyboard/**'
       - '.github/workflows/zmk-sofle.yml'
   workflow_dispatch:
 
@@ -28,6 +34,6 @@ jobs:
   build:
     uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@641514a97db345f499dd50b0360e594270f008fe
     with:
-      build_matrix_path: keyboard/sofle/build.yaml
-      config_path: keyboard/sofle/config
+      build_matrix_path: keyboard/build.yaml
+      config_path: keyboard
       archive_name: sofle-firmware
