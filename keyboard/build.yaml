@@ -1,7 +1,15 @@
 # Build matrix for the Parix Sofle MX (58 keys + 2 encoders, nice!nano v2).
 #
-# Stock ZMK `sofle` shield — the board is not a vendor fork, so nothing in
-# this repo has to redefine the matrix, the physical layout, or the encoders.
+# Stock ZMK `sofle` shield -- the board matches upstream, so nothing in this
+# repo has to redefine the matrix, the physical layout, or the encoders.
+#
+# The board is `nice_nano@2.0.0/nrf52840/zmk`, NOT `nice_nano_v2`. As of
+# Zephyr 4.1, ZMK's boards are Zephyr "board variants": the board is named
+# `nice_nano`, the v2 hardware is revision 2.0.0, and `/zmk` selects the ZMK
+# variant of the nrf52840 target. The old flat `nice_nano_v2` name no longer
+# resolves and fails the build at cmake with "Invalid BOARD" before anything
+# is compiled. Verified against `west boards`, which lists exactly two
+# qualifiers for this board: `nrf52840` and `nrf52840/zmk`.
 #
 # ZMK Studio is enabled on the LEFT half only. Left is the central side of the
 # split; the peripheral has no keymap of its own to serve over RPC, and giving
@@ -11,12 +19,19 @@
 # Bluetooth pairings and Studio-saved keymap changes, then immediately flash
 # the real firmware back. It is the escape hatch for "the halves won't pair"
 # and for "Studio state is overriding my .keymap".
+#
+# artifact-name is set explicitly only because the default is derived from the
+# board string with slashes replaced -- `sofle_left-nice_nano@2.0.0_nrf52840_zmk-zmk.uf2`
+# is not a filename you want to pick out of a folder at flashing time.
 include:
-  - board: nice_nano_v2
+  - board: nice_nano@2.0.0/nrf52840/zmk
     shield: sofle_left
     snippet: studio-rpc-usb-uart
     cmake-args: -DCONFIG_ZMK_STUDIO=y
-  - board: nice_nano_v2
+    artifact-name: sofle_left-nice_nano_v2
+  - board: nice_nano@2.0.0/nrf52840/zmk
     shield: sofle_right
-  - board: nice_nano_v2
+    artifact-name: sofle_right-nice_nano_v2
+  - board: nice_nano@2.0.0/nrf52840/zmk
     shield: settings_reset
+    artifact-name: settings_reset-nice_nano_v2

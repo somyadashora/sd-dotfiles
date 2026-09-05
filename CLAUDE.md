@@ -709,7 +709,10 @@ only the config is managed here.
 ## Keyboard (`keyboard/`)
 
 ZMK config for a Parix Sofle MX 58 (2 encoders, nice!nano v2 per half,
-wireless). **Not a dotfile** — `install.sh` ignores it, there is nothing to
+wireless). The build target is **`nice_nano@2.0.0/nrf52840/zmk`, not
+`nice_nano_v2`** — since Zephyr 4.1 ZMK uses Zephyr board variants (board
+`nice_nano`, revision `2.0.0` = the v2, `/zmk` variant), and the old flat name
+fails at cmake with "Invalid BOARD" before anything compiles. **Not a dotfile** — `install.sh` ignores it, there is nothing to
 symlink. It lives in this repo rather than its own because ZMK's reusable build
 workflow takes `config_path` / `build_matrix_path` inputs, so the mandated
 `config/` + `build.yaml` structure works fine in a subdirectory.

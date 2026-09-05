@@ -64,7 +64,8 @@ somewhere to put a new one without a reflash.
 
 1. Push a change under `keyboard/`. The **Sofle firmware** workflow runs.
 2. Open the run in GitHub → download the `sofle-firmware` artifact. It contains
-   `sofle_left-nice_nano_v2-zmk.uf2`, `sofle_right-…`, and `settings_reset-…`.
+   `sofle_left-nice_nano_v2.uf2`, `sofle_right-nice_nano_v2.uf2`, and
+   `settings_reset-nice_nano_v2.uf2`.
 3. Unzip **on the machine the keyboard is plugged into**. Flashing is a USB
    mass-storage copy, so it cannot happen from a Codespace — download the
    artifact locally.
@@ -83,6 +84,10 @@ somewhere to put a new one without a reflash.
   ships it commented out.
 - **Build fails right after a ZMK bump** — the pin in `west.yml` and the `uses:`
   ref in the workflow must name the same commit.
+- **"Invalid BOARD" at cmake** — the board is `nice_nano@2.0.0/nrf52840/zmk`,
+  not `nice_nano_v2`. Since Zephyr 4.1 ZMK uses Zephyr board variants: board
+  name `nice_nano`, revision `2.0.0` for the v2 hardware, `/zmk` for the ZMK
+  variant. `west boards -f "{name}|{qualifiers}"` lists what actually exists.
 
 ---
 
