@@ -1,0 +1,279 @@
+#!/usr/bin/env python3
+"""Regenerate the printable keymap art from config/sofle.keymap.
+
+Three outputs, all committed so nobody needs this script just to READ them:
+
+  keymap.svg  vector, for printing from a browser
+  keymap.png  raster, for a phone or a quick look
+  keymap.txt  ASCII, for `sofle-cs` in a terminal over ssh
+
+All three are derived from the .keymap file, never hand-drawn, so a diagram
+that disagrees with the firmware is impossible rather than merely unlikely.
+
+keymap.txt is deliberately **pure 7-bit ASCII**. Box-drawing characters and
+the nice-looking transparent glyph U+25BD are East Asian *Ambiguous* width:
+a terminal with a Nerd Font or a CJK locale renders them two columns wide,
+and the grid shears apart. `+---+` and `|` are one column everywhere. The
+width assertion at the end of render() is what keeps it that way.
+
+Requires keymap-drawer (`pip install keymap-drawer`) for the parse and the
+SVG; rsvg-convert (librsvg2-bin) for the PNG. Missing rsvg-convert only skips
+the PNG -- the SVG and the ASCII sheet still regenerate.
+
+    ./scripts/gen-keymap-art
+"""
+
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent.parent
+KEYMAP = HERE / "config" / "sofle.keymap"
+DRAWER_CFG = HERE / "keymap-drawer.yaml"
+
+# Sofle, 60 positions. Rows of (left indices, right indices); the two encoder
+# push-buttons (42, 43) sit in the middle gap of row 3.
+ROWS = [
+    (range(0, 6), range(6, 12)),
+    (range(12, 18), range(18, 24)),
+    (range(24, 30), range(30, 36)),
+    (range(36, 42), range(44, 50)),
+]
+ENCODER_BTNS = (42, 43)
+THUMBS = (range(50, 55), range(55, 60))
+
+W = 7                       # cell content width
+HALF = 6 * (W + 1) + 1      # rendered width of one half: 49
+GAP = " " * 11              # between the halves; also holds the encoder buttons
+INDENT = "  "
+WIDTH = len(INDENT) + HALF + len(GAP) + HALF
+
+TRANS = "..."               # keymap-drawer says U+25BD; ASCII says this
+
+# Only applied to legends that would otherwise overflow a cell. A shortened
+# legend beats a truncated one.
+SQUEEZE = [("SPACE", "SPC"), ("CLR ALL", "CLRA"), ("PAUSE BREAK", "PAUSE")]
+
+
+def run(*args, **kw):
+    return subprocess.run(args, check=True, text=True, capture_output=True, **kw).stdout
+
+
+def legend(entry):
+    """keymap-drawer entry -> (tap, shifted, hold). str or {t:,h:,s:}."""
+    if isinstance(entry, dict):
+        # A bare {type: held} is the key you are holding to be on this layer;
+        # it carries no legend of its own, and an empty cell there reads as a
+        # hole in the layout rather than as the thing that got you here.
+        if not entry.get("t") and entry.get("type") == "held":
+            return "HELD", "", ""
+        return (str(entry.get("t", "")),
+                str(entry.get("s", "")),
+                str(entry.get("h", "")))
+    return str(entry), "", ""
+
+
+def fit(text):
+    text = " ".join(text.split()).replace("▽", TRANS)
+    if len(text) > W:
+        for long, short in SQUEEZE:
+            text = text.replace(long, short)
+    if len(text) > W:
+        text = text.replace(" ", "")
+    if len(text) > W:
+        text = text[: W - 1] + ">"
+    return text.center(W)
+
+
+def blank_row(n):
+    return "|" + "|".join([" " * W] * n) + "|"
+
+
+def rule(n=6):
+    return "+" + "+".join(["-" * W] * n) + "+"
+
+
+def row_lines(entries, idxs):
+    """Up to three stacked lines per key: tap, shifted, hold.
+
+    A line is only emitted if some key in the row uses it, so the sheet does
+    not pay three rows of height for the many keys that are just a letter."""
+    cols = [legend(entries[i]) for i in idxs]
+    out = []
+    for slot in range(3):
+        if not any(c[slot] for c in cols):
+            out.append(None)
+            continue
+        out.append("|" + "|".join(fit(c[slot]) for c in cols) + "|")
+    return out
+
+
+def draw_layer(name, entries, encoders):
+    head = f"-- {name.upper()} "
+    out = [head + "-" * (WIDTH - len(head)), ""]
+    out.append(INDENT + rule() + GAP + rule())
+
+    for r, (lidx, ridx) in enumerate(ROWS):
+        left = row_lines(entries, lidx)
+        right = row_lines(entries, ridx)
+        mid = GAP
+        if r == 3:  # the encoder push-buttons live in the gap on this row
+            el = legend(entries[ENCODER_BTNS[0]])[0].replace("▽", TRANS)
+            er = legend(entries[ENCODER_BTNS[1]])[0].replace("▽", TRANS)
+            mid = " " + el[:5].center(5) + er[:5].center(5)
+        for slot in range(3):
+            if left[slot] is None and right[slot] is None:
+                continue
+            out.append(INDENT + (left[slot] or blank_row(len(lidx)))
+                       + (mid if slot == 0 else GAP)
+                       + (right[slot] or blank_row(len(ridx))))
+        out.append(INDENT + rule() + GAP + rule())
+
+    # thumbs: 5 per half, left half indented so both clusters sit inboard,
+    # the way they do on the keyboard
+    left = row_lines(entries, THUMBS[0])
+    right = row_lines(entries, THUMBS[1])
+    pad = " " * (W + 1)
+    out.append(INDENT + pad + rule(5) + GAP + rule(5))
+    for slot in range(3):
+        if left[slot] is None and right[slot] is None:
+            continue
+        out.append(INDENT + pad + (left[slot] or blank_row(5))
+                   + GAP + (right[slot] or blank_row(5)))
+    out.append(INDENT + pad + rule(5) + GAP + rule(5))
+
+    if encoders:
+        out.append("")
+        out.append(f"{INDENT}encoders   left {encoders[0]}     right {encoders[1]}")
+    out.append("")
+    return out
+
+
+def parse_encoders():
+    """display-name -> (left, right) encoder description, from the .keymap."""
+    src = KEYMAP.read_text()
+    found = {}
+    for body in re.findall(r"\w+_layer \{(.*?)\n        \};", src, re.S):
+        nm = re.search(r'display-name = "(\w+)"', body)
+        sb = re.search(r"sensor-bindings = <(.*?)>;", body, re.S)
+        if not (nm and sb):
+            continue  # conditional_layers' adjust_layer has neither
+        parts = [p.strip() for p in sb.group(1).split("&inc_dec_kp") if p.strip()]
+        desc = []
+        for p in parts:
+            kc = p.split()
+            desc.append(f"{kc[0]} / {kc[1]}" if len(kc) >= 2 else p)
+        found[nm.group(1)] = desc[:2] if len(desc) >= 2 else None
+    return found
+
+
+def render(km):
+    encoders = parse_encoders()
+    lines = [
+        "SOFLE MX 58 - KEYMAP CHEATSHEET",
+        "",
+        "Generated from config/sofle.keymap by scripts/gen-keymap-art.",
+        "Do not edit by hand - edit the keymap and regenerate.",
+        "",
+        "Each key stacks up to three lines:",
+        "    1  tap        what the key sends",
+        "    2  shifted    what Shift gives (punctuation / symbols)",
+        "    3  hold       what holding it gives (modifier names)",
+        "A line is omitted when no key in that row uses it.",
+        "",
+        f"    {TRANS}   transparent - falls through to the layer below",
+        "    HELD  the key you are holding to be on this layer",
+        "    blank nothing bound",
+        "",
+        "The two keys between the halves are the ENCODER PUSH-BUTTONS.",
+        "",
+    ]
+    for name, entries in km["layers"].items():
+        if len(entries) != 60:
+            sys.exit(f"layer {name}: expected 60 bindings, got {len(entries)}")
+        lines += draw_layer(name, entries, encoders.get(name))
+
+    combos = km.get("combos") or []
+    if combos:
+        head = "-- COMBOS "
+        lines += [head + "-" * (WIDTH - len(head)), ""]
+        for c in combos:
+            k = c["k"] if isinstance(c["k"], str) else c["k"].get("t", "?")
+            where = ",".join(c.get("l", [])) or "all layers"
+            lines.append(f"{INDENT}positions {str(c['p']):12} -> {k:8} ({where})")
+        lines.append("")
+
+    head = "-- NOTES "
+    lines += [
+        head + "-" * (WIDTH - len(head)),
+        "",
+        "  Home-row mods are GACS: GUI Alt Ctrl Shift, going inward, mirrored.",
+        "  They only resolve as a hold if the next key is on the OTHER hand, and",
+        "  only after 150ms of idle - so same-hand rolls still type letters.",
+        "",
+        "  Ctrl+hjkl (nvim windows), Alt+hjkl (tmux panes) and Ctrl+Space (tmux",
+        "  prefix) are all a left-hand hold plus a right-hand tap - no layer.",
+        "",
+        "  Hold NAV + MEDIA together for the ADJ layer.",
+        "",
+        "  A TKL's right-side overflow ( [ ] \\ = ) has no room on the base layer,",
+        "  so it lives on NAV under the digits it neighbours on a TKL: NAV+8 is",
+        "  \\, NAV+9 is [, NAV+0 is ], NAV+- is =. Shift composes on top, so",
+        "  NAV+Shift+9 is {.",
+        "",
+    ]
+
+    # The whole point of ASCII here is that it lines up in any terminal.
+    for n, line in enumerate(lines, 1):
+        if not line.isascii():
+            sys.exit(f"line {n} is not ASCII: {line!r}")
+    # Two groups, not one: the thumb clusters are deliberately inboard on both
+    # halves (that is where they are on the keyboard), so they are narrower
+    # than the main grid by exactly one cell. Each group must be internally
+    # square.
+    pad = " " * (W + 1)
+    main = [l for l in lines if l.startswith((INDENT + "|", INDENT + "+"))]
+    thumb = [l for l in lines if l.startswith((INDENT + pad + "|", INDENT + pad + "+"))]
+    for label, group, expect in (("main", main, WIDTH),
+                                 ("thumb", thumb, WIDTH - (W + 1))):
+        bad = {len(l) for l in group} - {expect}
+        if bad:
+            sys.exit(f"{label} grid lines are not {expect} wide: {sorted(bad)}")
+    return "\n".join(lines) + "\n"
+
+
+def main():
+    try:
+        import yaml
+    except ImportError:
+        sys.exit("need PyYAML: pip install keymap-drawer")
+
+    if not DRAWER_CFG.exists():
+        sys.exit(f"missing {DRAWER_CFG}")
+
+    print("parsing keymap ...")
+    parsed = run("keymap", "-c", str(DRAWER_CFG), "parse", "-z", str(KEYMAP))
+    km = yaml.safe_load(parsed)
+
+    print("drawing svg ...")
+    svg = HERE / "keymap.svg"
+    subprocess.run(
+        ["keymap", "-c", str(DRAWER_CFG), "draw", "-", "-o", str(svg)],
+        input=parsed, text=True, check=True,
+    )
+
+    png = HERE / "keymap.png"
+    try:
+        run("rsvg-convert", "-b", "white", "-z", "1.5", str(svg), "-o", str(png))
+        print("drawing png ...")
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        print("rsvg-convert not found - skipping PNG (install librsvg2-bin)")
+
+    print("writing ascii ...")
+    (HERE / "keymap.txt").write_text(render(km))
+    print("done: keymap.svg  keymap.png  keymap.txt")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,22 @@
+# ZMK source pin.
+#
+# Deliberately a commit SHA, not `main` — same rule as the commit-pinned bat
+# themes / fzf-git / abbrev-alias installs elsewhere in this repo. A floating
+# `main` means a keymap that built last month can fail today for reasons that
+# have nothing to do with anything in this directory, and the firmware you are
+# about to flash is not the firmware you tested.
+#
+# To bump: pick a new zmkfirmware/zmk commit, update `revision` here AND the
+# `uses:` ref in .github/workflows/zmk-sofle.yml, then build and flash both
+# halves together.
+manifest:
+  remotes:
+    - name: zmkfirmware
+      url-base: https://github.com/zmkfirmware
+  projects:
+    - name: zmk
+      remote: zmkfirmware
+      revision: 641514a97db345f499dd50b0360e594270f008fe  # main @ 2026-08-21
+      import: app/west.yml
+  self:
+    path: config

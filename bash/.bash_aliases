@@ -23,6 +23,11 @@ abbrev-alias vim-cs="sed -n '/VIM CHEATSHEET/,\${p;/^\" -\{20,\}\$/q}' \$DOTFILE
 
 abbrev-alias rg-cs="sed -n '/RG CHEATSHEET/,/# Case-insensitive/p' \$DOTFILES_DIR/rg/ripgreprc | sed '\$d'"
 
+# The keyboard sheet is a generated file, not a comment block inside a config,
+# so this one is a plain cat rather than the sed-extraction the others use.
+# Regenerate with keyboard/sofle/scripts/gen-keymap-art after a keymap change.
+abbrev-alias sofle-cs="cat \$DOTFILES_DIR/keyboard/sofle/keymap.txt"
+
 abbrev-alias watchtty="watch -d -n 1 'ps -f --forest --tty $1'"
 
 abbrev-alias getdotfiles="git -C $DOTFILES_DIR pull --rebase --autostash"

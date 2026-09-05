@@ -1,0 +1,245 @@
+/*
+ * Sofle MX 58 — a TKL in two halves.
+ *
+ * The guiding rule is that the base layer should be the TKL you already know:
+ * unshifted QWERTY where a TKL has it, the same bottom-row modifier order, and
+ * the nav cluster on NAV in the same 3-wide block, same relative positions.
+ * Departures from that are only where 6 columns per half physically cannot
+ * hold what a TKL holds, and each one is called out below.
+ *
+ * Reference points from the rest of this repo:
+ *   nvim leader   = <Space>          -> Space is a thumb, unmodified
+ *   tmux prefix   = Ctrl+Space       -> same thumb, plus a home-row Ctrl
+ *   Ctrl+hjkl     = nvim window nav  -> home-row Ctrl + base-layer hjkl
+ *   Alt+hjkl      = tmux pane nav    -> home-row Alt  + base-layer hjkl
+ *   jk            = Esc              -> hardware combo, works shell-wide
+ *
+ * KEY POSITIONS (index into the bindings array, used by the HRM guards)
+ *
+ *   0  1  2  3  4  5                        6  7  8  9 10 11
+ *  12 13 14 15 16 17                       18 19 20 21 22 23
+ *  24 25 26 27 28 29                       30 31 32 33 34 35
+ *  36 37 38 39 40 41  42              43   44 45 46 47 48 49
+ *        50 51 52 53 54              55 56 57 58 59
+ *
+ *  42/43 are the encoder push-buttons. 50-59 are the thumbs.
+ */
+
+#include <behaviors.dtsi>
+#include <dt-bindings/zmk/keys.h>
+#include <dt-bindings/zmk/bt.h>
+#include <dt-bindings/zmk/outputs.h>
+
+#define BASE  0
+#define NAV   1
+#define MEDIA 2
+#define ADJ   3
+
+/* Cross-hand guards. A home-row mod may only resolve as a hold if the next
+ * key comes from the OTHER hand (thumbs count as either). Without this,
+ * rolling a same-hand pair like "sd" or "df" at speed fires Alt/Ctrl instead
+ * of typing letters — which is the single reason most people give up on
+ * home-row mods. */
+#define RIGHT_SIDE  6  7  8  9 10 11 18 19 20 21 22 23 30 31 32 33 34 35 43 44 45 46 47 48 49
+#define LEFT_SIDE   0  1  2  3  4  5 12 13 14 15 16 17 24 25 26 27 28 29 36 37 38 39 40 41 42
+#define THUMBS     50 51 52 53 54 55 56 57 58 59
+
+/ {
+    behaviors {
+        /* Home-row mods, GACS: GUI / Alt / Ctrl / Shift going inward, so the
+         * strongest fingers carry Ctrl and Shift.
+         *
+         * flavor "balanced"      — hold wins only if another key is pressed
+         *                          AND released inside the term, so a slow
+         *                          deliberate letter still types.
+         * require-prior-idle-ms  — a mod cannot trigger mid-burst; 150ms of
+         *                          quiet is the price of a hold. This is the
+         *                          other half of the anti-misfire story.
+         * hold-trigger-on-release — lets you stack mods (Ctrl+Shift+key)
+         *                          instead of the first one resolving early.
+         * quick-tap-ms           — tap-then-hold repeats the letter, so held
+         *                          `j` in nvim still scrolls.
+         */
+        hml: homerow_mod_left {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            flavor = "balanced";
+            tapping-term-ms = <200>;
+            quick-tap-ms = <175>;
+            require-prior-idle-ms = <150>;
+            bindings = <&kp>, <&kp>;
+            hold-trigger-key-positions = <RIGHT_SIDE THUMBS>;
+            hold-trigger-on-release;
+        };
+
+        hmr: homerow_mod_right {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            flavor = "balanced";
+            tapping-term-ms = <200>;
+            quick-tap-ms = <175>;
+            require-prior-idle-ms = <150>;
+            bindings = <&kp>, <&kp>;
+            hold-trigger-key-positions = <LEFT_SIDE THUMBS>;
+            hold-trigger-on-release;
+        };
+    };
+
+    combos {
+        compatible = "zmk,combos";
+
+        /* j+k -> Esc, at the hardware level rather than as an nvim mapping,
+         * so it also escapes in nvim-bash vi mode, in a bare `vi` on a box
+         * you don't control, and in any TUI that wants Esc. (Esc is also on
+         * its own key at the TKL position, top-left — this is the fast one.)
+         *
+         * 45ms is deliberately tighter than the default: "jk" as a real
+         * letter pair is vanishingly rare in English, but a roll through j
+         * and k while typing fast is not, and require-prior-idle-ms keeps it
+         * from firing mid-word at all. */
+        combo_esc {
+            bindings = <&kp ESC>;
+            key-positions = <31 32>;
+            timeout-ms = <45>;
+            require-prior-idle-ms = <100>;
+            layers = <BASE>;
+        };
+    };
+
+    /* NAV + MEDIA held together = ADJ. Nothing on ADJ is a typing key, so it
+     * costs no base-layer real estate to reach radios and bootloader. */
+    conditional_layers {
+        compatible = "zmk,conditional-layers";
+        adjust_layer {
+            if-layers = <NAV MEDIA>;
+            then-layer = <ADJ>;
+        };
+    };
+
+    keymap {
+        compatible = "zmk,keymap";
+
+        base_layer {
+            display-name = "base";
+// Unshifted QWERTY, TKL positions throughout. Shift gives the usual second
+// legend on every key (` ~, 1 !, , <, . >, / ?, ; :, ' ", [ {, ] }).
+//
+// The one thing 6 columns per half cannot hold is TKL's right-side overflow:
+// a TKL row has `[ ] \` after P and `=` after `-`, and there is nowhere to put
+// them. All four move to NAV, contiguous on the number row they already sit
+// under on a TKL: NAV+8 `\`, NAV+9 `[`, NAV+0 `]`, NAV+- `=`. Shift still
+// works on top of that, because `[` and `{` are the same HID key -- so
+// NAV+9 is `[` and NAV+Shift+9 is `{`, no separate binding needed.
+//
+// The two inner keys by the encoders are the ENCODER PUSH-BUTTONS, not normal
+// keys: awkward to hit deliberately, easy to hit while turning the knob. They
+// get things that are harmless to fire by accident and that pair with the
+// knob beside them -- mute next to the volume knob, play/pause next to the
+// other. Never put a typing key here.
+//
+// Bottom row is TKL's own order: Ctrl Win Alt ... Alt Win Ctrl.
+// ---------------------------------------------------------------------------------------------------------------
+// |  ` ~ | 1 ! | 2 @ | 3 # | 4 $ | 5 % |               | 6 ^ | 7 & | 8 * | 9 ( | 0 ) |  - _  |
+// |  ESC |  Q  |  W  |  E  |  R  |  T  |               |  Y  |  U  |  I  |  O  |  P  | BKSPC |
+// |  TAB |  A  |  S  |  D  |  F  |  G  |               |  H  |  J  |  K  |  L  | ; : |  ' "  |
+// | SHIFT|  Z  |  X  |  C  |  V  |  B  | MUTE| |PLAY |  N  |  M  | , < | . > | / ? | SHIFT |
+//              | CTL | GUI | ALT | NAV | ENT | | SPC  |MEDIA| ALT | GUI | CTL |
+//                      home row: GUI ALT CTL SFT           SFT CTL ALT GUI
+            bindings = <
+&kp GRAVE &kp N1       &kp N2       &kp N3        &kp N4        &kp N5                              &kp N6    &kp N7        &kp N8        &kp N9       &kp N0          &kp MINUS
+&kp ESC   &kp Q        &kp W        &kp E         &kp R         &kp T                               &kp Y     &kp U         &kp I         &kp O        &kp P           &kp BSPC
+&kp TAB   &hml LGUI A  &hml LALT S  &hml LCTRL D  &hml LSHFT F  &kp G                               &kp H     &hmr RSHFT J  &hmr RCTRL K  &hmr RALT L  &hmr RGUI SEMI  &kp SQT
+&kp LSHFT &kp Z        &kp X        &kp C         &kp V         &kp B      &kp C_MUTE   &kp C_PP    &kp N     &kp M         &kp COMMA     &kp DOT      &kp FSLH        &kp RSHFT
+                       &kp LCTRL    &kp LGUI      &kp LALT      &mo NAV    &kp RET      &kp SPACE   &mo MEDIA &kp RALT      &kp RGUI      &kp RCTRL
+            >;
+            /* left knob: volume     right knob: page scroll */
+            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_DN PG_UP>;
+        };
+
+        nav_layer {
+            display-name = "nav";
+// The TKL nav island, kept as an island. PrtSc/ScrLk/Pause over Ins/Home/PgUp
+// over Del/End/PgDn, three wide, in the three rightmost columns — same shape
+// and same relative positions as the block to the right of a TKL's main
+// block, so PgUp sits directly above PgDn in the outermost column.
+//
+// The `[ ] \ =` that a TKL has and this board has no room for live on the
+// number row here, under the digits they neighbour on a TKL. Shift composes
+// normally: NAV+Shift+9 is `{`.
+//
+// Arrows are the TKL inverted-T, not hjkl: on the base layer hjkl are already
+// hjkl for vim, and this layer's arrows are for everything that ISN'T vim —
+// browsers, dialogs, spreadsheets — which is exactly where the TKL shape is
+// the one in your fingers.
+//
+// Left hand mirrors the home-row mods as plain mods, so Ctrl+Shift+Left and
+// friends work without leaving the layer.
+// ---------------------------------------------------------------------------------------------------------------
+// |      |      |      |      |      |      |             |      |      |  \ |  |  [ { |  ] } | = + |
+// |      | tmux | MENU | CAPS |      |      |             |      |      |      | PSCR | SLCK |PAUSE|
+// |      | GUI  | ALT  | CTRL | SHFT |      |             |      |  UP  |      | INS  | HOME |PG UP|
+// |      | UNDO | CUT  | COPY | PASTE|      |WIN+L|  |    | LEFT | DOWN | RIGHT| DEL  | END  |PG DN|
+//               |      |      |      |      |    |  |     |      |      |      |      |
+            bindings = <
+&trans  &trans        &trans       &trans     &trans      &trans                        &trans     &trans     &kp BSLH    &kp LBKT  &kp RBKT   &kp EQUAL
+&trans  &kp LC(SPACE) &kp K_CMENU  &kp CAPS   &trans      &trans                        &trans     &trans     &trans      &kp PSCRN &kp SLCK   &kp PAUSE_BREAK
+&trans  &kp LGUI      &kp LALT     &kp LCTRL  &kp LSHFT   &trans                        &trans     &kp UP     &trans      &kp INS   &kp HOME   &kp PG_UP
+&trans  &kp K_UNDO    &kp K_CUT    &kp K_COPY &kp K_PASTE &trans   &kp LG(L) &trans     &kp LEFT   &kp DOWN   &kp RIGHT   &kp DEL   &kp END    &kp PG_DN
+                      &trans       &trans     &trans      &trans   &trans    &trans     &trans     &trans     &trans      &trans
+            >;
+            /* left knob: word-wise cursor    right knob: cycle tabs */
+            sensor-bindings = <&inc_dec_kp LC(RIGHT) LC(LEFT) &inc_dec_kp LC(TAB) LC(LS(TAB))>;
+        };
+
+        media_layer {
+            display-name = "media";
+// F1-F12 straight across the number row, in the same order and the same place
+// as a TKL's function row sits above its number row — so F5 and F12 are where
+// your hand already goes.
+//
+// Transport and volume sit on the right home row, one-handed: the fingers that
+// rest on HJKL get prev/play/next, and mute/vol-down/vol-up follow on the same
+// row. Brightness is the row above.
+// ---------------------------------------------------------------------------------------------------------------
+// |  F1  |  F2  |  F3  |  F4  |  F5  |  F6  |             |  F7  |  F8  |  F9  | F10  | F11  | F12  |
+// |      |      |      |      |      |      |             |      |      |      | BRI- | BRI+ |      |
+// |      | GUI  | ALT  | CTRL | SHFT |      |             | PREV | PLAY | NEXT | MUTE | VOL- | VOL+ |
+// |      |      |      |      |      |      |    |  |     |      |      |      |      |      |      |
+//               |      |      |      |      |    |  |     |      |      |      |      |
+            bindings = <
+&kp F1  &kp F2    &kp F3    &kp F4     &kp F5     &kp F6                          &kp F7      &kp F8    &kp F9      &kp F10     &kp F11       &kp F12
+&trans  &trans    &trans    &trans     &trans     &trans                          &trans      &trans    &trans      &kp C_BRI_DN &kp C_BRI_UP &trans
+&trans  &kp LGUI  &kp LALT  &kp LCTRL  &kp LSHFT  &trans                          &kp C_PREV  &kp C_PP  &kp C_NEXT  &kp C_MUTE  &kp C_VOL_DN  &kp C_VOL_UP
+&trans  &trans    &trans    &trans     &trans     &trans   &trans    &trans       &trans      &trans    &trans      &trans      &trans        &trans
+                  &trans    &trans     &trans     &trans   &trans    &trans       &trans      &trans    &trans      &trans
+            >;
+            /* left knob: volume    right knob: screen brightness */
+            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp C_BRI_UP C_BRI_DN>;
+        };
+
+        adj_layer {
+            display-name = "adj";
+// Radios, bootloader, and the ZMK Studio unlock. `&studio_unlock` sits on U
+// ("unlock") — Studio refuses every edit until it is pressed, and it is
+// deliberately three keys deep so it cannot be hit by accident.
+// ---------------------------------------------------------------------------------------------------------------
+// | BTCLR | BT1 | BT2 | BT3 | BT4 | BT5 |            |     |UNLOCK|     | OUT |     | BTCLRALL |
+// ---------------------------------------------------------------------------------------------------------------
+            bindings = <
+&bt BT_CLR  &bt BT_SEL 0  &bt BT_SEL 1  &bt BT_SEL 2  &bt BT_SEL 3  &bt BT_SEL 4                     &none  &none           &none  &none        &none  &bt BT_CLR_ALL
+&none       &none         &none         &none         &none         &none                            &none  &studio_unlock  &none  &out OUT_TOG &none  &none
+&none       &none         &none         &none         &none         &none                            &none  &none           &none  &none        &none  &none
+&sys_reset  &none         &none         &none         &none         &bootloader  &none     &none     &bootloader &none      &none  &none        &none  &sys_reset
+                          &none         &none         &none         &trans       &none     &none     &trans      &none      &none  &none
+            >;
+            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_DN PG_UP>;
+        };
+
+        /* Empty slots that exist only so ZMK Studio has somewhere to put a
+         * new layer. Studio cannot create layers that devicetree did not
+         * declare, and adding one later means a reflash — which is exactly
+         * the thing Studio is supposed to save you. Cost is a few bytes. */
+        extra1 { status = "reserved"; };
+        extra2 { status = "reserved"; };
+    };
+};

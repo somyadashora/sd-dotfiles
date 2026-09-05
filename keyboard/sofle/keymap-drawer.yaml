@@ -1,0 +1,52 @@
+# keymap-drawer config for the printable keymap diagram.
+# Used by scripts/gen-keymap-art. Not read by the firmware build.
+
+draw_config:
+  n_columns: 1
+
+  # keymap-drawer draws layer headers as text with a fat white stroke UNDER
+  # the fill, via `paint-order: stroke fill`. Chrome honours that; librsvg and
+  # cairosvg do not, and paint the white stroke straight over the glyphs — so
+  # every layer header renders either invisible or as a black blob depending
+  # on which one you use. The halo only exists to lift the header off the keys
+  # and the header sits in clear space anyway, so dropping the stroke costs
+  # nothing and makes the PNG match the SVG on any renderer.
+  svg_extra_style: |
+    text.label { stroke: none; }
+
+  footer_text: 'Small legend at bottom-right of a key = what Shift gives. Encoders are per-layer, see keymap.txt. Hold NAV+MEDIA for ADJ.'
+
+parse_config:
+  # Without these, ZMK's own bare behaviors print as raw devicetree node names
+  # (`&studio_unlock`, `&bootloader`) and overflow the key.
+  raw_binding_map:
+    '&studio_unlock': 'UNLOCK'
+    '&bootloader': 'BOOT'
+    '&sys_reset': 'RESET'
+
+  # Print the second legend on every key that has one, the way it is printed
+  # on a real keycap. keymap-drawer knows the SHIFTED keycodes (`&kp LBRC` ->
+  # `{`) but not that an UNSHIFTED one also has a shifted face — `&kp COMMA`
+  # is just `,` to it — so the pairs have to be spelled out here.
+  zmk_keycode_map:
+    GRAVE: {t: '`', s: '~'}
+    N1: {t: '1', s: '!'}
+    N2: {t: '2', s: '@'}
+    N3: {t: '3', s: '#'}
+    N4: {t: '4', s: '$'}
+    N5: {t: '5', s: '%'}
+    N6: {t: '6', s: '^'}
+    N7: {t: '7', s: '&'}
+    N8: {t: '8', s: '*'}
+    N9: {t: '9', s: '('}
+    N0: {t: '0', s: ')'}
+    MINUS: {t: '-', s: '_'}
+    EQUAL: {t: '=', s: '+'}
+    LBKT: {t: '[', s: '{'}
+    RBKT: {t: ']', s: '}'}
+    BSLH: {t: '\', s: '|'}
+    SEMI: {t: ';', s: ':'}
+    SQT: {t: "'", s: '"'}
+    COMMA: {t: ',', s: '<'}
+    DOT: {t: '.', s: '>'}
+    FSLH: {t: '/', s: '?'}

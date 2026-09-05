@@ -1,0 +1,33 @@
+# Build Sofle firmware with ZMK's own reusable workflow.
+#
+# This lives in a dotfiles repo that gets pushed constantly for nvim and tmux
+# work, and a Zephyr build is minutes, not seconds — hence the paths filter.
+# Only a change under keyboard/sofle/ (or to this file) starts a build.
+#
+# ZMK's reusable workflow defaults to build.yaml + config/ at the repo root;
+# build_matrix_path and config_path are what let the whole thing live in a
+# subdirectory instead of needing its own repository.
+#
+# Pinned to the same ZMK commit as keyboard/sofle/config/west.yml. Bump both
+# together or the workflow and the source tree drift apart.
+
+name: Sofle firmware
+
+on:
+  push:
+    paths:
+      - 'keyboard/sofle/**'
+      - '.github/workflows/zmk-sofle.yml'
+  pull_request:
+    paths:
+      - 'keyboard/sofle/**'
+      - '.github/workflows/zmk-sofle.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@641514a97db345f499dd50b0360e594270f008fe
+    with:
+      build_matrix_path: keyboard/sofle/build.yaml
+      config_path: keyboard/sofle/config
+      archive_name: sofle-firmware

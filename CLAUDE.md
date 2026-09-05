@@ -5,7 +5,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What this repo is
 
 Personal dotfiles for Neovim, tmux, bash, git, and Sublime Text — focused on
-VLSI/SystemVerilog development. `install.sh` creates the necessary symlinks:
+VLSI/SystemVerilog development. Also carries a ZMK keyboard config
+(`keyboard/sofle/`), which is built by CI rather than symlinked.
+`install.sh` creates the necessary symlinks:
 
 ```
 nvim/               → ~/.config/nvim
@@ -704,6 +706,90 @@ files plugins write into `Packages/User` are kept out of git by
 `sublime/.gitignore`. Sublime Text itself is not installed by the installers —
 only the config is managed here.
 
+## Keyboard (`keyboard/sofle/`)
+
+ZMK config for a Parix Sofle MX 58 (2 encoders, nice!nano v2 per half,
+wireless). **Not a dotfile** — `install.sh` ignores it, there is nothing to
+symlink. It lives in this repo rather than its own because ZMK's reusable build
+workflow takes `config_path` / `build_matrix_path` inputs, so the mandated
+`config/` + `build.yaml` structure works fine in a subdirectory.
+`.github/workflows/zmk-sofle.yml` calls that workflow and is `paths:`-filtered
+to `keyboard/sofle/**` — this repo is pushed constantly for nvim work and a
+Zephyr build is minutes. ZMK source is **commit-pinned** in `config/west.yml`
+AND in the workflow's `uses:` ref (bump both together) — same rule as the
+pinned bat themes / fzf-git installs.
+
+**ZMK Studio cannot import or export keymap files** (planned upstream, not
+implemented). It edits the live device over USB. The trap: once Studio saves
+anything, `sofle.keymap` is ignored forever until *Restore Stock Settings* is
+run from the Studio UI — two sources of truth and the device silently prefers
+the other one. This repo is the source of truth; Studio is a scratchpad, and a
+change that earns its place gets written back into `sofle.keymap`. Studio also
+cannot define combos, tune hold-tap timings, add macros, or create layers
+devicetree did not declare, which is most of what this keymap is — two
+`status = "reserved"` layers exist so it can at least add one without a
+reflash.
+
+Layout: `base` / `nav` (left thumb) / `media` (right thumb) / `adj` (both, via
+conditional-layers). The design target is **"the TKL you already know"** — the
+user came from a TKL — so base is unshifted QWERTY in TKL positions with TKL's
+bottom-row order, NAV keeps the TKL nav island as a 3-wide island (PrtSc/ScrLk/
+Pause over Ins/Home/PgUp over Del/End/PgDn, in the three rightmost columns, so
+PgUp sits directly above PgDn), NAV's arrows are the TKL **inverted-T** rather
+than hjkl (base-layer hjkl are already hjkl for vim; these arrows are for
+browsers and dialogs, where the TKL shape is the muscle memory), and MEDIA is
+F1-F12 straight across the number row. **Six columns per half cannot hold a
+TKL's right-side overflow** (`[ ] \` after P, `=` after `-`), so all four live
+on NAV under the digits they neighbour on a TKL — NAV+8/9/0/- = `\ [ ] =` —
+with Shift composing for free (`[` and `{` are one HID key, so NAV+Shift+9 is
+`{`). Don't "fix" this by shuffling QWERTY. The two keys between the halves are
+the **encoder push-buttons**, not normal keys: easy to hit while turning the
+knob, so they only ever get things harmless to fire by accident (mute,
+play/pause, Win+L) — never a typing key.
+
+**GACS home-row mods** (`A`=GUI `S`=Alt `D`=Ctrl `F`=Shift, mirrored) keep the
+daily chords layer-free — `Ctrl+hjkl` (nvim windows), `Alt+hjkl` (tmux panes)
+and `Ctrl+Space` (tmux prefix) are each a left-hand hold plus a right-hand tap.
+Two settings carry that and are the first thing to touch if mods misfire: a
+**cross-hand guard** (`hold-trigger-key-positions`, so a same-hand roll like
+`sd` types letters) and `require-prior-idle-ms = 150` (no mod mid-burst) —
+raise the latter before touching `tapping-term-ms`. **`j`+`k` → Esc is a
+hardware combo**, not an nvim mapping, so it also escapes in nvim-bash vi mode
+and in a bare `vi` on a box you don't control. Encoders are per-layer.
+`&studio_unlock` is on ADJ+`U`.
+
+Encoders need `CONFIG_EC11=y` in `config/sofle.conf` (the stock shield ships it
+commented out). RGB underglow is deliberately **off**: binding `&rgb_ug` without
+`CONFIG_ZMK_RGB_UNDERGLOW=y` is a hard build failure, so the config and the
+bindings must be turned on together or not at all. `build.yaml` also builds
+`settings_reset` — flash it to a half to wipe BT pairings and Studio-saved
+state, then flash the real firmware back.
+
+**Printable diagrams** — `keymap.svg` (print this), `keymap.png`, and
+`keymap.txt` (`sofle-cs` prints it) are all **generated** from `sofle.keymap` by
+`scripts/gen-keymap-art`, so they cannot drift from the firmware. `keymap.txt`
+is **pure 7-bit ASCII on purpose** — box-drawing glyphs and `▽` are East Asian
+*Ambiguous* width, so a Nerd Font or CJK locale renders them double-wide and
+the grid shears; the generator asserts ASCII-ness and per-group column width
+before writing. Regenerate
+after every keymap change; the outputs are committed so reading them needs
+nothing installed (generating needs `keymap-drawer`, plus `librsvg2-bin` for the
+PNG only). `keymap-drawer.yaml` carries two necessary workarounds: it drops the
+layer-header text stroke (keymap-drawer relies on `paint-order`, which Chrome
+honours but librsvg/cairosvg do not — they paint the white stroke over the
+glyphs, rendering every header invisible or as a black blob), and its
+`raw_binding_map` renames bare ZMK behaviors that would otherwise print as
+devicetree node names (`&studio_unlock` → `UNLOCK`), while `zmk_keycode_map`
+spells out the **shifted faces** so every key prints its second legend keycap
+style (keymap-drawer knows `&kp LBRC` is `{`, but not that `&kp COMMA` also
+shows `<`) — **keep both in sync when adding a macro or punctuation key**. Encoders are
+listed in `keymap.txt` only; keymap-drawer does not draw them.
+
+Flashing is a USB mass-storage copy, so it **cannot happen from a Codespace**:
+download the `sofle-firmware` artifact locally, double-tap reset, drag the
+matching `.uf2` onto the `NICENANO` drive. Both halves, every keymap change.
+Details in `keyboard/sofle/README.md`.
+
 ## Useful aliases (from `.bash_aliases`)
 
 ```bash
@@ -712,6 +798,7 @@ git-cs        # print git aliases
 fzf-cs        # print fzf keybindings/syntax cheatsheet
 rg-cs         # print ripgrep usage cheatsheet
 vim-cs        # print the plain-vim (~/.vimrc) cheatsheet
+sofle-cs      # print the Sofle keymap (generated ASCII diagram, all layers)
 getdotfiles   # git pull --rebase on this repo
 prompt-check  # verify Nerd Font glyphs render correctly
 italic-check  # print an upright/italic pair — does this terminal really
