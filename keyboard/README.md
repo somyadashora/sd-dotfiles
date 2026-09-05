@@ -189,6 +189,24 @@ are on the right home row, one-handed; brightness is the row above.
 
 `&studio_unlock` is on ADJ + `U`. Studio refuses every edit until it is pressed.
 
+**Bootloader has a single-half escape hatch.** On NAV, pressing the two ends
+of the left half's number row together (`` ` `` + `5`) puts the **left** half
+into the bootloader; the same gesture on the right half's number row (`6` +
+`-`) does the right. Both use a 50ms window, so they are not hittable by
+accident.
+
+The left one is the one that matters: NAV is a left thumb and both keys are
+left-half, so it is entirely local to the central and works with the right
+half flat, unpaired, or running different firmware. Every ADJ binding needs
+the halves paired, because ADJ is NAV + MEDIA — thumbs on opposite halves —
+and that is exactly the state you cannot rely on when you need a bootloader.
+On a board whose reset button is sealed inside the case, that difference is
+whether you can reflash at all.
+
+The right-half combo still needs pairing. A ZMK peripheral never runs the
+keymap — it only forwards key positions to the central — so a peripheral
+cannot rescue itself with a keypress, and no keymap change can alter that.
+
 **Bootloader is deliberately two keys, one per half** — `ADJ+B` on the left,
 `ADJ+N` on the right. `&bootloader` runs on the half the key is physically on,
 not on the central, so a single key could only ever reflash one side. Pressing

@@ -759,8 +759,18 @@ Two settings carry that and are the first thing to touch if mods misfire: a
 raise the latter before touching `tapping-term-ms`. **`j`+`k` → Esc is a
 hardware combo**, not an nvim mapping, so it also escapes in nvim-bash vi mode
 and in a bare `vi` on a box you don't control. Encoders are per-layer.
-`&studio_unlock` is on ADJ+`U`. **Bootloader is two keys, `ADJ+B` (left) and
-`ADJ+N` (right), on purpose**: `&bootloader` is declared
+`&studio_unlock` is on ADJ+`U`. **Bootloader has a single-half escape hatch**: on NAV, the two ends of the
+left half's number row together (`` ` ``+`5`) bootloader the LEFT half, and
+the right half's number row (`6`+`-`) does the right. The left one is
+load-bearing — NAV is a left thumb and both keys are left-half, so it is local
+to the central and works with the right half flat, unpaired, or on different
+firmware, which is exactly when you need it and exactly when ADJ (NAV+MEDIA,
+thumbs on opposite halves) is unreachable. This board's reset button is sealed
+in the case, so that gap was the difference between reflashing and being
+stuck. The right-half combo still needs pairing and always will: a ZMK
+peripheral never runs the keymap, it only forwards key positions to the
+central, so it cannot rescue itself with a keypress. Also **bootloader is two
+keys, `ADJ+B` (left) and `ADJ+N` (right), on purpose**: `&bootloader` is declared
 `BEHAVIOR_LOCALITY_EVENT_SOURCE`, so the central forwards it back to the half
 the key physically sits on instead of running it itself — one key could only
 ever reflash one side, and pressing the wrong one looks like nothing happened

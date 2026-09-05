@@ -147,6 +147,42 @@
          * letter pair is vanishingly rare in English, but a roll through j
          * and k while typing fast is not, and require-prior-idle-ms keeps it
          * from firing mid-word at all. */
+        /* Bootloader escape hatches, reachable with the NAV thumb only.
+         *
+         * ADJ is NAV + MEDIA -- thumbs on OPPOSITE halves -- so every ADJ
+         * binding, including the two &bootloader keys, needs the halves
+         * paired. That is precisely the state you cannot count on when you
+         * need a bootloader, and on a board whose reset button is inside the
+         * case it is the difference between reflashing and being stuck.
+         *
+         * combo_boot_left uses positions 0 and 5 -- the two ends of the left
+         * half's number row -- plus the NAV thumb, which is also left. All
+         * three are local to the central, so this works with the right half
+         * flat, unpaired, or running different firmware.
+         *
+         * combo_boot_right is the same gesture on the right half's number
+         * row. It still needs the halves paired, because a ZMK peripheral
+         * never runs the keymap -- it only forwards key positions to the
+         * central -- so there is no such thing as a peripheral rescuing
+         * itself with a keypress. Nothing to be done about that.
+         *
+         * Both are two-handed-hard on purpose: opposite ends of a row, on a
+         * held layer, with a 50ms window. You will not hit either by accident.
+         */
+        combo_boot_left {
+            bindings = <&bootloader>;
+            key-positions = <0 5>;
+            timeout-ms = <50>;
+            layers = <NAV>;
+        };
+
+        combo_boot_right {
+            bindings = <&bootloader>;
+            key-positions = <6 11>;
+            timeout-ms = <50>;
+            layers = <NAV>;
+        };
+
         combo_esc {
             bindings = <&kp ESC>;
             key-positions = <31 32>;
