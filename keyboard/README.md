@@ -60,6 +60,27 @@ somewhere to put a new one without a reflash.
 
 ---
 
+## The hardware, as reported by the board itself
+
+From `INFO_UF2.TXT` on the mounted bootloader drive (2026-09-05):
+
+```
+UF2 Bootloader 0.6.0  lib/nrfx (v2.0.0)  lib/tinyusb (0.10.1-41-gdf0cda2d)
+                      lib/uf2 (remotes/origin/configupdate-9-gadbb8c7)
+Model:       nice!nano
+Board-ID:    nRF52840-nicenano
+SoftDevice:  S140 version 6.1.1
+Date:        Jun 19 2021
+```
+
+`Board-ID: nRF52840-nicenano` is the genuine nice!nano target and matches the
+`0xADA52840` UF2 family ID in the firmware this repo builds. Bootloader 0.6.0
+is old but is what nice!nano v2 shipped with and is fine with current ZMK.
+**Do not update it** unless something concretely requires it — it is the one
+operation on this board that can actually brick it.
+
+Per-key SK6812MINI-E LEDs, no underglow strip. 1000mAh per half.
+
 ## Build and flash
 
 1. Push a change under `keyboard/`. The **Sofle firmware** workflow runs.
@@ -70,8 +91,18 @@ somewhere to put a new one without a reflash.
    mass-storage copy, so it cannot happen from a Codespace — download the
    artifact locally.
 4. Per half: plug in USB, **double-tap reset**, wait for the `NICENANO` drive
-   to mount, copy the matching `.uf2` onto it. The drive unmounts itself when
-   the write completes; that is success, not an error.
+   to mount, copy the matching `.uf2` onto it — `sofle_left` when the cable is
+   in the left half, `sofle_right` when it is in the right.
+
+   The drive shows three files (`CURRENT.UF2`, `INFO_UF2.TXT`, `INDEX.HTM`).
+   They are not real files — the bootloader fakes a FAT filesystem — so there
+   is nothing to delete first and deletes are ignored. **`CURRENT.UF2` is a
+   dump of whatever is on the board right now**, so copying it off before the
+   first flash is a free rollback to the vendor's stock firmware.
+
+   The drive vanishes mid-copy and the OS may report the device as
+   disconnected or improperly ejected. That is success: the bootloader reboots
+   into the new firmware as soon as the write lands.
 5. Flash **both halves** whenever the keymap changes. They exchange nothing
    about the keymap at runtime, and mismatched halves fail in confusing ways.
 
