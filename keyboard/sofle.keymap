@@ -29,6 +29,19 @@
 #include <dt-bindings/zmk/keys.h>
 #include <dt-bindings/zmk/bt.h>
 #include <dt-bindings/zmk/outputs.h>
+#include <dt-bindings/zmk/rgb.h>
+
+/* Per-key LED chain length, per half.
+ *
+ * The stock shield overlay says 36 and calls it "arbitrary". It is not: a
+ * fully populated Sofle RGB is 29 per-key + 6 rear-facing underglow + 1
+ * front-facing indicator = 36. This build has the per-key LEDs only, so 29.
+ *
+ * Too low and the far end of the chain stays dark; too high and the gradient
+ * effects (spectrum, swirl) compress into the LEDs that do exist. To check:
+ * pick the spectrum effect and see whether the sweep reaches the last key.
+ */
+&led_strip { chain-length = <29>; };
 
 #define BASE  0
 #define NAV   1
@@ -82,6 +95,43 @@
             bindings = <&kp>, <&kp>;
             hold-trigger-key-positions = <LEFT_SIDE THUMBS>;
             hold-trigger-on-release;
+        };
+    };
+
+    macros {
+        /* Layer colour. ZMK has no per-key addressing and no "layer entered"
+         * hook in the keymap, so a layer indicator can only be the WHOLE
+         * board changing colour, driven by the same key that activates the
+         * layer. Hence a macro instead of a bare &mo.
+         *
+         * Only visible on the SOLID effect -- spectrum and swirl paint their
+         * own colours over this. And ADJ gets no colour of its own: it is a
+         * conditional layer with no key to hang a macro on, so holding both
+         * shows whichever of the two you pressed second.
+         *
+         * Hues are the repo's catppuccin accents, so the board matches the
+         * editor: base blue, nav green, media mauve.
+         */
+        nav_rgb: nav_with_colour {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings
+                = <&macro_press &mo NAV>
+                , <&macro_tap &rgb_ug RGB_COLOR_HSB(115,55,40)>
+                , <&macro_pause_for_release>
+                , <&macro_release &mo NAV>
+                , <&macro_tap &rgb_ug RGB_COLOR_HSB(217,70,40)>;
+        };
+
+        media_rgb: media_with_colour {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings
+                = <&macro_press &mo MEDIA>
+                , <&macro_tap &rgb_ug RGB_COLOR_HSB(267,60,40)>
+                , <&macro_pause_for_release>
+                , <&macro_release &mo MEDIA>
+                , <&macro_tap &rgb_ug RGB_COLOR_HSB(217,70,40)>;
         };
     };
 
@@ -150,7 +200,7 @@
 &kp ESC   &kp Q        &kp W        &kp E         &kp R         &kp T                               &kp Y     &kp U         &kp I         &kp O        &kp P           &kp BSPC
 &kp TAB   &hml LGUI A  &hml LALT S  &hml LCTRL D  &hml LSHFT F  &kp G                               &kp H     &hmr RSHFT J  &hmr RCTRL K  &hmr RALT L  &hmr RGUI SEMI  &kp SQT
 &kp LSHFT &kp Z        &kp X        &kp C         &kp V         &kp B      &kp C_MUTE   &kp C_PP    &kp N     &kp M         &kp COMMA     &kp DOT      &kp FSLH        &kp RSHFT
-                       &kp LCTRL    &kp LGUI      &kp LALT      &mo NAV    &kp RET      &kp SPACE   &mo MEDIA &kp RALT      &kp RGUI      &kp RCTRL
+                       &kp LCTRL    &kp LGUI      &kp LALT      &nav_rgb   &kp RET      &kp SPACE   &media_rgb &kp RALT      &kp RGUI      &kp RCTRL
             >;
             /* left knob: volume     right knob: page scroll */
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_DN PG_UP>;
@@ -202,15 +252,15 @@
 // row. Brightness is the row above.
 // ---------------------------------------------------------------------------------------------------------------
 // |  F1  |  F2  |  F3  |  F4  |  F5  |  F6  |             |  F7  |  F8  |  F9  | F10  | F11  | F12  |
-// |      |      |      |      |      |      |             |      |      |      | BRI- | BRI+ |      |
+// |      |RGBtog|RGBdim|RGBbrt|EFF - |EFF + |             |      |      |      | BRI- | BRI+ |      |
 // |      | GUI  | ALT  | CTRL | SHFT |      |             | PREV | PLAY | NEXT | MUTE | VOL- | VOL+ |
-// |      |      |      |      |      |      |    |  |     |      |      |      |      |      |      |
+// |SPD - |HUE - |HUE + |SAT - |SAT + |SPD + |    |  |     |      |      |      |      |      |      |
 //               |      |      |      |      |    |  |     |      |      |      |      |
             bindings = <
 &kp F1  &kp F2    &kp F3    &kp F4     &kp F5     &kp F6                          &kp F7      &kp F8    &kp F9      &kp F10     &kp F11       &kp F12
-&trans  &trans    &trans    &trans     &trans     &trans                          &trans      &trans    &trans      &kp C_BRI_DN &kp C_BRI_UP &trans
-&trans  &kp LGUI  &kp LALT  &kp LCTRL  &kp LSHFT  &trans                          &kp C_PREV  &kp C_PP  &kp C_NEXT  &kp C_MUTE  &kp C_VOL_DN  &kp C_VOL_UP
-&trans  &trans    &trans    &trans     &trans     &trans   &trans    &trans       &trans      &trans    &trans      &trans      &trans        &trans
+&trans           &rgb_ug RGB_TOG &rgb_ug RGB_BRD &rgb_ug RGB_BRI &rgb_ug RGB_EFR &rgb_ug RGB_EFF          &trans      &trans    &trans      &kp C_BRI_DN &kp C_BRI_UP &trans
+&trans           &kp LGUI        &kp LALT        &kp LCTRL       &kp LSHFT       &trans                   &kp C_PREV  &kp C_PP  &kp C_NEXT  &kp C_MUTE  &kp C_VOL_DN  &kp C_VOL_UP
+&rgb_ug RGB_SPD  &rgb_ug RGB_HUD &rgb_ug RGB_HUI &rgb_ug RGB_SAD &rgb_ug RGB_SAI &rgb_ug RGB_SPI  &trans    &trans   &trans      &trans    &trans      &trans      &trans        &trans
                   &trans    &trans     &trans     &trans   &trans    &trans       &trans      &trans    &trans      &trans
             >;
             /* left knob: volume    right knob: screen brightness */

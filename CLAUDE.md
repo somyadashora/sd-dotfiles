@@ -768,6 +768,24 @@ bindings must be turned on together or not at all. `build.yaml` also builds
 `settings_reset` — flash it to a half to wipe BT pairings and Studio-saved
 state, then flash the real firmware back.
 
+**Per-key RGB** — the LEDs are SK6812MINI-E (addressable, WS2812 protocol), so
+they are driven by ZMK's **underglow** subsystem, NOT its backlight one
+(ZMK "backlight" = single-colour array that cannot dim individual LEDs).
+`chain-length` is **29 per half**, overridden from `sofle.keymap`; the stock
+shield says 36 and calls it arbitrary, but 36 is a fully populated Sofle RGB
+(29 per-key + 6 underglow + 1 indicator) and this build is per-key only.
+**ZMK cannot do per-key addressing, a typing heatmap, or reactive lighting** —
+verified in `rgb_underglow.c`, and there are exactly four whole-chain effects
+(solid/breathe/spectrum/swirl). So a layer indicator can only be the whole
+board changing colour: the NAV/MEDIA keys are macros that set a catppuccin hue
+alongside `&mo`, visible on the solid effect only, and ADJ gets none (a
+conditional layer has no key to hang a macro on). Controls live on MEDIA's left
+hand. **Battery is the real constraint**: 29 LEDs/half at full white is ~1.7A
+against a 1000mAh cell, so the LEDs start OFF, cap at 50% brightness, and die
+on idle; `CONFIG_ZMK_RGB_UNDERGLOW_AUTO_OFF_USB=y` (commented) is the
+LEDs-only-on-USB switch. Toggling LEDs off also cuts external power and takes
+the OLED with it.
+
 **Printable diagrams** — `keymap.svg` (print this), `keymap.png`, and
 `keymap.txt` (`sofle-cs` prints it) are all **generated** from `sofle.keymap` by
 `scripts/gen-keymap-art`, so they cannot drift from the firmware. `keymap.txt`

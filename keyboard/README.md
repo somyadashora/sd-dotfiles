@@ -152,6 +152,72 @@ are on the right home row, one-handed; brightness is the row above.
 
 `&studio_unlock` is on ADJ + `U`. Studio refuses every edit until it is pressed.
 
+## Per-key RGB
+
+The per-key LEDs are **SK6812MINI-E** — addressable, WS2812-protocol parts. ZMK
+drives them with its **underglow** subsystem, not its *backlight* one, which
+trips people up: "backlight" in ZMK means a single-colour array that explicitly
+cannot dim individual LEDs. So `CONFIG_ZMK_RGB_UNDERGLOW=y` is correct here even
+though nothing glows from underneath.
+
+`chain-length` is **29 per half**, overridden from `sofle.keymap`. The stock
+shield overlay says 36 and calls it "arbitrary" — it isn't: a fully populated
+Sofle RGB is 29 per-key + 6 rear underglow + 1 front indicator = 36. This build
+has the per-key LEDs only. To check the number is right, pick the spectrum
+effect and see whether the sweep reaches the last key; if the far end stays
+dark, raise it.
+
+### What ZMK cannot do
+
+Worth knowing before designing around it — all three verified by reading
+`zmk/app/src/rgb_underglow.c`, not the docs:
+
+- **No per-key addressing.** "Light only the keys that exist on this layer" is
+  not possible. ZMK has no RGB matrix.
+- **No typing heatmap.** That is QMK's `RGB_MATRIX_TYPING_HEATMAP`.
+- **No reactive lighting** — nothing lights up in response to a keypress.
+
+There are exactly four effects, all whole-chain: **solid, breathe, spectrum,
+swirl**.
+
+### Layer colour
+
+The closest thing to a layer indicator is the **whole board** changing colour,
+so that is what this does. ZMK has no "layer entered" hook in the keymap, so
+the layer keys are macros that activate the layer *and* set the colour —
+`nav_rgb` / `media_rgb` in `sofle.keymap`. Hues are the repo's catppuccin
+accents, so the board matches the editor: base blue, nav green, media mauve.
+
+Two limits fall out of that. It is **only visible on the solid effect** —
+spectrum and swirl paint over it. And **ADJ gets no colour**: it is a
+conditional layer with no key to hang a macro on, so holding NAV+MEDIA shows
+whichever you pressed second.
+
+### Controls — MEDIA layer, left hand
+
+| | | | | | |
+|---|---|---|---|---|---|
+| row 1 | `RGB_TOG` | dim | bright | prev effect | next effect |
+| row 3 | speed − | hue − | hue + | sat − | sat + |
+
+### Battery
+
+This is the whole story on a wireless board. 29 RGB LEDs per half at full white
+is roughly `29 x 60mA = 1.7A`, which a 1000mAh cell turns into well under an
+hour. A single mid-brightness hue is nearer 200–350mA — hours, against the
+**weeks** this board gets with the LEDs off.
+
+So the defaults are deliberately timid: LEDs **start off** (opt in per session
+with `RGB_TOG`), brightness is capped at 50% so a held brightness key cannot
+reach the ugly end of that range, and they drop when the board goes idle. If
+you decide the lights are a desk luxury rather than a portable one, uncomment
+`CONFIG_ZMK_RGB_UNDERGLOW_AUTO_OFF_USB=y` — LEDs only while plugged in, and by
+far the biggest single win.
+
+Note that toggling the LEDs off also cuts external power, which **takes the
+OLED with it**. That is the right trade for battery; set
+`CONFIG_ZMK_RGB_UNDERGLOW_EXT_POWER=n` if you would rather keep the display.
+
 ## Printable diagrams
 
 ```
