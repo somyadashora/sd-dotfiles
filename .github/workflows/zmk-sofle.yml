@@ -23,10 +23,26 @@ on:
   push:
     paths:
       - 'keyboard/**'
+      # ...but not the parts that cannot change the firmware. Editing a README
+      # or regenerating a diagram should not spend five minutes of Zephyr.
+      - '!keyboard/README.md'
+      - '!keyboard/keymap.svg'
+      - '!keyboard/keymap.png'
+      - '!keyboard/keymap.txt'
+      - '!keyboard/keymap-drawer.yaml'
+      - '!keyboard/scripts/**'
       - '.github/workflows/zmk-sofle.yml'
   pull_request:
     paths:
       - 'keyboard/**'
+      # ...but not the parts that cannot change the firmware. Editing a README
+      # or regenerating a diagram should not spend five minutes of Zephyr.
+      - '!keyboard/README.md'
+      - '!keyboard/keymap.svg'
+      - '!keyboard/keymap.png'
+      - '!keyboard/keymap.txt'
+      - '!keyboard/keymap-drawer.yaml'
+      - '!keyboard/scripts/**'
       - '.github/workflows/zmk-sofle.yml'
   workflow_dispatch:
 

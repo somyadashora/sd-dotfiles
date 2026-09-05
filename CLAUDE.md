@@ -759,7 +759,12 @@ Two settings carry that and are the first thing to touch if mods misfire: a
 raise the latter before touching `tapping-term-ms`. **`j`+`k` → Esc is a
 hardware combo**, not an nvim mapping, so it also escapes in nvim-bash vi mode
 and in a bare `vi` on a box you don't control. Encoders are per-layer.
-`&studio_unlock` is on ADJ+`U`.
+`&studio_unlock` is on ADJ+`U`. **Bootloader is two keys, `ADJ+B` (left) and
+`ADJ+N` (right), on purpose**: `&bootloader` is declared
+`BEHAVIOR_LOCALITY_EVENT_SOURCE`, so the central forwards it back to the half
+the key physically sits on instead of running it itself — one key could only
+ever reflash one side, and pressing the wrong one looks like nothing happened
+(that half reboots into a bootloader with no USB attached and drops off BLE).
 
 Encoders need `CONFIG_EC11=y` in `sofle.conf` (the stock shield ships it
 commented out). RGB underglow is deliberately **off**: binding `&rgb_ug` without

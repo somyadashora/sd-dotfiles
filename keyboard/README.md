@@ -84,6 +84,12 @@ somewhere to put a new one without a reflash.
   ships it commented out.
 - **Build fails right after a ZMK bump** — the pin in `west.yml` and the `uses:`
   ref in the workflow must name the same commit.
+- **A bootloader key seems to do nothing** — it almost certainly worked, on the
+  other half. `&bootloader` is declared `BEHAVIOR_LOCALITY_EVENT_SOURCE`, so
+  the central forwards it back to the half the key is *physically on* rather
+  than running it itself (`zmk/app/src/behavior.c`). Put the cable in that
+  half, or use the bootloader key that lives on the half you want. That is why
+  ADJ has two: **ADJ+B** for the left half, **ADJ+N** for the right.
 - **"Invalid BOARD" at cmake** — the board is `nice_nano@2.0.0/nrf52840/zmk`,
   not `nice_nano_v2`. Since Zephyr 4.1 ZMK uses Zephyr board variants: board
   name `nice_nano`, revision `2.0.0` for the v2 hardware, `/zmk` for the ZMK
@@ -151,6 +157,12 @@ are on the right home row, one-handed; brightness is the row above.
 / tab cycling, media = volume / brightness.
 
 `&studio_unlock` is on ADJ + `U`. Studio refuses every edit until it is pressed.
+
+**Bootloader is deliberately two keys, one per half** — `ADJ+B` on the left,
+`ADJ+N` on the right. `&bootloader` runs on the half the key is physically on,
+not on the central, so a single key could only ever reflash one side. Pressing
+the wrong one looks like nothing happened: that half quietly reboots into a
+bootloader with no USB attached and drops off Bluetooth.
 
 ## Per-key RGB
 
