@@ -16,7 +16,10 @@
  *                                      the right half's RCTRL, or the real
  *                                      LCTRL on the bottom row.
  *   Ctrl+hjkl     = nvim window nav  -> home-row Ctrl + base-layer hjkl
- *   Alt+hjkl      = tmux pane nav    -> home-row Alt  + base-layer hjkl
+ *   Alt+hjkl      = pane/split nav   -> home-row Alt  + base-layer hjkl.
+ *                                      One chord for nvim splits AND tmux
+ *                                      panes: tmux forwards it into nvim
+ *                                      and takes over at the edge split.
  *   jk            = Esc              -> hardware combo, works shell-wide
  *
  * KEY POSITIONS (index into the bindings array, used by the HRM guards)

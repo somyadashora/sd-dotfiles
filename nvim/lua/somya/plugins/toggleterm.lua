@@ -111,6 +111,14 @@ return {
       vim.keymap.set("t", "<C-j>", [[<Cmd>wincmd j<CR>]], kopts)
       vim.keymap.set("t", "<C-k>", [[<Cmd>wincmd k<CR>]], kopts)
       vim.keymap.set("t", "<C-l>", [[<Cmd>wincmd l<CR>]], kopts)
+      -- Alt+hjkl is the editor-wide navigator (plugins/vim-tmux-navigator.lua);
+      -- without these it would be the one place in nvim where it does nothing.
+      -- TmuxNavigate* rather than wincmd, so leaving the terminal at an edge
+      -- crosses into the neighbouring tmux pane like everywhere else.
+      vim.keymap.set("t", "<A-h>", [[<Cmd>TmuxNavigateLeft<CR>]], kopts)
+      vim.keymap.set("t", "<A-j>", [[<Cmd>TmuxNavigateDown<CR>]], kopts)
+      vim.keymap.set("t", "<A-k>", [[<Cmd>TmuxNavigateUp<CR>]], kopts)
+      vim.keymap.set("t", "<A-l>", [[<Cmd>TmuxNavigateRight<CR>]], kopts)
     end
 
     vim.api.nvim_create_autocmd("TermOpen", {

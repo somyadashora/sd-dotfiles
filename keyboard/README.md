@@ -155,8 +155,8 @@ carry mute (next to the volume knob) and play/pause on base, and Win+L on NAV:
 things that are harmless to fire by accident. Never put a typing key there.
 
 **Home-row mods, GACS** — `A`=GUI `S`=Alt `D`=Ctrl `F`=Shift, mirrored right.
-This is what makes the daily chords layer-free: `Ctrl+hjkl` (nvim windows) and
-`Alt+hjkl` (tmux panes) are a left-hand hold plus a right-hand tap.
+This is what makes the daily chords layer-free: `Alt+hjkl` (nvim splits *and*
+tmux panes, as one seamless space) is a left-hand hold plus a right-hand tap.
 
 The `Ctrl+b` prefix — shared by tmux and herdr — is the exception, and it is
 worth knowing why. `b` is a **left-half** key, so a left home-row Ctrl and `b`

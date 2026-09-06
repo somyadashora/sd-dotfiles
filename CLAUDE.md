@@ -577,6 +577,35 @@ Config: `tmux/.tmux.conf`. Prefix: `Ctrl+b` — shared with herdr (see
 inside a tmux pane. tmux's default table still binds the prefix key to
 `send-prefix`, so nothing had to be added for that.
 
+**Seamless pane/split navigation**: `Alt+hjkl` is the one navigator — it moves
+between tmux panes, except when the focused pane runs nvim, where tmux's
+`is_vim` check forwards the key into nvim instead and
+`plugins/vim-tmux-navigator.lua` hands control back at the edge split. Three
+things about it are decided and should not be re-litigated:
+
+- **Alt, not Ctrl.** `<C-j>`/`<C-k>` are neoscroll's half-page scroll and stay
+  that way. `Ctrl+Shift+hjkl` was considered and rejected: it is **not
+  representable in legacy terminal encoding** — `Ctrl+h` is the byte `0x08` and
+  the shifted form has no distinct byte, so telling them apart needs the kitty
+  protocol / CSI-u (xterm's `modifyOtherKeys=2`) forwarded by *every* hop of
+  Windows → ETX → xterm → tmux → nvim. An ETX xterm has it off by default, so
+  the chord would silently arrive as `Ctrl+j` and scroll. Alt is an ESC prefix
+  and survives every hop. Alt was also completely unused in the nvim config.
+- **The check is nvim-only**, unlike upstream's regex which also matches plain
+  vim. `vim/.vimrc` is deliberately zero-plugin, so a forwarded `Alt+h` there
+  would be swallowed with nothing to handle it and you could not leave the
+  pane. Plain vim keeps its own `<C-hjkl>` window moves and `Alt` always means
+  "change tmux pane" in it.
+- **`g:tmux_navigator_no_mappings = 1` is load-bearing.** Without it the plugin
+  claims `<C-hjkl>` at startup and neoscroll (lazy on `WinScrolled`) takes
+  `<C-j>`/`<C-k>` back on the first scroll — the same key navigated early in a
+  session and scrolled later. The winner is now declared in the spec instead of
+  decided by load order.
+
+toggleterm's terminal-mode maps carry `<A-hjkl>` too, so Alt isn't dead inside
+a terminal buffer; copy mode gets the plain (unconditional) bindings, since a
+pane in copy mode is tmux's scrollback rather than nvim's.
+
 **Status bar**:
 - Primary (always on): session name left, Bangalore time + weather right
 - Secondary (toggle `prefix+S`): CPU load, RAM, disk, SJC time + weather —
@@ -646,6 +675,28 @@ chars parse literally, and there is **no `pipe` key name** (`minus`, `comma`,
 `[[keys.command]]` entries run through a shell that has **not** sourced
 `.bash_aliases`, so each one is self-contained — no aliases, no `$DOTFILES_DIR`.
 The getdotfiles popup finds the repo by `readlink -f` on the config symlink.
+
+**herdr deliberately does NOT join the seamless `Alt+hjkl` navigation** that
+tmux and nvim share (see the tmux section). `Alt+hjkl` here is a plain pane
+focus; nvim splits inside a herdr pane use `<C-w>hjkl`. This was investigated
+and rejected, so it doesn't need re-deriving:
+
+- herdr has no `is_vim` equivalent — keybindings are unconditional, with no
+  `#{pane_current_command}` ternary — so the decision has to be reconstructed
+  by an external action.
+- The community plugins that do this (`paulbkim-dev/vim-herdr-navigation`,
+  `aimdevlee/herdr-nvim-nav`) both **hardcode `ctrl+h/j/k/l`** as the chord
+  they forward into the editor, with no override. Bound to `alt+j` one would
+  deliver `Ctrl+j` to nvim, which is neoscroll — it would scroll instead of
+  navigating. Using either as shipped forces Ctrl+hjkl, which is the collision
+  the Alt decision exists to avoid.
+- The primitives *do* support Alt, so a bespoke action is possible if this ever
+  becomes worth it: `herdr pane send-keys <pane> alt+h` is accepted (a bad key
+  gives `{"error":{"code":"invalid_key"}}`), and
+  `herdr pane process-info --pane <pane>` returns
+  `.result.process_info.foreground_processes[].name` to match on. It would need
+  an nvim-side edge handler too, since vim-tmux-navigator shells out to
+  `tmux select-pane` and there is no tmux inside herdr.
 
 **Theme** is catppuccin mocha with the repo's mauve `#cba6f7` accent (herdr
 defaults to cyan), same identity as the tmux pane borders, lazygit and fzf.
@@ -846,8 +897,8 @@ knob, so they only ever get things harmless to fire by accident (mute,
 play/pause, Win+L) — never a typing key.
 
 **GACS home-row mods** (`A`=GUI `S`=Alt `D`=Ctrl `F`=Shift, mirrored) keep the
-daily chords layer-free — `Ctrl+hjkl` (nvim windows) and `Alt+hjkl` (tmux
-panes) are each a left-hand hold plus a right-hand tap. The `Ctrl+b` prefix
+daily chords layer-free — `Alt+hjkl` (nvim splits and tmux panes as one
+seamless space) is a left-hand hold plus a right-hand tap. The `Ctrl+b` prefix
 (tmux and herdr) is the **exception**: `b` is a left-half key, so a left
 home-row Ctrl and `b` are the same hand and the cross-hand guard refuses the
 hold — it types `db`. Press it with the right half's `RCTRL` or the real
