@@ -38,7 +38,14 @@
 # AGENTS (the reason herdr exists):
 #   Just run claude/codex/... in a pane — herdr detects it and shows its state
 #   in the sidebar: blocked (needs you) / working / done / idle.
-#   Ctrl+b + o              - Focus whatever the current notification points at
+#   Ctrl+b + a              - Jump to the next agent (press again to walk them)
+#   Ctrl+b + Alt+a          - Jump to the previous agent
+#   Ctrl+b + Alt+[1-9]      - Jump straight to agent N
+#   Ctrl+b + b              - The agent list itself: the sidebar's agent panel
+#                             (Ctrl+b + g navigates it alongside everything else)
+#   Ctrl+b + o              - Focus whatever the current notification points at.
+#                             Only acts on a PENDING notification — with none
+#                             outstanding it does nothing, by design
 #   herdr agent list        - Same states on the CLI, as JSON
 #
 # SESSION (herdr has tmux's detach/attach built in — no resurrect needed):
@@ -143,6 +150,12 @@ accent = "#cba6f7"                          # highlights, borders, navigate mode
 tab_bar_position = "top"                    # matches tmux's status-position top
 window_title = "{hostname}: {workspace}"
 status_indicators = "symbols"               # shape as well as colour per state
+# The nearest thing herdr has to tmux's pane-border-format. There is no format
+# string — pane_border_title is computed in code and every other border knob is
+# a boolean — so this flag IS the feature: it puts the detected agent label on
+# the split border when the pane has no manual name (Ctrl+b Shift+P sets one,
+# and a manual name always wins).
+show_agent_labels_on_pane_borders = true
 tab_bar_right_separator = " "
 
 # The tmux status scripts are plain /bin/sh and know nothing about tmux, so the
@@ -154,6 +167,57 @@ tab_bar_right = [
   { type = "zoom" },
   { type = "command", command = "$HOME/.config/tmux/scripts/tmux-tz-time Asia/Kolkata", interval_seconds = 30, timeout_seconds = 5 },
   { type = "command", command = "$HOME/.config/tmux/scripts/tmux-weather Bangalore", interval_seconds = 300, timeout_seconds = 10 },
+]
+
+agent_panel_sort = "spaces"
+# ----------------------------------------------------------------------------
+# Sidebar agent rows — where the pane detail actually lives
+# ----------------------------------------------------------------------------
+# tmux puts per-pane detail on the pane border; herdr puts it in the sidebar,
+# and this is the only place it takes a template. Built-in tokens: state_icon,
+# state_text, workspace, tab, pane, agent, terminal_title,
+# terminal_title_stripped. (A $name token renders a custom value pushed with
+# `herdr pane report-metadata --token NAME=VALUE`; nothing here pushes any, so
+# none are used — that is the poller-shaped half of tmux parity, deliberately
+# not built.)
+#
+# Default is [["state_icon", "workspace", "tab"], ["agent"]]. Three changes:
+# the tab/pane pair leads, since that is the "which split am I looking at"
+# question the tmux border answers; terminal_title_stripped gets its own row
+# because for Claude/Codex it is the CURRENT TASK, the most useful string in
+# the panel (the unstripped form keeps the agent's spinner glyph); and
+# workspace moves to the bottom row dim, because agent_panel_sort = "spaces"
+# already groups by it — it is there so the row still reads correctly after a
+# switch to "priority", which sorts by attention and drops the grouping.
+# Colours are the repo's: mauve accent, lavender for structure, overlay1 for
+# the things you read only when you go looking. Drop the third row if the
+# panel gets too tall for the number of agents you run.
+[ui.sidebar.agents]
+row_gap = 0
+rows = [
+  ["state_icon", { token = "tab", fg = "#b4befe", bold = true }, { token = "pane", fg = "#7f849c", dim = true }],
+  ["terminal_title_stripped"],
+  [{ token = "agent", fg = "#cba6f7" }, { token = "workspace", fg = "#7f849c", dim = true }],
+]
+
+# ----------------------------------------------------------------------------
+# Sidebar space rows — the workspace half of the same panel
+# ----------------------------------------------------------------------------
+# Same template mechanism, different token set: state_icon, state_text,
+# workspace, branch, git_status (plus $name customs pushed as workspace
+# metadata — e.g. $jj_status for a jj repo, which nothing here reports).
+#
+# The default rows ALREADY carry branch + git_status; setting them here buys
+# the colours, not the fields. Branch reads teal — structural, always present,
+# glanced at constantly — and git_status yellow, since a dirty tree is the only
+# thing in this row worth interrupting a read for. Both come from the workspace
+# cwd, so a space that is not a git checkout simply renders the row empty
+# rather than erroring.
+[ui.sidebar.spaces]
+row_gap = 0
+rows = [
+  ["state_icon", { token = "workspace", fg = "#cba6f7", bold = true }],
+  [{ token = "branch", fg = "#94e2d5" }, { token = "git_status", fg = "#f9e2af" }],
 ]
 
 [ui.toast]
@@ -198,6 +262,19 @@ focus_pane_left = "alt+h"
 focus_pane_down = "alt+j"
 focus_pane_up = "alt+k"
 focus_pane_right = "alt+l"
+
+# --- agents ----------------------------------------------------------------
+# herdr ships next_agent / previous_agent / focus_agent UNBOUND, so out of the
+# box nothing walks agent to agent. There is no agent-picker action to bind —
+# the sidebar's agent panel IS the list (prefix+b) and prefix+g navigates it —
+# so prefix+a is a cycle key: the a-for-agent counterpart to prefix+w for
+# workspaces, pressed repeatedly to walk them. Shift is deliberately avoided on
+# the forward key (it is the one that gets pressed), so backward takes alt+a.
+next_agent = "prefix+a"
+previous_agent = "prefix+alt+a"
+# Indexed jump straight to agent N — switch_tab's prefix+1..9 shape, one
+# modifier over, so tabs and agents stay distinguishable by the modifier alone.
+focus_agent = "prefix+alt+1..9"
 
 # --- session / config ------------------------------------------------------
 detach = ["prefix+d", "prefix+q"]           # tmux: prefix+d
