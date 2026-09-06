@@ -29,6 +29,9 @@ SKIP_RUSTUP=0
 SKIP_HERDR=0
 NO_LOG=0
 LOG_FILE="${LOG_FILE:-$OPT_DIR/install-linux-tools.log}"
+# The option loop below shifts the script's positional parameters, so `$@` is
+# empty by the time main runs. Snapshot the invocation for the log header here.
+SD_ARGV="$*"
 
 usage() {
   cat <<'USAGE'
@@ -706,9 +709,33 @@ install_herdr() {
     arm64)  target=linux-aarch64 ;;
     *) warn "No herdr Linux build for ${arch}; skipping."; return 0 ;;
   esac
+  # curl's own message is the whole diagnosis here and used to be thrown away
+  # with 2>/dev/null. "Could not reach herdr.dev" is true of an offline laptop,
+  # a corporate proxy, and an intercepting TLS middlebox alike, and the fix is
+  # different for each -- so keep what curl said, and its exit code, which
+  # names the layer that failed.
+  local curl_err rc=0
+  curl_err=$(mktemp "${TMPDIR:-/tmp}/sd-herdr-curl.XXXXXX")
   manifest=$(curl -fsSL --retry 3 --connect-timeout 10 --max-time 20 \
-    "https://herdr.dev/latest.json" 2>/dev/null) || true
-  [[ -n "$manifest" ]] || { warn "Could not reach herdr.dev/latest.json; skipping herdr."; return 0; }
+    "https://herdr.dev/latest.json" 2>"$curl_err") || rc=$?
+  if [[ -z "$manifest" ]]; then
+    warn "Could not reach https://herdr.dev/latest.json (curl exit ${rc}); skipping herdr."
+    if [[ -s "$curl_err" ]]; then
+      warn "curl said: $(tr -d '\r' < "$curl_err" | head -n 2 | tr '\n' ' ')"
+    fi
+    case "$rc" in
+      6)  warn "Exit 6 is DNS: herdr.dev did not resolve. Offline, split-horizon DNS, or a network that only reaches the internet through a proxy." ;;
+      7)  warn "Exit 7 is connect: DNS resolved but the connection was refused or dropped — a firewall or a proxy sits in between." ;;
+      28) warn "Exit 28 is timeout: the link is slow, or a proxy is accepting the connection and never answering." ;;
+      35|60|77) warn "Exit ${rc} is TLS: an intercepting proxy's CA is most likely missing from this host's trust store." ;;
+      22) warn "Exit 22 is HTTP: herdr.dev answered with an error status. The manifest URL may have moved — check https://herdr.dev/latest.json in a browser." ;;
+    esac
+    warn "Behind a proxy: export https_proxy=... http_proxy=... (curl honours both) and re-run."
+    warn "This costs herdr only — every other tool installs regardless, and --skip-herdr silences the step."
+    rm -f "$curl_err"
+    return 0
+  fi
+  rm -f "$curl_err"
   version=$(printf '%s\n' "$manifest" | awk -F '"' '/^[[:space:]]*"version"[[:space:]]*:/ { print $4; exit }')
   url=$(herdr_manifest_field "$manifest" assets "$target")
   sha=$(herdr_manifest_field "$manifest" sha256 "$target")
@@ -888,7 +915,7 @@ main() {
   require_linux
   require_basic_tools
   prepare_dirs
-  start_transcript "$0 $*"
+  start_transcript "$0 $SD_ARGV"
   arch=$(host_arch)
   log "Detected Linux/${arch}; installing into ${OPT_DIR} and ${BIN_DIR}"
 

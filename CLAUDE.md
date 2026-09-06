@@ -26,7 +26,19 @@ sublime/            → ~/.config/sublime-text/Packages/User  (ST3 dir if that's
 ./install.sh                             # symlink all configs
 bash installers/install-linux-tools.sh   # tools for standard Linux
 bash installers/install-termux-tools.sh  # tools for Termux (Android)
+pwsh installers/install-windows-tools.ps1  # tools for Windows (Scoop, no admin)
 ```
+
+All three tool installers share one contract, because a failing install you
+cannot read is the expensive kind. Every step runs isolated (`run_step` in the
+shell scripts, `Invoke-Step` in the PowerShell one) so one bad download never
+blocks the tools after it. Every run appends a transcript next to the tools —
+`$OPT_DIR/install-<platform>-tools.log`, `--no-log`/`-NoLog` to opt out —
+because a terminal that closes takes its scrollback with it and a log file is
+the only thing left to read. And each refuses to be sourced/dot-sourced, since
+an `exit` in a sourced script ends the shell that sourced it, which is
+indistinguishable from a crash. The Windows one additionally holds the window
+open on failure (`-NoPause` to opt out), which is the double-click case.
 
 ## Config principle: graceful degradation
 

@@ -26,17 +26,69 @@ param(
     # Do not install the Meslo Nerd Font.
     [switch]$SkipFonts,
     # Do not install a C compiler (gcc) for nvim-treesitter parser builds.
-    [switch]$SkipCompiler
+    [switch]$SkipCompiler,
+    # Do not write a transcript of this run to $OptDir\install-windows-tools.log.
+    [switch]$NoLog,
+    # Do not wait for a keypress at the end when a step failed.
+    [switch]$NoPause
 )
 
+# Refuse to be dot-sourced. A fatal error here ends the shell it is dot-sourced
+# into, and Start-Transcript below would outlive the run in that session.
+if ($MyInvocation.InvocationName -eq '.') {
+    Write-Warning 'Run this script, do not dot-source it: .\install-windows-tools.ps1'
+    return
+}
+
 $ErrorActionPreference = 'Stop'
+
+# Defined up here because the transcript starts before anything else does.
+$OptDir  = Join-Path $env:LOCALAPPDATA 'sd-tools'
+$ShimDir = Join-Path $env:USERPROFILE 'scoop\shims'
+$LogFile = Join-Path $OptDir 'install-windows-tools.log'
 
 function Log  { param($m) Write-Host "==> $m" -ForegroundColor Blue }
 function Ok   { param($m) Write-Host "OK  $m"  -ForegroundColor Green }
 function Warn { param($m) Write-Warning $m }
-function Die  { param($m) Write-Error $m; exit 1 }
+# `throw`, not `exit 1`: an exit here closes the window when the script was
+# launched by double-click / "Run with PowerShell", taking the error message
+# with it. A throw is caught by Invoke-Step, which reports it and carries on.
+function Die  { param($m) throw $m }
 
 function Test-Cmd { param($name) [bool](Get-Command $name -ErrorAction SilentlyContinue) }
+
+# Isolate each tool, the way run_step does in install-linux-tools.sh: one step
+# that throws — a moved release URL, a bucket that will not add, a Die — must
+# cost that tool and nothing after it. Without this the script was one
+# $ErrorActionPreference = 'Stop' away from ending at its first bad download,
+# and on a double-clicked window that ending is invisible.
+$script:FailedSteps = @()
+function Invoke-Step {
+    param([string]$Name, [scriptblock]$Body)
+    try { & $Body }
+    catch {
+        Warn "$Name failed: $($_.Exception.Message)"
+        $script:FailedSteps += $Name
+    }
+}
+
+# Terminal scrollback is not evidence you can rely on: a double-clicked
+# PowerShell window closes the instant the script ends, error and all. The
+# transcript is still on disk afterwards.
+function Start-RunTranscript {
+    if ($NoLog) { return }
+    try {
+        if (-not (Test-Path $OptDir)) { New-Item -ItemType Directory -Path $OptDir -Force | Out-Null }
+        Start-Transcript -Path $LogFile -Append | Out-Null
+        Log "Transcript of this run: $LogFile"
+    }
+    catch { Warn "Could not start a transcript ($($_.Exception.Message)); continuing without one." }
+}
+
+function Stop-RunTranscript {
+    if ($NoLog) { return }
+    try { Stop-Transcript | Out-Null } catch { }
+}
 
 # ---------------------------------------------------------------------------
 # Scoop bootstrap + packages
@@ -80,9 +132,6 @@ function Install-ScoopApp {
 # ---------------------------------------------------------------------------
 # Best-effort GitHub-release tools (not in Scoop): Verible, slang-server
 # ---------------------------------------------------------------------------
-
-$OptDir  = Join-Path $env:LOCALAPPDATA 'sd-tools'
-$ShimDir = Join-Path $env:USERPROFILE 'scoop\shims'
 
 # Plain-web release resolution — no GitHub API, no tokens (api.github.com
 # rate-limits and scoped CI tokens 403). If a project moves hosts, only these
@@ -184,39 +233,57 @@ function Install-SlangServer {
 # Main
 # ---------------------------------------------------------------------------
 
+Start-RunTranscript
+
 Log "Installing Neovim tooling for Windows (user-local via Scoop)"
 
-Install-Scoop
-Add-Bucket 'main'
-Add-Bucket 'extras'
-if (-not $SkipFonts) { Add-Bucket 'nerd-fonts' }
+Invoke-Step 'scoop' { Install-Scoop }
 
-# Core CLI tools (Scoop app names).
-Install-ScoopApp 'neovim'      'Neovim'
-Install-ScoopApp 'git'         'git'
-Install-ScoopApp 'lazygit'     'lazygit'
-Install-ScoopApp 'fzf'         'fzf'
-Install-ScoopApp 'ripgrep'     'ripgrep (rg)'
-Install-ScoopApp 'fd'          'fd'
-Install-ScoopApp 'bat'         'bat'
-Install-ScoopApp 'delta'       'delta'
-Install-ScoopApp 'tree-sitter' 'tree-sitter'
+if (Test-Cmd scoop) {
+    Invoke-Step 'bucket main'   { Add-Bucket 'main' }
+    Invoke-Step 'bucket extras' { Add-Bucket 'extras' }
+    if (-not $SkipFonts) { Invoke-Step 'bucket nerd-fonts' { Add-Bucket 'nerd-fonts' } }
 
-if (-not $SkipCompiler) {
-    # nvim-treesitter compiles parsers; gcc (mingw) is the simplest no-admin cc.
-    Install-ScoopApp 'gcc' 'gcc (treesitter compiler)'
+    # Core CLI tools (Scoop app names). Each scriptblock holds literals rather
+    # than loop variables on purpose: a PowerShell scriptblock is not a closure,
+    # and `& $Body` inside Invoke-Step resolves names through the CALLER's scope,
+    # where Invoke-Step's own [string]$Name param shadows an outer $name.
+    Invoke-Step 'Neovim'          { Install-ScoopApp 'neovim'      'Neovim' }
+    Invoke-Step 'git'             { Install-ScoopApp 'git'         'git' }
+    Invoke-Step 'lazygit'         { Install-ScoopApp 'lazygit'     'lazygit' }
+    Invoke-Step 'fzf'             { Install-ScoopApp 'fzf'         'fzf' }
+    Invoke-Step 'ripgrep'         { Install-ScoopApp 'ripgrep'     'ripgrep (rg)' }
+    Invoke-Step 'fd'              { Install-ScoopApp 'fd'          'fd' }
+    Invoke-Step 'bat'             { Install-ScoopApp 'bat'         'bat' }
+    Invoke-Step 'delta'           { Install-ScoopApp 'delta'       'delta' }
+    Invoke-Step 'tree-sitter'     { Install-ScoopApp 'tree-sitter' 'tree-sitter' }
+
+    if (-not $SkipCompiler) {
+        # nvim-treesitter compiles parsers; gcc (mingw) is the simplest no-admin cc.
+        Invoke-Step 'gcc'         { Install-ScoopApp 'gcc' 'gcc (treesitter compiler)' }
+    }
+    if (-not $SkipFonts) {
+        Invoke-Step 'Meslo-NF'    { Install-ScoopApp 'Meslo-NF' 'MesloLGS Nerd Font' }
+    }
 }
-
-if (-not $SkipFonts) {
-    Install-ScoopApp 'Meslo-NF' 'MesloLGS Nerd Font'
+else {
+    # Everything Scoop-installed is out of reach, but the GitHub-release tools
+    # below only need Scoop for their shims — they still install without it.
+    Warn "scoop is not available; skipping the Scoop-installed tools."
 }
 
 # SystemVerilog tooling not packaged by Scoop.
-Install-Verible
-Install-SlangServer
+Invoke-Step 'Verible'      { Install-Verible }
+Invoke-Step 'slang-server' { Install-SlangServer }
 
 Write-Host ""
-Ok "Done."
+if ($script:FailedSteps.Count -gt 0) {
+    Warn "Finished with failed steps: $($script:FailedSteps -join ', ') (everything else installed)."
+}
+else {
+    Ok "Done."
+}
+if (-not $NoLog) { Log "Full transcript: $LogFile" }
 Write-Host @"
 
 Open a NEW terminal so PATH (~\scoop\shims) is picked up, then verify:
@@ -233,3 +300,12 @@ Open a NEW terminal so PATH (~\scoop\shims) is picked up, then verify:
 
 Set a Nerd Font (e.g. 'MesloLGS NF') as your terminal font for icons to render.
 "@ -ForegroundColor DarkGray
+
+Stop-RunTranscript
+
+# A double-clicked window closes the moment this script ends. When something
+# failed, that is exactly the moment the output was worth reading — so hold the
+# window open, but only when a person is actually there to read it.
+if ($script:FailedSteps.Count -gt 0 -and -not $NoPause -and [Environment]::UserInteractive) {
+    Read-Host 'Some steps failed. Press Enter to close'
+}

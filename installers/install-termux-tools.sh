@@ -4,12 +4,30 @@
 # Uses Termux packages and never uses sudo.
 # Compatible with sh and bash (run as: sh install-termux-tools.sh  OR  ./install-termux-tools.sh)
 
+# Refuse to run sourced. This script exits on a fatal error, and an `exit` in a
+# sourced script kills the shell that sourced it — in Termux that is the
+# session going away, which looks like a crash rather than a failed install.
+# Checked BEFORE `set -eu`, so the shell that sourced it is not left with -e
+# and then killed by this very return. (A shell where `return` outside a
+# function is an error just falls through and behaves as it always did.)
+if (return 0 2>/dev/null); then
+  printf 'Run this script, do not source it: sh install-termux-tools.sh\n' >&2
+  return 2
+fi
+
 set -eu
 
 FONT_DIR="${FONT_DIR:-$HOME/.termux}"
 NERD_FONT_VERSION_FILE="${FONT_DIR}/.meslo-nerd-font-version"
+OPT_DIR="${OPT_DIR:-$HOME/.somyadashora/sd-tools}"
+LOG_FILE="${LOG_FILE:-$OPT_DIR/install-termux-tools.log}"
 FORCE=0
 SKIP_FONTS=0
+NO_LOG=0
+TEE_PID=
+# The option loop below shifts the script's positional parameters, so `$@` is
+# empty by the time main runs. Snapshot the invocation for the log header here.
+SD_ARGV="$*"
 
 usage() {
   cat <<'USAGE'
@@ -18,7 +36,12 @@ Usage: sh install-termux-tools.sh [options]
 Options:
   --force       Reinstall/update even if a marker says the font is current.
   --skip-fonts  Do not install MesloLGS Nerd Font into ~/.termux/font.ttf.
+  --no-log      Do not write a transcript of this run to LOG_FILE.
   -h, --help    Show this help.
+
+Environment overrides:
+  LOG_FILE      Transcript of the run.
+                Default: ~/.somyadashora/sd-tools/install-termux-tools.log
 
 Notes:
   - Installs native Termux packages for nvim, lazygit, fzf, rg, tmux, git,
@@ -34,6 +57,7 @@ while [ "$#" -gt 0 ]; do
   case "$1" in
     --force) FORCE=1 ;;
     --skip-fonts) SKIP_FONTS=1 ;;
+    --no-log) NO_LOG=1 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -45,6 +69,41 @@ ok()   { printf '\033[1;32m✓\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33mWARN:\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
 have() { command -v "$1" >/dev/null 2>&1; }
+
+# Keep a transcript on disk. Terminal scrollback is not evidence you can rely
+# on here: Android reclaiming the Termux app mid-`pkg upgrade` takes the
+# session and everything printed to it, and a failed step is then unreadable.
+# The file survives that.
+#
+# Written through a FIFO rather than bash's `exec > >(tee ...)`: this file's
+# shebang is sh and it is documented as running under either shell, so process
+# substitution is not available to it. A FIFO is portable to both.
+finish_transcript() {
+  [ -n "$TEE_PID" ] || return 0
+  # Drop the write end so tee sees EOF and flushes before the shell goes.
+  exec >/dev/null 2>&1
+  wait "$TEE_PID" 2>/dev/null || true
+  TEE_PID=
+}
+
+start_transcript() {
+  [ "$NO_LOG" = 1 ] && return 0
+  have tee || return 0
+  have mkfifo || return 0
+  mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null || return 0
+  fifo="${TMPDIR:-/tmp}/sd-termux-install.$$"
+  rm -f "$fifo"
+  mkfifo "$fifo" 2>/dev/null || return 0
+  printf '\n===== %s | %s =====\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" \
+    >> "$LOG_FILE" 2>/dev/null || { rm -f "$fifo"; return 0; }
+  tee -a "$LOG_FILE" < "$fifo" &
+  TEE_PID=$!
+  exec > "$fifo" 2>&1
+  # The fd is open; the name is not needed and must not outlive the run.
+  rm -f "$fifo"
+  trap finish_transcript EXIT
+  log "Transcript of this run: ${LOG_FILE}"
+}
 
 require_termux() {
   have pkg || die "This script is for Termux only. Use ./install-linux-tools.sh on normal Linux."
@@ -240,13 +299,18 @@ run_step() {
 
 main() {
   require_termux
-  install_packages
+  start_transcript "$0 $SD_ARGV"
+  # Through run_step like everything else: a package that will not install --
+  # a mirror mid-sync is the common one -- must not cost the font, TPM and
+  # fzf-git steps that do not depend on it.
+  run_step install_packages
   run_step install_refs_python_deps
   run_step install_fzf_git
   run_step install_tpm
   run_step install_meslo_font
   show_status
   [ -n "$FAILED_STEPS" ] && warn "Finished with failed steps:${FAILED_STEPS} (everything else installed)."
+  [ "$NO_LOG" = 1 ] || log "Full transcript: ${LOG_FILE}"
   ok "Termux tool installation complete."
 }
 
