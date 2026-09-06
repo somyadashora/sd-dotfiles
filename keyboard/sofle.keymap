@@ -101,6 +101,40 @@
             hold-trigger-key-positions = <LEFT_SIDE THUMBS>;
             hold-trigger-on-release;
         };
+
+        /* Symbol mod-tap, for the `]` in the bottom-right corner.
+         *
+         * Deliberately NOT ZMK's stock &mt, whose default flavor is
+         * hold-preferred: a `]` you linger on a fraction too long would come
+         * out as Ctrl and swallow the next keystroke. tap-preferred resolves
+         * the hold ONLY past the tapping term, and another key pressed in the
+         * meantime never forces it -- so the symbol always wins, and Ctrl is
+         * something you ask for deliberately.
+         *
+         * quick-tap-ms is what keeps `]]` and `[[` repeating: tap-then-hold
+         * repeats the symbol instead of arming the mod. No cross-hand guard
+         * here on purpose -- unlike a home-row mod, this key carries no
+         * letter, so a same-hand chord is not a misfire, it is the point. */
+        smt: symbol_mod_tap {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            flavor = "tap-preferred";
+            tapping-term-ms = <220>;
+            quick-tap-ms = <175>;
+            bindings = <&kp>, <&kp>;
+        };
+
+        /* Backspace, or Delete when a Shift is held. Delete is the only thing
+         * regularly wanted in the other direction, and it is not worth its
+         * own key on a 58-key board -- keep-mods means Shift+Delete still
+         * reaches the applications that want it. */
+        bspc_del: backspace_delete {
+            compatible = "zmk,behavior-mod-morph";
+            #binding-cells = <0>;
+            bindings = <&kp BSPC>, <&kp DEL>;
+            mods = <(MOD_LSFT|MOD_RSFT)>;
+            keep-mods = <(MOD_LSFT|MOD_RSFT)>;
+        };
     };
 
     macros {
@@ -188,6 +222,35 @@
             layers = <NAV>;
         };
 
+        /* Both Shift keys together -> caps word.
+         *
+         * This is the SystemVerilog key. UVM_INFO, SCREAMING_PARAMS, enum
+         * values and macro names are most of what gets typed in this repo,
+         * and caps-word's continue-list already carries UNDERSCORE -- so the
+         * whole identifier types in one gesture and ends itself at the space,
+         * with no Caps Lock left on afterwards.
+         *
+         * Cross-half, so it needs both halves paired. That is fine: unlike
+         * the bootloader combos, nothing about this one is a rescue. */
+        combo_caps_word {
+            bindings = <&caps_word>;
+            key-positions = <50 59>;
+            timeout-ms = <50>;
+            layers = <BASE>;
+        };
+
+        /* `,` + `.` -> backslash. Regex (\v, \zs -- see the vim log
+         * highlighting) and localleader, on base, for no key at all. The pair
+         * is meaningless pressed together in vim and vanishingly rare in
+         * prose, and require-prior-idle keeps it from firing mid-word. */
+        combo_bslh {
+            bindings = <&kp BSLH>;
+            key-positions = <46 47>;
+            timeout-ms = <45>;
+            require-prior-idle-ms = <100>;
+            layers = <BASE>;
+        };
+
         combo_esc {
             bindings = <&kp ESC>;
             key-positions = <31 32>;
@@ -215,12 +278,32 @@
 // Unshifted QWERTY, TKL positions throughout. Shift gives the usual second
 // legend on every key (` ~, 1 !, , <, . >, / ?, ; :, ' ", [ {, ] }).
 //
-// The one thing 6 columns per half cannot hold is TKL's right-side overflow:
-// a TKL row has `[ ] \` after P and `=` after `-`, and there is nowhere to put
-// them. All four move to NAV, contiguous on the number row they already sit
-// under on a TKL: NAV+8 `\`, NAV+9 `[`, NAV+0 `]`, NAV+- `=`. Shift still
-// works on top of that, because `[` and `{` are the same HID key -- so
-// NAV+9 is `[` and NAV+Shift+9 is `{`, no separate binding needed.
+// TKL's right-side overflow (`[ ] \` after P, `=` after `-`) does not fit as a
+// block, so it is split by how often it is actually typed rather than moved
+// wholesale to NAV. `[` and `]` earn base keys: this repo's nvim config has
+// twenty `[x`/`]x` mappings (]d [d ]h [h ]t [t ]q [q ]i [i ]o [o ...), and
+// Shift on top of them gives `{` and `}`, which are paragraph motions. A
+// navigation prefix behind a held layer is the one thing you cannot afford.
+// `\` and `=` are rarer and stay on NAV (`=` under `-`, where a TKL has it);
+// `\` also has a `,`+`.` combo. NAV keeps `[` and `]` too -- costs nothing,
+// and it is the fallback while the fingers relearn.
+//
+// `[` takes the BSPC slot, which is its TKL position (right after P), and
+// Backspace moves to the right thumb. `]` takes the bottom-right corner.
+//
+// THE CORNERS ARE CTRL, NOT SHIFT. Home-row Ctrl lives on D behind a
+// cross-hand guard, so it can only ever fire with a RIGHT-hand key -- which
+// makes every left-hand Ctrl chord physically impossible: <C-d> <C-u> scroll,
+// <C-w> windows, <C-r> redo, <C-v> blockwise, <C-a>/<C-x> increment,
+// <C-e>/<C-y>, and the Ctrl+b prefix above. A guard-free LCTRL on the bottom
+// row is the missing half of the home-row-mod story, not a luxury. Shift
+// moves down one row onto the outer thumb keys, which is also where a real
+// Shift is still wanted: require-prior-idle-ms means the home-row one refuses
+// to fire mid-burst, so capitals typed at speed need a plain key.
+//
+// The right corner doubles up: tap `]`, hold RCTRL (see &smt). A right Ctrl
+// is only needed for Ctrl + a left-hand key while the left hand is busy, so
+// it is fine as the hold half of a symbol key.
 //
 // The two inner keys by the encoders are the ENCODER PUSH-BUTTONS, not normal
 // keys: awkward to hit deliberately, easy to hit while turning the knob. They
@@ -228,20 +311,23 @@
 // knob beside them -- mute next to the volume knob, play/pause next to the
 // other. Never put a typing key here.
 //
-// Bottom row is TKL's own order: Ctrl Win Alt ... Alt Win Ctrl.
+// Space is on the LEFT inner thumb and Enter on the right. Space is the nvim
+// leader and the most-pressed key on the board; Enter is not, and the two
+// were swapped so the busier one sits under the stronger thumb.
 // ---------------------------------------------------------------------------------------------------------------
 // |  ` ~ | 1 ! | 2 @ | 3 # | 4 $ | 5 % |               | 6 ^ | 7 & | 8 * | 9 ( | 0 ) |  - _  |
-// |  ESC |  Q  |  W  |  E  |  R  |  T  |               |  Y  |  U  |  I  |  O  |  P  | BKSPC |
+// |  ESC |  Q  |  W  |  E  |  R  |  T  |               |  Y  |  U  |  I  |  O  |  P  |  [ {  |
 // |  TAB |  A  |  S  |  D  |  F  |  G  |               |  H  |  J  |  K  |  L  | ; : |  ' "  |
-// | SHIFT|  Z  |  X  |  C  |  V  |  B  | MUTE| |PLAY |  N  |  M  | , < | . > | / ? | SHIFT |
-//              | CTL | GUI | ALT | NAV | ENT | | SPC  |MEDIA| ALT | GUI | CTL |
+// | CTRL |  Z  |  X  |  C  |  V  |  B  | MUTE| |PLAY |  N  |  M  | , < | . > | / ? | ] } / CTRL |
+//              | SHFT| GUI | ALT | NAV | SPC | | ENT  |MEDIA|BSPC | GUI | SHFT|
 //                      home row: GUI ALT CTL SFT           SFT CTL ALT GUI
+//                      thumb BSPC: Shift+it is Delete
             bindings = <
 &kp GRAVE &kp N1       &kp N2       &kp N3        &kp N4        &kp N5                              &kp N6    &kp N7        &kp N8        &kp N9       &kp N0          &kp MINUS
-&kp ESC   &kp Q        &kp W        &kp E         &kp R         &kp T                               &kp Y     &kp U         &kp I         &kp O        &kp P           &kp BSPC
+&kp ESC   &kp Q        &kp W        &kp E         &kp R         &kp T                               &kp Y     &kp U         &kp I         &kp O        &kp P           &kp LBKT
 &kp TAB   &hml LGUI A  &hml LALT S  &hml LCTRL D  &hml LSHFT F  &kp G                               &kp H     &hmr RSHFT J  &hmr RCTRL K  &hmr RALT L  &hmr RGUI SEMI  &kp SQT
-&kp LSHFT &kp Z        &kp X        &kp C         &kp V         &kp B      &kp C_MUTE   &kp C_PP    &kp N     &kp M         &kp COMMA     &kp DOT      &kp FSLH        &kp RSHFT
-                       &kp LCTRL    &kp LGUI      &kp LALT      &nav_rgb   &kp RET      &kp SPACE   &media_rgb &kp RALT      &kp RGUI      &kp RCTRL
+&kp LCTRL &kp Z        &kp X        &kp C         &kp V         &kp B      &kp C_MUTE   &kp C_PP    &kp N     &kp M         &kp COMMA     &kp DOT      &kp FSLH        &smt RCTRL RBKT
+                       &kp LSHFT    &kp LGUI      &kp LALT      &nav_rgb   &kp SPACE    &kp RET     &media_rgb &bspc_del     &kp RGUI      &kp RSHFT
             >;
             /* left knob: volume     right knob: page scroll */
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_DN PG_UP>;
@@ -254,9 +340,10 @@
 // and same relative positions as the block to the right of a TKL's main
 // block, so PgUp sits directly above PgDn in the outermost column.
 //
-// The `[ ] \ =` that a TKL has and this board has no room for live on the
-// number row here, under the digits they neighbour on a TKL. Shift composes
-// normally: NAV+Shift+9 is `{`.
+// TKL's right-side overflow lives on the number row here, under the digits it
+// neighbours on a TKL. Shift composes normally: NAV+Shift+9 is `{`. `\` and
+// `=` are only here; `[` and `]` are also on base now (see the base layer),
+// and are kept here as a fallback because the slots cost nothing.
 //
 // Arrows are the TKL inverted-T, not hjkl: on the base layer hjkl are already
 // hjkl for vim, and this layer's arrows are for everything that ISN'T vim —

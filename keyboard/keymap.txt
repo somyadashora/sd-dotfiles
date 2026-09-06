@@ -21,17 +21,20 @@ The two keys between the halves are the ENCODER PUSH-BUTTONS.
   |   `   |   1   |   2   |   3   |   4   |   5   |           |   6   |   7   |   8   |   9   |   0   |   -   |
   |   ~   |   !   |   @   |   #   |   $   |   %   |           |   ^   |   &   |   *   |   (   |   )   |   _   |
   +-------+-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+-------+
-  |  ESC  |   Q   |   W   |   E   |   R   |   T   |           |   Y   |   U   |   I   |   O   |   P   |  BSPC |
+  |  ESC  |   Q   |   W   |   E   |   R   |   T   |           |   Y   |   U   |   I   |   O   |   P   |   [   |
+  |       |       |       |       |       |       |           |       |       |       |       |       |   {   |
   +-------+-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+-------+
   |  TAB  |   A   |   S   |   D   |   F   |   G   |           |   H   |   J   |   K   |   L   |   ;   |   '   |
   |       |       |       |       |       |       |           |       |       |       |       |   :   |   "   |
   |       |  LGUI |  LALT | LCTRL | LSHFT |       |           |       | RSHFT | RCTRL |  RALT |  RGUI |       |
   +-------+-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+-------+
-  | LSHFT |   Z   |   X   |   C   |   V   |   B   |  MUTE  PP |   N   |   M   |   ,   |   .   |   /   | RSHFT |
-  |       |       |       |       |       |       |           |       |       |   <   |   >   |   ?   |       |
+  | LCTRL |   Z   |   X   |   C   |   V   |   B   |  MUTE  PP |   N   |   M   |   ,   |   .   |   /   |   ]   |
+  |       |       |       |       |       |       |           |       |       |   <   |   >   |   ?   |   }   |
+  |       |       |       |       |       |       |           |       |       |       |       |       | RCTRL |
   +-------+-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+-------+
           +-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+
-          | LCTRL |  LGUI |  LALT |&nav_r>|  RET  |           | SPACE |&media>|  RALT |  RGUI | RCTRL |
+          | LSHFT |  LGUI |  LALT |  NAV  | SPACE |           |  RET  | MEDIA |  BSPC |  RGUI | RSHFT |
+          |       |       |       |       |       |           |       |       |  DEL  |       |       |
           +-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+
 
   encoders   left C_VOL_UP / C_VOL_DN     right PG_DN / PG_UP
@@ -92,6 +95,8 @@ The two keys between the halves are the ENCODER PUSH-BUTTONS.
 
   positions [0, 5]       -> BOOT     (nav)
   positions [6, 11]      -> BOOT     (nav)
+  positions [50, 59]     -> CAPSWRD  (base)
+  positions [46, 47]     -> \        (base)
   positions [31, 32]     -> ESC      (base)
 
 -- NOTES ------------------------------------------------------------------------------------------------------
@@ -109,8 +114,18 @@ The two keys between the halves are the ENCODER PUSH-BUTTONS.
 
   Hold NAV + MEDIA together for the ADJ layer.
 
-  A TKL's right-side overflow ( [ ] \ = ) has no room on the base layer,
-  so it lives on NAV under the digits it neighbours on a TKL: NAV+8 is
-  \, NAV+9 is [, NAV+0 is ], NAV+- is =. Shift composes on top, so
-  NAV+Shift+9 is {.
+  The bottom-row corners are Ctrl, not Shift. Home-row Ctrl is on D
+  behind the cross-hand guard, so it can only fire with a right-hand
+  key - every left-hand Ctrl chord (<C-d> <C-u> <C-w> <C-r> <C-v>,
+  and Ctrl+b) needs the guard-free LCTRL down here. Shift moved one
+  row down to the outer thumb keys.
+
+  Both Shift keys together = caps word: UVM_INFO and SCREAMING_PARAMS
+  type in one gesture and end themselves at the space.
+
+  Of a TKL's right-side overflow, [ and ] are on base - [ where a TKL
+  has it, after P, and ] on the bottom-right corner. Shift composes,
+  so { and } (paragraph motions) are one gesture. Only \ and = stay
+  layer-bound: NAV+8 is \, NAV+- is =, and , + . is also \. NAV
+  keeps [ and ] as well, as a fallback.
 

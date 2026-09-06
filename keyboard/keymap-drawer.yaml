@@ -23,6 +23,15 @@ parse_config:
     '&studio_unlock': 'UNLOCK'
     '&bootloader': 'BOOT'
     '&sys_reset': 'RESET'
+    # Custom behaviours from sofle.keymap. The RGB layer macros are here for
+    # the same reason as the bare ZMK ones: `&nav_rgb` overflows the 7-char
+    # cell in keymap.txt and gets truncated to `&nav_r>`.
+    '&nav_rgb': 'NAV'
+    '&media_rgb': 'MEDIA'
+    '&caps_word': 'CAPSWRD'
+    # A mod-morph has no shifted face keymap-drawer can infer, so spell the
+    # pair out the way the keycaps do.
+    '&bspc_del': {t: 'BSPC', s: 'DEL'}
 
   # Print the second legend on every key that has one, the way it is printed
   # on a real keycap. keymap-drawer knows the SHIFTED keycodes (`&kp LBRC` ->

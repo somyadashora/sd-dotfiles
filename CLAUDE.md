@@ -831,10 +831,16 @@ PgUp sits directly above PgDn), NAV's arrows are the TKL **inverted-T** rather
 than hjkl (base-layer hjkl are already hjkl for vim; these arrows are for
 browsers and dialogs, where the TKL shape is the muscle memory), and MEDIA is
 F1-F12 straight across the number row. **Six columns per half cannot hold a
-TKL's right-side overflow** (`[ ] \` after P, `=` after `-`), so all four live
-on NAV under the digits they neighbour on a TKL — NAV+8/9/0/- = `\ [ ] =` —
-with Shift composing for free (`[` and `{` are one HID key, so NAV+Shift+9 is
-`{`). Don't "fix" this by shuffling QWERTY. The two keys between the halves are
+TKL's right-side overflow** (`[ ] \` after P, `=` after `-`), so it is split by
+how often each is actually typed rather than exiled wholesale: `[` and `]` sit
+on **base** (`[` in its TKL position right after P, taking the old Backspace
+slot; `]` on the bottom-right corner) because this repo's nvim config has
+twenty `[x`/`]x` mappings and Shift on top gives the `{`/`}` paragraph motions
+— a navigation prefix behind a held layer is the one thing you cannot afford.
+`\` and `=` stay on NAV under the digits they neighbour on a TKL (NAV+8 `\`,
+NAV+- `=`), with Shift composing for free (`[` and `{` are one HID key, so
+NAV+Shift+9 is `{`); `\` also has a `,`+`.` combo. NAV keeps `[`/`]` too, as a
+free fallback. Don't "fix" any of this by shuffling QWERTY. The two keys between the halves are
 the **encoder push-buttons**, not normal keys: easy to hit while turning the
 knob, so they only ever get things harmless to fire by accident (mute,
 play/pause, Win+L) — never a typing key.
@@ -850,7 +856,29 @@ because Space is a right thumb; that property did not survive the move.
 Two settings carry that and are the first thing to touch if mods misfire: a
 **cross-hand guard** (`hold-trigger-key-positions`, so a same-hand roll like
 `sd` types letters) and `require-prior-idle-ms = 150` (no mod mid-burst) —
-raise the latter before touching `tapping-term-ms`. **`j`+`k` → Esc is a
+raise the latter before touching `tapping-term-ms`.
+
+**The bottom-row corners are Ctrl, not Shift**, and that is the other half of
+the home-row-mod story rather than a preference. Home-row Ctrl lives on `D`
+behind the cross-hand guard, so it can only ever fire with a right-hand key —
+which makes every **left-hand** Ctrl chord physically impossible: `<C-d>`/`<C-u>`
+scroll, `<C-w>` windows, `<C-r>` redo, `<C-v>` blockwise, `<C-a>`/`<C-x>`
+increment, `<C-e>`/`<C-y>`, this config's `<C-g>`/`<C-q>`, and the `Ctrl+b`
+prefix above. A guard-free `&kp LCTRL` in the corner is the fix; right-hand
+Ctrl chords were always fine via the left home-row one. Shift moves down a row
+onto the **outer thumb keys**, which is also where a plain Shift is still
+wanted — `require-prior-idle-ms` means the home-row one refuses to fire
+mid-burst, so capitals typed at speed need a real key. The right corner doubles
+up as `&smt RCTRL RBKT` (tap `]`, hold Ctrl); `&smt` is deliberately **not**
+stock `&mt`, whose `hold-preferred` default would turn a lingered `]` into
+Ctrl. Backspace moves to the right thumb as `&bspc_del`, a mod-morph giving
+Delete under Shift. **Space and Enter are swapped** from TKL order — Space is
+the nvim leader and the most-pressed key, so it takes the stronger left inner
+thumb. Both Shift keys pressed together are a **`&caps_word` combo**: the
+SystemVerilog key, since `UVM_INFO`/`SCREAMING_PARAMS` are most of what gets
+typed here and caps-word's continue-list already carries `UNDERSCORE`.
+
+**`j`+`k` → Esc is a
 hardware combo**, not an nvim mapping, so it also escapes in nvim-bash vi mode
 and in a bare `vi` on a box you don't control. Encoders are per-layer.
 `&studio_unlock` is on ADJ+`U`. **Bootloader has a single-half escape hatch**: on NAV, the two ends of the
@@ -908,8 +936,10 @@ PNG only). `keymap-drawer.yaml` carries two necessary workarounds: it drops the
 layer-header text stroke (keymap-drawer relies on `paint-order`, which Chrome
 honours but librsvg/cairosvg do not — they paint the white stroke over the
 glyphs, rendering every header invisible or as a black blob), and its
-`raw_binding_map` renames bare ZMK behaviors that would otherwise print as
-devicetree node names (`&studio_unlock` → `UNLOCK`), while `zmk_keycode_map`
+`raw_binding_map` renames behaviors that would otherwise print as devicetree
+node names (`&studio_unlock` → `UNLOCK`) or overflow `keymap.txt`'s 7-char cell
+(`&nav_rgb` → `NAV`, else it truncates to `&nav_r>`), and gives a mod-morph the
+shifted face it has no way to infer (`&bspc_del` → `{t: BSPC, s: DEL}`), while `zmk_keycode_map`
 spells out the **shifted faces** so every key prints its second legend keycap
 style (keymap-drawer knows `&kp LBRC` is `{`, but not that `&kp COMMA` also
 shows `<`) — **keep both in sync when adding a macro or punctuation key**. Encoders are
