@@ -734,6 +734,22 @@ target names in prose, hence the awk scoped to the `assets`/`sha256` objects
 rather than a bare grep. There is **no Termux build** — herdr's own installer
 refuses Android outright — so tmux remains the multiplexer there.
 
+Every herdr invocation in the installer goes through `sandbox_run` — no stdin,
+a hard timeout, and `setsid -w` (its own session, no controlling terminal).
+herdr is the only tool the script installs that IS a multiplexer, so it is the
+only one that can take the terminal down with it: a child that claims the tty
+or signals the shell's process group closes the window, and `run_step`'s
+subshell does not help — that isolates a failing *function*, not a child that
+kills its terminal. `setsid -w`'s `-w` is load-bearing (a bare `setsid` forks
+and returns 0 immediately, so every success check would pass on a step that
+never ran). The rest of the debugging story: the script refuses to be
+`source`d (an `exit` in a sourced script kills the shell that sourced it, which
+looks identical to the terminal dying), every run appends a transcript to
+`$OPT_DIR/install-linux-tools.log` (`--no-log` opts out) since a terminal that
+closes takes its scrollback with it, `herdr plugin install` output is kept per
+plugin in `$OPT_DIR/herdr-logs/<id>.log` and tailed on failure instead of going
+to `/dev/null`, and `--skip-herdr` gets the other tools installed meanwhile.
+
 `herdr-cs` prints the cheatsheet block; `Ctrl+b Alt+c` shows the same block in a
 popup. That alias's start pattern is `^`-anchored, because the popup binding's
 own command line contains the words "HERDR CHEATSHEET" and an unanchored range

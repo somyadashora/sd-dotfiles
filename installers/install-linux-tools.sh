@@ -3,6 +3,16 @@
 # Linux-only, no-sudo installer for this dotfiles/Neovim setup.
 # Installs portable tools into ~/.local/opt/sd-tools and symlinks into ~/.local/bin.
 
+# Refuse to run sourced. This script exits on a fatal error, and an `exit` in a
+# sourced script kills the shell that sourced it — which from the outside looks
+# exactly like the terminal dying on its own. (The transcript redirection in
+# start_transcript would outlive the run too.) Checked BEFORE `set -e`, so the
+# shell that sourced it is not left with -e — and killed by this very return.
+if (return 0 2>/dev/null); then
+  printf 'Run this script, do not source it: ./install-linux-tools.sh\n' >&2
+  return 2
+fi
+
 set -euo pipefail
 
 BIN_DIR="${BIN_DIR:-$HOME/.local/bin}"
@@ -16,6 +26,9 @@ NVIM_GLIBC_MIN="${NVIM_GLIBC_MIN:-2.34}"
 FORCE=0
 SKIP_FONTS=0
 SKIP_RUSTUP=0
+SKIP_HERDR=0
+NO_LOG=0
+LOG_FILE="${LOG_FILE:-$OPT_DIR/install-linux-tools.log}"
 
 usage() {
   cat <<'USAGE'
@@ -26,6 +39,8 @@ Options:
   --skip-fonts  Do not install MesloLGS Nerd Font.
   --skip-rustup Do not bootstrap Rust/cargo via rustup when it is needed to
                 build the tree-sitter CLI from source.
+  --skip-herdr  Do not install herdr or its plugins.
+  --no-log      Do not write a transcript of this run to LOG_FILE.
   -h, --help    Show this help.
 
 Environment overrides:
@@ -34,6 +49,7 @@ Environment overrides:
   FONT_DIR      Directory for Linux user fonts. Default: ~/.local/share/fonts/MesloNerdFonts
   NVIM_GLIBC_MIN  Min host glibc for official neovim/neovim builds. Older hosts
                   fall back to neovim/neovim-releases. Default: 2.34
+  LOG_FILE      Transcript of the run. Default: $OPT_DIR/install-linux-tools.log
 
 Notes:
   - This script never uses sudo and never uses system package managers.
@@ -47,6 +63,8 @@ while [[ $# -gt 0 ]]; do
     --force) FORCE=1 ;;
     --skip-fonts) SKIP_FONTS=1 ;;
     --skip-rustup) SKIP_RUSTUP=1 ;;
+    --skip-herdr) SKIP_HERDR=1 ;;
+    --no-log) NO_LOG=1 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -121,6 +139,9 @@ command_version() {
     tree-sitter) tree-sitter --version 2>/dev/null | extract_version ;;
     slang-server) slang-server --version 2>/dev/null | extract_version ;;
     tmux) tmux -V 2>/dev/null | extract_version ;;
+    # Same reason as sandbox_run: this one runs the INSTALLED herdr, on every
+    # subsequent run of this script, before anything else has touched it.
+    herdr) sandbox_run 20 herdr --version 2>/dev/null | extract_version ;;
     git) git --version 2>/dev/null | extract_version ;;
     *) "$command_name" --version 2>/dev/null | extract_version ;;
   esac
@@ -215,7 +236,51 @@ link_binary() {
   ln -sfn "$target" "$BIN_DIR/$name"
 }
 
-test_binary() { "$1" --version >/dev/null 2>&1; }
+# `</dev/null` matters as much as the exit status here: this runs a binary that
+# was on the internet a second ago, and a probe that finds a terminal to read
+# from can sit on it forever instead of answering.
+test_binary() { "$1" --version </dev/null >/dev/null 2>&1; }
+
+# herdr is the one tool in this script that IS a terminal multiplexer, so it is
+# the one tool that can take the terminal down with it — a run that claims this
+# terminal as its controlling tty, or signals the process group the shell lives
+# in, closes the window and the scrollback along with it, and `run_step`'s
+# subshell cannot help with that (it isolates a failing *function*, not a child
+# that kills its terminal). So every herdr invocation goes through here: no
+# stdin, so it can never sit on a prompt; a hard timeout, so it can never hang
+# the installer; and, where `setsid -w` exists, its own session with no
+# controlling terminal, which is what puts this terminal out of its reach.
+# `-w` is not optional — a bare `setsid` forks and returns 0 immediately, so
+# every success check downstream would believe a step that never ran.
+SANDBOX_PROBED=0
+SANDBOX_SETSID=0
+sandbox_run() {
+  local timeout_seconds=$1
+  shift
+  if (( ! SANDBOX_PROBED )); then
+    SANDBOX_PROBED=1
+    if have setsid && setsid -w true >/dev/null 2>&1; then
+      SANDBOX_SETSID=1
+    fi
+  fi
+  local -a cmd=()
+  if (( SANDBOX_SETSID )); then cmd+=(setsid -w); fi
+  if have timeout; then cmd+=(timeout -k 10 "$timeout_seconds"); fi
+  cmd+=("$@")
+  "${cmd[@]}" </dev/null
+}
+
+# Terminal scrollback is not evidence you can rely on while a step is capable
+# of closing the terminal: the window goes and the output goes with it. The log
+# file is still there afterwards.
+start_transcript() {
+  [[ "$NO_LOG" == 1 ]] && return 0
+  mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null || return 0
+  printf '\n===== %s | %s =====\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" \
+    >> "$LOG_FILE" 2>/dev/null || return 0
+  exec > >(tee -a "$LOG_FILE") 2>&1
+  log "Transcript of this run: ${LOG_FILE}"
+}
 
 skip_incompatible_binary() {
   local label=$1
@@ -665,8 +730,10 @@ install_herdr() {
   fi
   chmod +x "$binary"
   # herdr is a recent-glibc Rust build; older hosts (ETX/SLES) fall out here and
-  # keep whatever they had, with tmux still doing the multiplexing.
-  if ! test_binary "$binary"; then
+  # keep whatever they had, with tmux still doing the multiplexing. This is the
+  # first time the downloaded binary is ever run, so it goes through the
+  # sandbox rather than test_binary (see sandbox_run).
+  if ! sandbox_run 20 "$binary" --version >/dev/null 2>&1; then
     skip_incompatible_binary herdr "$tmp"
     return 0
   fi
@@ -697,8 +764,10 @@ install_herdr() {
 # EXITS 0, so the step would report success having installed nothing. That is
 # also why success is confirmed against `herdr plugin list` rather than $?.
 install_herdr_plugins() {
-  local entry repo ref id missing=()
+  local entry repo ref id plugin_log missing=()
+  local log_dir="$OPT_DIR/herdr-logs"
   have herdr || { warn "herdr not on PATH; skipping herdr plugins."; return 0; }
+  mkdir -p "$log_dir"
   for entry in \
     'thanhdat77/herdr-navigator|v0.3.6|herdr-navigator' \
     'ChmaraX/herdr-nvim|v1.0.0|chmarax.herdr-nvim' \
@@ -706,16 +775,23 @@ install_herdr_plugins() {
     'yuk1ty/herdr-spreader|v0.2.1|herdr-spreader'
   do
     IFS='|' read -r repo ref id <<<"$entry"
-    if [[ "$FORCE" != 1 ]] && herdr plugin list 2>/dev/null | grep -Fq "$id"; then
+    if [[ "$FORCE" != 1 ]] && sandbox_run 60 herdr plugin list 2>/dev/null | grep -Fq "$id"; then
       ok "herdr plugin ${id} already installed."
       continue
     fi
     log "Installing herdr plugin ${id} (${ref})"
-    herdr plugin install "$repo" --ref "$ref" --yes >/dev/null || true
-    if herdr plugin list 2>/dev/null | grep -Fq "$id"; then
+    # navigator and spreader build with cargo, so the timeout has to allow for
+    # a cold compile. Output is kept rather than discarded: a plugin that fails
+    # says why here, and this is the only place it says it.
+    plugin_log="$log_dir/${id}.log"
+    sandbox_run 1800 herdr plugin install "$repo" --ref "$ref" --yes \
+      >"$plugin_log" 2>&1 || true
+    if sandbox_run 60 herdr plugin list 2>/dev/null | grep -Fq "$id"; then
       ok "Installed herdr plugin ${id}."
     else
       missing+=("$id")
+      warn "herdr plugin ${id} did not install; last lines of ${plugin_log}:"
+      tail -n 15 "$plugin_log" 2>/dev/null | sed 's/^/    /' >&2 || true
     fi
   done
   if (( ${#missing[@]} > 0 )); then
@@ -812,6 +888,7 @@ main() {
   require_linux
   require_basic_tools
   prepare_dirs
+  start_transcript "$0 $*"
   arch=$(host_arch)
   log "Detected Linux/${arch}; installing into ${OPT_DIR} and ${BIN_DIR}"
 
@@ -828,14 +905,19 @@ main() {
   run_step install_abbrev_alias
   run_step install_fzf_git
   run_step install_verible "$arch"
-  run_step install_herdr "$arch"
-  run_step install_herdr_plugins
+  if [[ "$SKIP_HERDR" == 1 ]]; then
+    warn "Skipping herdr and its plugins (--skip-herdr)."
+  else
+    run_step install_herdr "$arch"
+    run_step install_herdr_plugins
+  fi
   run_step install_meslo_font
   run_step check_existing_only_tools
 
   if (( ${#FAILED_STEPS[@]} > 0 )); then
     warn "Finished with failed steps: ${FAILED_STEPS[*]} (everything else installed)."
   fi
+  [[ "$NO_LOG" == 1 ]] || log "Full transcript: ${LOG_FILE}"
 
   cat <<EOF_STATUS
 
