@@ -4,8 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-Personal dotfiles for Neovim, tmux, bash, git, and Sublime Text — focused on
-VLSI/SystemVerilog development. Also carries a ZMK keyboard config
+Personal dotfiles for Neovim, tmux, herdr, bash, git, and Sublime Text —
+focused on VLSI/SystemVerilog development. Also carries a ZMK keyboard config
 (`keyboard/`), which is built by CI rather than symlinked.
 `install.sh` creates the necessary symlinks:
 
@@ -15,6 +15,8 @@ vim/.vimrc          → ~/.vimrc
 tmux/.tmux.conf     → ~/.tmux.conf
 tmux/scripts/       → ~/.config/tmux/scripts
 lazygit/config.yml  → ~/.config/lazygit/config.yml
+herdr/config.toml   → ~/.config/herdr/config.toml
+herdr/spreader.yaml → ~/.config/herdr/plugins/config/herdr-spreader/config.yaml
 sublime/            → ~/.config/sublime-text/Packages/User  (ST3 dir if that's what exists)
 ```
 
@@ -570,7 +572,10 @@ customized `sd-rtl-style` template. Nothing is installed globally — per-projec
 
 ## tmux architecture
 
-Config: `tmux/.tmux.conf`. Prefix: `Ctrl+Space`.
+Config: `tmux/.tmux.conf`. Prefix: `Ctrl+b` — shared with herdr (see
+`## herdr` below), so `Ctrl+b Ctrl+b` is how you reach a herdr running
+inside a tmux pane. tmux's default table still binds the prefix key to
+`send-prefix`, so nothing had to be added for that.
 
 **Status bar**:
 - Primary (always on): session name left, Bangalore time + weather right
@@ -598,6 +603,90 @@ Config: `tmux/.tmux.conf`. Prefix: `Ctrl+Space`.
 mauve current line; needs tmux 3.2+), sainnhe/tmux-fzf, tmux-plugins/tmux-yank,
 tmux-plugins/tmux-resurrect + tmux-continuum (session save/restore),
 tmux-plugins/tpm.
+
+## herdr (`herdr/`)
+
+[herdr](https://github.com/herdrdev/herdr) is a second multiplexer, kept for one
+job tmux doesn't do: it knows what a coding agent in a pane is *doing*. It
+detects Claude Code / Codex / Copilot / Devin / … by process name and output
+pattern and shows each pane's state — **blocked / working / done / idle** — in a
+sidebar, so a pane waiting on you is visible without cycling through windows.
+Panes survive detach on their own (no resurrect/continuum equivalent needed).
+
+**It coexists with tmux, it does not replace it.** tmux stays the general
+multiplexer and keeps everything herdr has no concept of: `synchronize-panes`,
+`tmux-pad`, `tmux-watch`, `tmux-sysmon`, the paste-buffer pickers, and the
+`g` / `g d` key tables (herdr has **no multi-key tables** at all). herdr is what
+you launch to run agents in. Both use prefix `Ctrl+b`, so `Ctrl+b Ctrl+b`
+drives a herdr nested inside a tmux pane.
+
+**Config** is `herdr/config.toml`, symlinked **file-level** to
+`~/.config/herdr/config.toml` — not the whole dir, because herdr keeps installed
+plugin checkouts, per-plugin config and runtime state under
+`~/.config/herdr/plugins/`. Same reasoning as `lazygit/config.yml`. herdr does
+edit the file itself for a few settings (theme, sound, toasts, onboarding), but
+its writes are **textual key upserts** (`src/config/write.rs`), not a serde
+re-serialize, so the cheatsheet comment block at the top survives them;
+`onboarding = false` is pre-set so a fresh machine produces no diff at all.
+`herdr config check` validates the file — it reports both unknown action names
+(`unknown config key keys.X; ignoring key`) and unparseable combos
+(`invalid keybinding: … disabling binding`), so it is the fast check after any
+edit, and `prefix+?` in a running herdr is the authority on what is bound.
+
+**Keybindings mirror tmux.** herdr merges `[keys]` over its own defaults, so the
+file lists only the divergences. The load-bearing ones: tmux binds `j`/`k` to
+next/previous window, and adding those to `next_tab`/`previous_tab` is what
+frees `prefix+j`/`k` from stock herdr's pane focus — pane focus then moves to
+bare `alt+hjkl`, which is where tmux has it anyway (`bind -n M-h …`). Likewise
+`reload_config` takes `prefix+r` (tmux) and stock herdr's `resize_mode` moves
+off it to `prefix+shift+r`. `split_vertical` is `prefix+|`: single punctuation
+chars parse literally, and there is **no `pipe` key name** (`minus`, `comma`,
+`ampersand`, `period`, `slash` do exist).
+
+`[[keys.command]]` entries run through a shell that has **not** sourced
+`.bash_aliases`, so each one is self-contained — no aliases, no `$DOTFILES_DIR`.
+The getdotfiles popup finds the repo by `readlink -f` on the config symlink.
+
+**Theme** is catppuccin mocha with the repo's mauve `#cba6f7` accent (herdr
+defaults to cyan), same identity as the tmux pane borders, lazygit and fzf.
+`ui.tab_bar_right` takes `{ type = "command", … }` entries, so the tab bar
+reuses `tmux/scripts/tmux-tz-time` and `tmux-weather` directly — those scripts
+are plain `/bin/sh` and know nothing about tmux. herdr clears a command entry
+when it fails, so this degrades to blank rather than breaking.
+
+**Plugins** (`herdr plugin install`, checkouts managed by herdr, nothing
+vendored here) are installed by `install_herdr_plugins` in the Linux installer
+and **ref-pinned** there, same rule as the bat themes and fzf-git.sh — the
+marketplace is explicitly unreviewed. Two traps that cost real time: a
+non-interactive `herdr plugin install` without `--yes` prints a message and
+**exits 0** having installed nothing, so the step confirms success against
+`herdr plugin list` rather than `$?`; and a `plugin_action` binding for a plugin
+that is not installed is **inert, not a config error** (`herdr config check`
+passes), so a failed plugin costs one key and nothing else.
+
+- **herdr-navigator** (`prefix+f`) — fuzzy jump over workspaces/agents/sessions.
+  The tmux-fzf analogue, so it keeps tmux's `prefix+f`. Builds with cargo.
+- **herdr-nvim** (`prefix+alt+n`) — nvim sidebar in the workspace; also
+  linkifies file paths agents print. Prebuilt binary.
+- **reviewr** (`prefix+alt+r`) — review an agent's diff and send line comments
+  back to it; the herdr-side companion to `ai/skills/sd-code-review`. Prebuilt
+  binary, but its installer needs `curl >= 7.71` (`--retry-all-errors`).
+- **herdr-spreader** (`prefix+alt+s`) — tmuxinator for herdr. Its layout is a
+  dotfile: `herdr/spreader.yaml`, symlinked to
+  `~/.config/herdr/plugins/config/herdr-spreader/config.yaml`. Builds with cargo.
+
+**Install**: `install_herdr` reads `https://herdr.dev/latest.json`, the manifest
+`herdr update` itself uses — plain curl, no GitHub API (the house rule), and it
+carries a per-target SHA-256, so this is the one install step that verifies its
+download. The `notes` field is a one-line release-notes blob that mentions
+target names in prose, hence the awk scoped to the `assets`/`sha256` objects
+rather than a bare grep. There is **no Termux build** — herdr's own installer
+refuses Android outright — so tmux remains the multiplexer there.
+
+`herdr-cs` prints the cheatsheet block; `Ctrl+b Alt+c` shows the same block in a
+popup. That alias's start pattern is `^`-anchored, because the popup binding's
+own command line contains the words "HERDR CHEATSHEET" and an unanchored range
+would restart there.
 
 ## Critical tmux format rule
 
@@ -751,8 +840,13 @@ knob, so they only ever get things harmless to fire by accident (mute,
 play/pause, Win+L) — never a typing key.
 
 **GACS home-row mods** (`A`=GUI `S`=Alt `D`=Ctrl `F`=Shift, mirrored) keep the
-daily chords layer-free — `Ctrl+hjkl` (nvim windows), `Alt+hjkl` (tmux panes)
-and `Ctrl+Space` (tmux prefix) are each a left-hand hold plus a right-hand tap.
+daily chords layer-free — `Ctrl+hjkl` (nvim windows) and `Alt+hjkl` (tmux
+panes) are each a left-hand hold plus a right-hand tap. The `Ctrl+b` prefix
+(tmux and herdr) is the **exception**: `b` is a left-half key, so a left
+home-row Ctrl and `b` are the same hand and the cross-hand guard refuses the
+hold — it types `db`. Press it with the right half's `RCTRL` or the real
+bottom-row `LCTRL`. The old `Ctrl+Space` prefix was home-row-reachable only
+because Space is a right thumb; that property did not survive the move.
 Two settings carry that and are the first thing to touch if mods misfire: a
 **cross-hand guard** (`hold-trigger-key-positions`, so a same-hand roll like
 `sd` types letters) and `require-prior-idle-ms = 150` (no mod mid-burst) —
@@ -834,6 +928,8 @@ git-cs        # print git aliases
 fzf-cs        # print fzf keybindings/syntax cheatsheet
 rg-cs         # print ripgrep usage cheatsheet
 vim-cs        # print the plain-vim (~/.vimrc) cheatsheet
+herdr-cs      # print the herdr cheatsheet (keys + plugin usage)
+hdr / hdrl / hdra  # herdr / herdr session list / herdr session attach
 sofle-cs      # print the Sofle keymap (generated ASCII diagram, all layers)
 getdotfiles   # git pull --rebase on this repo
 prompt-check  # verify Nerd Font glyphs render correctly

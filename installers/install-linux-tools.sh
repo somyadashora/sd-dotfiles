@@ -611,6 +611,119 @@ install_fzf_git() {
   ok "Installed fzf-git.sh (${sha:0:7})."
 }
 
+# herdr publishes its own release manifest at herdr.dev/latest.json — the same
+# one `herdr update` reads — carrying the version, a download URL per target and
+# a SHA-256 per target. Using it keeps this file's rule intact (plain curl, no
+# GitHub API, no tokens) AND gets a checksum, which the GitHub-release steps
+# above have no equivalent for.
+#
+# Scoped awk rather than a JSON parser (none is guaranteed on these hosts) and
+# rather than a bare grep: the manifest's `notes` field is a long release-notes
+# blob on one line that mentions target names in prose, so the search has to be
+# confined to the assets/sha256 objects. Same approach as herdr's own installer.
+herdr_manifest_field() {
+  local manifest=$1 section=$2 target=$3
+  printf '%s\n' "$manifest" | awk -v section="\"${section}\"" -v target="\"${target}\"" '
+    $0 ~ "^[[:space:]]*" section "[[:space:]]*:" { inside = 1; next }
+    inside && /^[[:space:]]*}/ { exit }
+    inside && index($0, target) {
+      sub(/^.*:[[:space:]]*"/, "")
+      sub(/".*$/, "")
+      print
+      exit
+    }'
+}
+
+install_herdr() {
+  local arch=$1 target manifest version url sha tmp binary dest
+  case "$arch" in
+    x86_64) target=linux-x86_64 ;;
+    arm64)  target=linux-aarch64 ;;
+    *) warn "No herdr Linux build for ${arch}; skipping."; return 0 ;;
+  esac
+  manifest=$(curl -fsSL --retry 3 --connect-timeout 10 --max-time 20 \
+    "https://herdr.dev/latest.json" 2>/dev/null) || true
+  [[ -n "$manifest" ]] || { warn "Could not reach herdr.dev/latest.json; skipping herdr."; return 0; }
+  version=$(printf '%s\n' "$manifest" | awk -F '"' '/^[[:space:]]*"version"[[:space:]]*:/ { print $4; exit }')
+  url=$(herdr_manifest_field "$manifest" assets "$target")
+  sha=$(herdr_manifest_field "$manifest" sha256 "$target")
+  if [[ -z "$version" || -z "$url" || ${#sha} -ne 64 ]]; then
+    warn "herdr manifest did not describe ${target}; skipping."
+    return 0
+  fi
+  needs_update herdr herdr "$version" || return 0
+  tmp=$(tmpdir); binary="$tmp/herdr"
+  download "$url" "$binary"
+  if have sha256sum; then
+    if ! printf '%s  %s\n' "$sha" "$binary" | sha256sum -c --status; then
+      warn "herdr checksum did not match the manifest; not installing."
+      rm -rf "$tmp"
+      return 0
+    fi
+  else
+    warn "sha256sum unavailable; installing herdr without verifying the checksum."
+  fi
+  chmod +x "$binary"
+  # herdr is a recent-glibc Rust build; older hosts (ETX/SLES) fall out here and
+  # keep whatever they had, with tmux still doing the multiplexing.
+  if ! test_binary "$binary"; then
+    skip_incompatible_binary herdr "$tmp"
+    return 0
+  fi
+  dest="$OPT_DIR/herdr-$version"
+  rm -rf "$dest"
+  mkdir -p "$dest"
+  mv "$binary" "$dest/herdr"
+  link_binary "$dest/herdr" herdr
+  rm -rf "$tmp"
+  ok "Installed herdr ${version}."
+}
+
+# The four plugins herdr/config.toml binds keys for. Installed the TPM way —
+# herdr manages the checkouts under ~/.config/herdr/plugins, nothing is vendored
+# here. herdr-nvim and reviewr download a prebuilt binary; navigator and
+# spreader build from source with cargo, so those two need rustup to have run.
+# Each is guarded, so a missing cargo or a moved repo costs one plugin, not the
+# step — a plugin_action keybinding for a plugin that isn't installed is inert,
+# not a config error (verified with `herdr config check`).
+#
+# Every entry is REF-PINNED, the same rule as the bat themes / fzf-git.sh /
+# pinned ZMK source: `herdr plugin install` otherwise takes whatever the default
+# branch holds today, and the marketplace is explicitly unreviewed. Bump the tag
+# and the plugin's keybindings in herdr/config.toml together.
+#
+# `--yes` is load-bearing: without it a non-interactive install prints
+# "remote plugin install requires --yes when stdin is not interactive" and
+# EXITS 0, so the step would report success having installed nothing. That is
+# also why success is confirmed against `herdr plugin list` rather than $?.
+install_herdr_plugins() {
+  local entry repo ref id missing=()
+  have herdr || { warn "herdr not on PATH; skipping herdr plugins."; return 0; }
+  for entry in \
+    'thanhdat77/herdr-navigator|v0.3.6|herdr-navigator' \
+    'ChmaraX/herdr-nvim|v1.0.0|chmarax.herdr-nvim' \
+    'persiyanov/herdr-reviewr|v0.36.2|persiyanov.reviewr' \
+    'yuk1ty/herdr-spreader|v0.2.1|herdr-spreader'
+  do
+    IFS='|' read -r repo ref id <<<"$entry"
+    if [[ "$FORCE" != 1 ]] && herdr plugin list 2>/dev/null | grep -Fq "$id"; then
+      ok "herdr plugin ${id} already installed."
+      continue
+    fi
+    log "Installing herdr plugin ${id} (${ref})"
+    herdr plugin install "$repo" --ref "$ref" --yes >/dev/null || true
+    if herdr plugin list 2>/dev/null | grep -Fq "$id"; then
+      ok "Installed herdr plugin ${id}."
+    else
+      missing+=("$id")
+    fi
+  done
+  if (( ${#missing[@]} > 0 )); then
+    warn "herdr plugins not installed: ${missing[*]} (their keybindings stay inert)."
+    warn "herdr-navigator and herdr-spreader build with cargo — re-run this script once rustup has provided it."
+  fi
+}
+
 install_verible() {
   local arch=$1 tag asset url tmp archive root target tool
   tag=$(latest_tag chipsalliance/verible)
@@ -715,6 +828,8 @@ main() {
   run_step install_abbrev_alias
   run_step install_fzf_git
   run_step install_verible "$arch"
+  run_step install_herdr "$arch"
+  run_step install_herdr_plugins
   run_step install_meslo_font
   run_step check_existing_only_tools
 
@@ -740,6 +855,8 @@ Useful checks:
   delta --version
   bat --version
   verible-verilog-ls --version
+  herdr --version
+  herdr plugin list          # navigator / herdr-nvim / reviewr / spreader
   # bash-abbrev-alias: source \$HOME/.somyadashora/sd-tools/abbrev-alias/abbrev-alias.plugin.bash
   # fzf-git.sh: sourced by fzf/fzf.bash from \$HOME/.somyadashora/sd-tools/fzf-git/fzf-git.sh (Ctrl-G pickers)
   bat --list-themes | grep -E 'Catppuccin|tokyonight|Kanagawa|cyberdream|palenight'  # prompt-scheme bat themes

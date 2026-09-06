@@ -53,6 +53,22 @@ create_symlink "$DOTFILES_DIR/tmux/scripts" "$HOME/.config/tmux/scripts"
 mkdir -p "$HOME/.config/lazygit"
 create_symlink "$DOTFILES_DIR/lazygit/config.yml" "$HOME/.config/lazygit/config.yml"
 
+# herdr configuration. File-level symlinks, not the whole dir: herdr keeps
+# installed plugin checkouts, per-plugin config and runtime state under
+# ~/.config/herdr/plugins/, none of which belongs in the repo — same reasoning
+# as lazygit's config.yml above. herdr edits config.toml in place for a few
+# settings (theme, sound, toasts), and those writes are textual key upserts, so
+# they land in the repo as a normal diff without disturbing the rest of the file.
+mkdir -p "$HOME/.config/herdr"
+create_symlink "$DOTFILES_DIR/herdr/config.toml" "$HOME/.config/herdr/config.toml"
+
+# The herdr-spreader layout, at the path that plugin reads
+# (`herdr plugin config-dir herdr-spreader`). Pre-creating the directory means
+# the link works before the plugin is ever installed.
+mkdir -p "$HOME/.config/herdr/plugins/config/herdr-spreader"
+create_symlink "$DOTFILES_DIR/herdr/spreader.yaml" \
+    "$HOME/.config/herdr/plugins/config/herdr-spreader/config.yaml"
+
 # Sublime Text configuration: the whole sublime/ dir becomes Packages/User,
 # so settings edited inside Sublime land straight in the repo. Machine-local
 # files plugins drop there are filtered by sublime/.gitignore. Prefers the

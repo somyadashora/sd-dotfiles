@@ -9,7 +9,12 @@
  *
  * Reference points from the rest of this repo:
  *   nvim leader   = <Space>          -> Space is a thumb, unmodified
- *   tmux prefix   = Ctrl+Space       -> same thumb, plus a home-row Ctrl
+ *   tmux prefix   = Ctrl+b           -> herdr uses the same prefix. NOT a
+ *                                      home-row-Ctrl chord: b is a LEFT-half
+ *                                      key, so the cross-hand guard refuses
+ *                                      the left Ctrl and it types "db". Use
+ *                                      the right half's RCTRL, or the real
+ *                                      LCTRL on the bottom row.
  *   Ctrl+hjkl     = nvim window nav  -> home-row Ctrl + base-layer hjkl
  *   Alt+hjkl      = tmux pane nav    -> home-row Alt  + base-layer hjkl
  *   jk            = Esc              -> hardware combo, works shell-wide

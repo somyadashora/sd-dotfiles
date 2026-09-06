@@ -183,6 +183,7 @@ for its shebang to resolve against, so call the interpreter explicitly:
   python3 scripts/fetch-refs.py --extract
 EOF_REFS
 
+  warn "herdr is skipped on Termux: it publishes no Android build, and its own installer refuses Android outright. tmux stays the multiplexer here; herdr/config.toml is still symlinked by install.sh so a synced checkout stays consistent."
   warn "slang-server is skipped on Termux: no official Android/Termux release asset is handled here."
   warn "verible is skipped on Termux: no native Termux package or official Android release asset is handled here."
   warn "termux-api installed — also install the Termux:API companion app (F-Droid/Play Store) for Android clipboard to work in nvim."
@@ -222,7 +223,7 @@ install_tpm() {
     git clone https://github.com/tmux-plugins/tpm "$tpm_dir"
   fi
 
-  ok "TPM installed. Open tmux and press Ctrl+Space+I to install all plugins (catppuccin etc)."
+  ok "TPM installed. Open tmux and press Ctrl+b then Shift+I to install all plugins (catppuccin etc)."
 }
 
 # Isolate each tool: run the step in a subshell so any failure (including a

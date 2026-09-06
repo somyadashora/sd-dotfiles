@@ -1,0 +1,306 @@
+# ============================================================================
+# HERDR CHEATSHEET (prefix = Ctrl+b)
+# ============================================================================
+# herdr is the agent multiplexer; tmux stays the general one. Same prefix
+# (Ctrl+b) and the same keys wherever both tools have the concept, so there is
+# one muscle memory. Nested (herdr inside a tmux pane): Ctrl+b Ctrl+b sends the
+# prefix through to herdr.
+#
+# TABS (tmux calls these windows):
+#   Ctrl+b + c              - New tab
+#   Ctrl+b + n / p          - Next / previous tab
+#   Ctrl+b + j / k          - Next / previous tab (tmux muscle memory)
+#   Ctrl+b + [1-9]          - Jump to tab N
+#   Ctrl+b + ,              - Rename tab
+#   Ctrl+b + &              - Close tab
+#   Ctrl+b + Tab            - Cycle panes (Ctrl+b + Shift+Tab backwards)
+#
+# PANES (splits):
+#   Ctrl+b + |              - Split side by side
+#   Ctrl+b + -              - Split stacked
+#   Alt + h/j/k/l           - Focus pane left/down/up/right (no prefix, as tmux)
+#   Ctrl+b + Shift+h/j/k/l  - Swap the focused pane in that direction
+#   Ctrl+b + x              - Close pane
+#   Ctrl+b + z              - Zoom / unzoom pane
+#   Ctrl+b + Shift+r        - Resize mode (arrows/hjkl resize, Esc exits)
+#   Ctrl+b + Shift+p        - Rename pane
+#
+# WORKSPACES (herdr-only — a project/repo context holding its own tabs):
+#   Ctrl+b + w              - Workspace picker
+#   Ctrl+b + g              - Session navigator (everything, one list)
+#   Ctrl+b + Shift+n        - New workspace
+#   Ctrl+b + Shift+w        - Rename workspace
+#   Ctrl+b + Shift+d        - Close workspace
+#   Ctrl+b + Shift+g        - New git worktree from this workspace
+#   Ctrl+b + b              - Toggle sidebar (Ctrl+b + Shift+s does the same,
+#                             mirroring tmux's status-line toggle)
+#
+# AGENTS (the reason herdr exists):
+#   Just run claude/codex/... in a pane — herdr detects it and shows its state
+#   in the sidebar: blocked (needs you) / working / done / idle.
+#   Ctrl+b + o              - Focus whatever the current notification points at
+#   herdr agent list        - Same states on the CLI, as JSON
+#
+# SESSION (herdr has tmux's detach/attach built in — no resurrect needed):
+#   Ctrl+b + d              - Detach (agents keep running; Ctrl+b + q also works)
+#   herdr                   - Re-attach to the running session
+#   herdr session list      - List sessions
+#   herdr status            - Server/client status
+#
+# SCROLLBACK / COPY:
+#   Ctrl+b + [              - Copy mode (keyboard selection)
+#   Ctrl+b + e              - Open this pane's scrollback in $EDITOR
+#   Mouse drag / dbl-click  - Selects and copies (ui.copy_on_select)
+#
+# POPUPS (open over the layout, close on exit):
+#   Ctrl+b + Shift+t        - Scratch shell (tmux's Ctrl+b + T)
+#   Ctrl+b + Alt+g          - lazygit
+#   Ctrl+b + Alt+d          - getdotfiles (pull this repo)
+#   Ctrl+b + Alt+c          - This cheatsheet
+#
+# PLUGINS:
+#   herdr-navigator — one fuzzy list over every workspace, agent, session,
+#   remote, directory and action. The tmux-fzf of herdr, so it keeps tmux's key.
+#     Ctrl+b + f            - Open the navigator (overlay); type to filter,
+#                             Enter jumps, Esc cancels
+#     Ctrl+b + Shift+f      - Open it as a persistent side pane instead, so it
+#                             stays put while you jump around
+#     Ctrl+b + Alt+b        - Jump back to where you were before the last jump
+#
+#   herdr-nvim — a full-height nvim sidebar sharing the workspace. Use it to
+#   read/annotate code beside a running agent without leaving herdr.
+#     Ctrl+b + Alt+n        - Toggle the nvim sidebar
+#     Ctrl+b + Alt+o        - Pick a file out of the current agent's output and
+#                             open it in that sidebar
+#     Ctrl+click a path     - Any file path an agent prints is a link into the
+#                             sidebar (also handles agents' file:// links)
+#
+#   reviewr — review the diff an agent just wrote, next to the chat, and send
+#   line comments straight back to it. The herdr-side companion to this repo's
+#   .code-review.md / sd-code-review skill.
+#     Ctrl+b + Alt+r        - Toggle the reviewr pane
+#                             In it: browse changed files, inspect hunks, add a
+#                             comment on a line, send the comments to the agent
+#     Auto-opens by itself when a worktree workspace is created.
+#
+#   herdr-spreader — tmuxinator/tmuxp for herdr: build a whole workspace (tabs,
+#   panes, cwds, commands) from one YAML file. The layout lives in this repo at
+#   herdr/spreader.yaml.
+#     Ctrl+b + Alt+s        - Apply the layout
+#     herdr-spreader apply --dry-run   - Print what it would do, change nothing
+#
+# HELP / CONFIG:
+#   Ctrl+b + ?              - herdr's own list of every active binding (this is
+#                             the authority; this sheet is the narrated version)
+#   Ctrl+b + s              - Settings UI
+#   Ctrl+b + r              - Reload this config
+#
+# NO HERDR EQUIVALENT (stay in tmux for these):
+#   synchronize-panes, tmux-pad (Ctrl+b + P), tmux-watch (Ctrl+b + W),
+#   tmux-sysmon (Ctrl+b + M), the paste-buffer pickers (Ctrl+b + b / =),
+#   and the g / g d key tables (herdr has no multi-key tables).
+# ============================================================================
+
+# Onboarding writes `onboarding = false` on first run. Pre-setting it keeps
+# herdr from editing this file at all on a fresh machine — the file is a
+# symlink into the dotfiles repo, so every write it makes is a repo diff.
+# (Its writes are textual key upserts, not a re-serialize, so the cheatsheet
+# block above survives them — but a clean `git status` is still nicer.)
+onboarding = false
+
+[terminal]
+# Empty = $SHELL, then /bin/sh. new_cwd = "follow" opens new panes/tabs in the
+# focused pane's directory, which is what tmux's default-path behaviour does.
+default_shell = ""
+new_cwd = "follow"
+
+[session]
+# Re-enter each agent's own conversation session when a herdr session is
+# restored, rather than dropping you at a fresh prompt.
+resume_agents_on_restore = true
+
+# ============================================================================
+# Theme — catppuccin mocha with the repo's mauve accent
+# ============================================================================
+# Same identity as the tmux pane borders (#cba6f7), lazygit, fzf and the nvim
+# accent, so herdr chrome reads as part of the same setup. herdr's base
+# catppuccin theme already carries the mocha palette; only the tokens that
+# differ from it are set here.
+
+[theme]
+name = "catppuccin"
+auto_switch = false
+
+[theme.custom]
+accent = "#cba6f7"        # mauve — herdr defaults this to cyan
+sidebar_bg = "#11111b"    # crust — sits under the panels
+panel_bg = "#181825"      # mantle
+active_row_bg = "#313244" # surface0 — active space / focused agent row
+selection_bg = "#45475a"  # surface1 — navigate-mode cursor row
+
+[ui]
+accent = "#cba6f7"                          # highlights, borders, navigate mode
+tab_bar_position = "top"                    # matches tmux's status-position top
+window_title = "{hostname}: {workspace}"
+status_indicators = "symbols"               # shape as well as colour per state
+tab_bar_right_separator = " "
+
+# The tmux status scripts are plain /bin/sh and know nothing about tmux, so the
+# herdr tab bar reuses the ones install.sh already symlinked — same Bangalore
+# time and weather the tmux status bar shows, same 30-minute weather cache.
+# herdr clears a command entry when it fails, so on a machine where the tmux
+# config was never installed these just render empty.
+tab_bar_right = [
+  { type = "zoom" },
+  { type = "command", command = "$HOME/.config/tmux/scripts/tmux-tz-time Asia/Kolkata", interval_seconds = 30, timeout_seconds = 5 },
+  { type = "command", command = "$HOME/.config/tmux/scripts/tmux-weather Bangalore", interval_seconds = 300, timeout_seconds = 10 },
+]
+
+[ui.toast]
+# An agent going blocked is the one event worth interrupting for.
+delivery = "herdr"
+delay_seconds = 1
+
+# ============================================================================
+# Keybindings — tmux parity
+# ============================================================================
+# herdr merges this over its built-in defaults, so only the divergences from
+# stock herdr are listed; anything absent keeps herdr's default. `prefix+?`
+# inside herdr is the authority on what is actually bound.
+#
+# Punctuation: single characters parse literally ("prefix+|", "prefix+["), and
+# there are names for a few of them (minus, comma, ampersand, period, slash).
+# There is no "pipe" name — the literal | is the way.
+
+[keys]
+prefix = "ctrl+b"
+
+# --- tabs (tmux windows) ---------------------------------------------------
+# tmux binds j/k to next/previous window on top of n/p. Adding them here is
+# what frees prefix+j/k, which stock herdr uses for pane focus — the pane keys
+# move to bare Alt+hjkl below, which is where tmux has them anyway.
+next_tab = ["prefix+n", "prefix+j"]
+previous_tab = ["prefix+p", "prefix+k"]
+switch_tab = "prefix+1..9"
+# tmux: prefix+, renames. Stock herdr's prefix+shift+t is dropped rather than
+# kept as an alias — the scratch-shell popup below takes that key, matching
+# tmux's prefix+T.
+rename_tab = "prefix+comma"
+close_tab = ["prefix+ampersand", "prefix+shift+x"]
+
+# --- panes -----------------------------------------------------------------
+# tmux: | is side by side, - is stacked. herdr names the first one "vertical".
+split_vertical = "prefix+|"
+split_horizontal = "prefix+minus"
+# tmux focuses panes with bare Alt+hjkl (bind -n M-h ...), no prefix at all.
+# This replaces herdr's prefix+hjkl, freeing prefix+j/k for the tab keys above.
+focus_pane_left = "alt+h"
+focus_pane_down = "alt+j"
+focus_pane_up = "alt+k"
+focus_pane_right = "alt+l"
+
+# --- session / config ------------------------------------------------------
+detach = ["prefix+d", "prefix+q"]           # tmux: prefix+d
+reload_config = "prefix+r"                  # tmux: prefix+r
+# Stock herdr puts resize mode on prefix+r, which tmux uses for reload; resize
+# mode takes the key reload_config vacated.
+resize_mode = "prefix+shift+r"
+# tmux's prefix+S cycles status lines. The sidebar is the nearest thing herdr
+# has, so it answers to both keys.
+toggle_sidebar = ["prefix+b", "prefix+shift+s"]
+
+# ============================================================================
+# Custom commands
+# ============================================================================
+# These run through a shell that has NOT sourced .bash_aliases, so every one of
+# them is self-contained — no aliases, no $DOTFILES_DIR. Where the repo path is
+# needed, it is resolved from this file's own symlink.
+
+# tmux: prefix+T — a scratch shell over the layout, no split, no tab.
+[[keys.command]]
+key = "prefix+shift+t"
+type = "popup"
+command = 'exec "${SHELL:-sh}"'
+description = "scratch shell"
+width = "80%"
+height = "80%"
+
+# Same tool the nvim config opens on <leader>lg.
+[[keys.command]]
+key = "prefix+alt+g"
+type = "popup"
+command = "lazygit"
+description = "lazygit"
+width = "90%"
+height = "90%"
+
+# tmux: prefix+g d f. readlink -f on the config symlink lands in the repo, so
+# this works wherever the dotfiles are checked out.
+[[keys.command]]
+key = "prefix+alt+d"
+type = "popup"
+command = '''cd "$(dirname "$(dirname "$(readlink -f "$HOME/.config/herdr/config.toml")")")" && git pull --rebase --autostash; printf '\npress enter to close '; read -r _'''
+description = "getdotfiles"
+width = "80%"
+height = "60%"
+
+# The same block herdr-cs prints in the shell. The ^ anchor matters: without it
+# the pattern would match this very line and restart the range.
+[[keys.command]]
+key = "prefix+alt+c"
+type = "popup"
+command = '''sed -n '/^# HERDR CHEATSHEET/,/^$/p' "$HOME/.config/herdr/config.toml" | ${PAGER:-less} -R'''
+description = "herdr cheatsheet"
+width = "90%"
+height = "90%"
+
+# --- plugin actions --------------------------------------------------------
+# Action ids are the plugin's own id plus the action id, from each plugin's
+# herdr-plugin.toml. Install them with installers/install-linux-tools.sh or:
+#   herdr plugin install thanhdat77/herdr-navigator
+#   herdr plugin install ChmaraX/herdr-nvim
+#   herdr plugin install persiyanov/herdr-reviewr
+#   herdr plugin install yuk1ty/herdr-spreader
+
+# tmux puts tmux-fzf on prefix+f; the navigator is the same idea.
+[[keys.command]]
+key = "prefix+f"
+type = "plugin_action"
+command = "herdr-navigator.open"
+description = "navigator"
+
+[[keys.command]]
+key = "prefix+shift+f"
+type = "plugin_action"
+command = "herdr-navigator.open-side"
+description = "navigator side pane"
+
+[[keys.command]]
+key = "prefix+alt+b"
+type = "plugin_action"
+command = "herdr-navigator.jump-back"
+description = "navigator jump back"
+
+[[keys.command]]
+key = "prefix+alt+n"
+type = "plugin_action"
+command = "chmarax.herdr-nvim.toggle"
+description = "nvim sidebar"
+
+[[keys.command]]
+key = "prefix+alt+o"
+type = "plugin_action"
+command = "chmarax.herdr-nvim.pick-file"
+description = "open file from agent output"
+
+[[keys.command]]
+key = "prefix+alt+r"
+type = "plugin_action"
+command = "persiyanov.reviewr.toggle"
+description = "reviewr"
+
+[[keys.command]]
+key = "prefix+alt+s"
+type = "plugin_action"
+command = "herdr-spreader.apply"
+description = "apply workspace layout"

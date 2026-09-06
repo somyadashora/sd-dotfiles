@@ -23,6 +23,13 @@ abbrev-alias vim-cs="sed -n '/VIM CHEATSHEET/,\${p;/^\" -\{20,\}\$/q}' \$DOTFILE
 
 abbrev-alias rg-cs="sed -n '/RG CHEATSHEET/,/# Case-insensitive/p' \$DOTFILES_DIR/rg/ripgreprc | sed '\$d'"
 
+# Same blank-line-terminated block as fzf-cs, but the start pattern is anchored
+# with ^: the config binds Ctrl+b + Alt+c to a popup that prints this same block,
+# and that binding's own command line contains the words "HERDR CHEATSHEET". An
+# unanchored range would restart there and print the rest of the file (the same
+# trap vim-cs works around above).
+abbrev-alias herdr-cs="sed -n '/^# HERDR CHEATSHEET/,/^\$/p' \$DOTFILES_DIR/herdr/config.toml | sed '\$d'"
+
 # The keyboard sheet is a generated file, not a comment block inside a config,
 # so this one is a plain cat rather than the sed-extraction the others use.
 # Regenerate with keyboard/scripts/gen-keymap-art after a keymap change.
@@ -31,6 +38,15 @@ abbrev-alias sofle-cs="cat \$DOTFILES_DIR/keyboard/keymap.txt"
 abbrev-alias watchtty="watch -d -n 1 'ps -f --forest --tty $1'"
 
 abbrev-alias getdotfiles="git -C $DOTFILES_DIR pull --rebase --autostash"
+
+# herdr session handling. Bare `herdr` already starts-or-attaches the default
+# session, so hdr is the one you actually use; the other two are for the case
+# where you keep more than one named session around. Deliberately NOT `hd`:
+# that is bsdmainutils' hexdump, and shadowing a base tool is exactly what this
+# repo doesn't do.
+abbrev-alias hdr="herdr"
+abbrev-alias hdrl="herdr session list"
+abbrev-alias hdra="herdr session attach"
 
 abbrev-alias slang-init="$DOTFILES_DIR/nvim/scripts/slang-init"
 abbrev-alias verible-init="$DOTFILES_DIR/nvim/scripts/verible-init"

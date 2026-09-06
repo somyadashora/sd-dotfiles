@@ -100,8 +100,12 @@ The two keys between the halves are the ENCODER PUSH-BUTTONS.
   They only resolve as a hold if the next key is on the OTHER hand, and
   only after 150ms of idle - so same-hand rolls still type letters.
 
-  Ctrl+hjkl (nvim windows), Alt+hjkl (tmux panes) and Ctrl+Space (tmux
-  prefix) are all a left-hand hold plus a right-hand tap - no layer.
+  Ctrl+hjkl (nvim windows) and Alt+hjkl (tmux panes) are a left-hand
+  hold plus a right-hand tap - no layer needed.
+
+  The Ctrl+b prefix (tmux and herdr) is the exception: b is a LEFT-half
+  key, so the cross-hand guard refuses a left home-row Ctrl and you get
+  "db". Use the right half's RCTRL, or the real LCTRL on the bottom row.
 
   Hold NAV + MEDIA together for the ADJ layer.
 

@@ -1,0 +1,54 @@
+# herdr-spreader layout — tmuxinator/tmuxp for herdr.
+#
+# Symlinked by install.sh to the path the plugin reads:
+#   ~/.config/herdr/plugins/config/herdr-spreader/config.yaml
+# (confirm with `herdr plugin config-dir herdr-spreader`).
+#
+# Apply it with Ctrl+b + Alt+s inside herdr, or:
+#   herdr plugin action invoke herdr-spreader.apply
+#   herdr-spreader apply --dry-run     # print the plan, touch nothing
+#
+# Paths are per-machine — edit `root` to wherever the checkout actually lives.
+# Unknown keys are rejected at parse time, so a typo surfaces immediately
+# rather than being silently ignored.
+
+workspaces:
+  - name: dotfiles
+    root: ~/nvim-configs
+    focus: true
+    tabs:
+      # Editor over a shell, the shape most work starts in.
+      - label: editor
+        panes:
+          - command: nvim
+            focus: true
+          - split: down
+            ratio: 0.25
+      # A tab to run coding agents in. herdr detects whatever starts here and
+      # tracks its state (blocked/working/done/idle) in the sidebar, so leaving
+      # the panes at a bare shell is deliberate — start claude/codex by hand and
+      # they get picked up.
+      - label: agents
+        panes:
+          - {}
+          - split: right
+            ratio: 0.5
+
+  # Second workspace, commented out: the shape an RTL project wants — editor,
+  # a build/sim pane, and a waveform/log pane. Uncomment and repoint `root`.
+  #
+  # - name: rtl
+  #   root: ~/work/rtl
+  #   env:
+  #     SD_PROJECT: rtl
+  #   tabs:
+  #     - label: editor
+  #       cwd: ./rtl
+  #       panes:
+  #         - command: nvim
+  #           focus: true
+  #     - label: sim
+  #       panes:
+  #         - {}
+  #         - split: down
+  #           ratio: 0.4

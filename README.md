@@ -38,6 +38,7 @@ onboarding cheat-card, and there's a full keymap cheatsheet a `<leader>fH` away.
 | `nvim/`           | Neovim config (lazy.nvim, one file per plugin) → `~/.config/nvim`     |
 | `vim/`            | plugin-free `~/.vimrc` for large logs & run dirs (companion to nvim)  |
 | `tmux/`           | tmux config + status-bar scripts → `~/.tmux.conf`, `~/.config/tmux`   |
+| `herdr/`          | [herdr](https://github.com/herdrdev/herdr) agent multiplexer config   |
 | `bash/`           | aliases & two switchable prompt styles                                |
 | `git/`            | git aliases + [delta](https://github.com/dandavison/delta) pager      |
 | `ai/skills/`      | portable AI-agent skills (RTL coding/style contracts, code review)    |
@@ -50,6 +51,8 @@ onboarding cheat-card, and there's a full keymap cheatsheet a `<leader>fH` away.
 - **Neovim ≥ 0.11** (uses the `vim.lsp.config()` API)
 - **tmux ≥ 3.2**, **git**, **bash**
 - A **[Nerd Font](https://www.nerdfonts.com/)** for the icons/glyphs
+- Optional: [`herdr`](https://github.com/herdrdev/herdr) (agent multiplexer;
+  Linux/macOS only — no Android build)
 - Optional: `ripgrep` + `fd` (Telescope), `lazygit`, and for SystemVerilog
   [`verible`](https://github.com/chipsalliance/verible) /
   [`slang`](https://github.com/MikePopoloski/slang)
@@ -151,7 +154,7 @@ Run these once at a project root (aliased in `.bash_aliases`):
 
 ## tmux
 
-Prefix is `Ctrl+Space`. The status bar shows the session and Bangalore
+Prefix is `Ctrl+b`. The status bar shows the session and Bangalore
 time + weather; `prefix + S` toggles a second row with CPU/RAM/disk and a San
 Jose clock. Custom scripts in `tmux/scripts/` feed those widgets.
 
@@ -180,10 +183,47 @@ Print the full keybinding cheatsheet any time with `tmux-cs`.
 
 ---
 
+## herdr
+
+[herdr](https://github.com/herdrdev/herdr) is a second multiplexer kept for the
+one thing tmux can't do: it recognises coding agents (Claude Code, Codex,
+Copilot, Devin, …) running in its panes and shows each one's state — **blocked /
+working / done / idle** — in a sidebar, so a pane waiting on you is visible
+without cycling windows. Panes survive detach on their own.
+
+It **coexists with tmux** rather than replacing it: tmux stays the general
+multiplexer and keeps everything herdr has no concept of (`synchronize-panes`,
+the pad/watch/sysmon windows, the paste-buffer pickers). herdr is what you
+launch to run agents in.
+
+The config keeps **tmux's keys** wherever both tools have the concept, so there
+is one muscle memory — same `Ctrl+b` prefix, `|` and `-` to split, `Alt+hjkl`
+between panes, `prefix + c/n/p/j/k/,/&` for tabs, `prefix + d` to detach. Where
+tmux and stock herdr disagree, tmux wins. `Ctrl+b Ctrl+b` sends the prefix
+through when herdr is running inside a tmux pane.
+
+Four plugins are keybound and installed by the Linux installer: a fuzzy
+navigator on `prefix + f` (herdr's tmux-fzf), an nvim sidebar, a diff reviewer
+that sends line comments back to the agent, and a tmuxinator-style layout tool
+whose YAML lives in this repo at `herdr/spreader.yaml`.
+
+```bash
+herdr            # start or attach; agents keep running after you detach
+herdr-cs         # print the cheatsheet — keys plus how each plugin is used
+herdr config check   # validate herdr/config.toml
+```
+
+Inside herdr, `Ctrl+b + ?` lists every active binding and `Ctrl+b + Alt+c` shows
+the same cheatsheet in a popup. There is no Android build, so tmux remains the
+multiplexer on Termux.
+
+---
+
 ## Bash & git
 
 ```bash
 tmux-cs        # print the tmux keybinding cheatsheet
+herdr-cs       # print the herdr cheatsheet (keys + plugin usage)
 git-cs         # print the git aliases
 getdotfiles    # git pull --rebase on this repo
 prompt-default # / prompt-tc   — switch between the two prompt styles
@@ -215,6 +255,9 @@ vim/
 tmux/
   .tmux.conf
   scripts/                      # status-bar widgets
+herdr/
+  config.toml                   # keys mirror tmux; cheatsheet block at the top
+  spreader.yaml                 # workspace layout for the herdr-spreader plugin
 bash/  git/  ai/skills/  installers/
 ```
 
