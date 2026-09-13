@@ -13,8 +13,7 @@
  *                                      home-row-Ctrl chord: b is a LEFT-half
  *                                      key, so the cross-hand guard refuses
  *                                      the left Ctrl and it types "db". Use
- *                                      the right half's RCTRL, or the real
- *                                      LCTRL on the bottom row.
+ *                                      either bottom-row corner Ctrl.
  *   Ctrl+hjkl     = nvim window nav  -> home-row Ctrl + base-layer hjkl
  *   Alt+hjkl      = pane/split nav   -> home-row Alt  + base-layer hjkl.
  *                                      One chord for nvim splits AND tmux
@@ -107,7 +106,7 @@
         };
 
         /* There is deliberately NO mod-tap on the bottom-right corner any
-         * more -- it is a plain &kp RCTRL. `]` was its tap half until the TKL
+         * more -- it is a plain &kp LCTRL. `]` was its tap half until the TKL
          * keys came back to base and `]` moved to the `/`+corner combo. With
          * no tap half there is nothing for a hold-tap to arbitrate, and
          * dropping it takes the tapping-term latency off a modifier.
@@ -165,6 +164,42 @@
                 , <&macro_pause_for_release>
                 , <&macro_release &mo MEDIA>
                 , <&macro_tap &rgb_ug RGB_COLOR_HSB(217,70,40)>;
+        };
+
+        /* tmux, one key each: the Ctrl+Space prefix (the same chord the
+         * both-Spaces combo sends) followed by tmux's stock `[` copy mode and
+         * `]` paste-buffer. On NAV+Y and NAV+P. */
+        tmux_copy: tmux_copy_mode {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&macro_tap &kp LC(SPACE) &kp LBKT>;
+        };
+
+        tmux_paste: tmux_paste_buffer {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&macro_tap &kp LC(SPACE) &kp RBKT>;
+        };
+
+        /* The rest of NAV's Y-P row, same prefix: previous window (`k`) and
+         * next window (`j`) -- this repo's tmux.conf bindings -- and tmux's
+         * stock zoom toggle (`z`). */
+        tmux_prev: tmux_previous_window {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&macro_tap &kp LC(SPACE) &kp K>;
+        };
+
+        tmux_next: tmux_next_window {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&macro_tap &kp LC(SPACE) &kp J>;
+        };
+
+        tmux_zoom: tmux_zoom_pane {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&macro_tap &kp LC(SPACE) &kp Z>;
         };
     };
 
@@ -228,7 +263,18 @@
          * the bootloader combos, nothing about this one is a rescue. */
         combo_caps_word {
             bindings = <&caps_word>;
-            key-positions = <50 59>;
+            key-positions = <51 58>;
+            timeout-ms = <50>;
+            layers = <BASE>;
+        };
+
+        /* Both Space thumbs together -> Ctrl+Space. Space is on both halves,
+         * so the pair is a gesture you never make while typing; one space is
+         * always one thumb. Cross-half, so it needs both halves paired. This
+         * also replaces the Ctrl+Space key NAV used to carry. */
+        combo_ctrl_space {
+            bindings = <&kp LC(SPACE)>;
+            key-positions = <53 56>;
             timeout-ms = <50>;
             layers = <BASE>;
         };
@@ -248,6 +294,20 @@
         combo_esc {
             bindings = <&kp ESC>;
             key-positions = <31 32>;
+            timeout-ms = <45>;
+            require-prior-idle-ms = <100>;
+            layers = <BASE>;
+        };
+
+        /* h+j -> Enter, the jk idea one key to the left. Enter is on a thumb
+         * on the right inner thumb too; this is the one you don't have to move
+         * the thumb for. Same guard and window as jk: pressing both at once
+         * is a chord, and a real h then j (a vim motion, or a roll through a
+         * word) is either slower than 45ms or mid-burst, where
+         * require-prior-idle-ms refuses it. */
+        combo_ret {
+            bindings = <&kp RET>;
+            key-positions = <30 31>;
             timeout-ms = <45>;
             require-prior-idle-ms = <100>;
             layers = <BASE>;
@@ -285,7 +345,7 @@
         };
         combo_rbkt {
             bindings = <&kp RBKT>;      /* ] and, with Shift, } */
-            key-positions = <48 49>;    /* / + the RCTRL corner */
+            key-positions = <48 49>;    /* / + the Ctrl corner */
             timeout-ms = <45>;
             layers = <BASE>;
         };
@@ -332,13 +392,16 @@
 // cross-hand guard, so it can only ever fire with a RIGHT-hand key -- which
 // makes every left-hand Ctrl chord physically impossible: <C-d> <C-u> scroll,
 // <C-w> windows, <C-r> redo, <C-v> blockwise, <C-a>/<C-x> increment,
-// <C-e>/<C-y>, and the Ctrl+b prefix above. A guard-free LCTRL on the bottom
+// <C-e>/<C-y>, and the Ctrl+b prefix above. A guard-free Ctrl on the bottom
 // row is the missing half of the home-row-mod story, not a luxury. Shift
-// moves down one row onto the outer thumb keys, which is also where a real
+// moves down one row onto the thumb keys, which is also where a real
 // Shift is still wanted: require-prior-idle-ms means the home-row one refuses
 // to fire mid-burst, so capitals typed at speed need a plain key.
 //
-// The right corner is a plain RCTRL. It carried `]` as a mod-tap's tap half
+// The corners are swapped on purpose: RCTRL bottom-left, LCTRL bottom-right.
+// Either is a plain Ctrl to almost everything.
+//
+// The right corner is a plain Ctrl. It carried `]` as a mod-tap's tap half
 // until the TKL keys came back to base and `]` became the `/`+corner combo;
 // with no tap half there is nothing to arbitrate, and dropping the hold-tap
 // takes its tapping-term latency off a modifier. A right Ctrl is only ever
@@ -350,23 +413,26 @@
 // knob beside them -- mute next to the volume knob, play/pause next to the
 // other. Never put a typing key here.
 //
-// Space is on the LEFT inner thumb and Enter on the right. Space is the nvim
-// leader and the most-pressed key on the board; Enter is not, and the two
-// were swapped so the busier one sits under the stronger thumb.
+// Thumbs, outside in. Left: GUI, Shift, Alt, Space, NAV (innermost). Right:
+// Enter (innermost), Space, Backspace, Shift, MEDIA (outermost). Space is on
+// BOTH thumbs -- it is the nvim leader and the most-pressed key, so either
+// hand can take it. Shift sits second from the outside on each half, which is
+// what the both-Shift caps-word combo keys on. NAV and MEDIA are still on
+// opposite halves, so holding both still reaches ADJ. h+j is also Enter.
 // ---------------------------------------------------------------------------------------------------------------
 // |  ` ~ | 1 ! | 2 @ | 3 # | 4 $ | 5 % |               | 6 ^ | 7 & | 8 * | 9 ( | 0 ) | BSPC  |
 // |  ESC |  Q  |  W  |  E  |  R  |  T  |               |  Y  |  U  |  I  |  O  |  P  |  - _  |
 // |  TAB |  A  |  S  |  D  |  F  |  G  |               |  H  |  J  |  K  |  L  | ; : |  ' "  |
 // | CTRL |  Z  |  X  |  C  |  V  |  B  | MUTE| |PLAY |  N  |  M  | , < | . > | / ? | CTRL |
-//              | SHFT| GUI | ALT | NAV | SPC | | ENT  |MEDIA|BSPC | GUI | SHFT|
+//              | GUI | SHFT| ALT | SPC | NAV | | ENT  | SPC |BSPC | SHFT|MEDIA|
 //                      home row: GUI ALT CTL SFT           SFT CTL ALT GUI
-//                      thumb BSPC: Shift+it is Delete
+//                      thumb BSPC: Shift+it is Delete     h+j: Enter   j+k: Esc
             bindings = <
 &kp GRAVE &kp N1       &kp N2       &kp N3        &kp N4        &kp N5                              &kp N6    &kp N7        &kp N8        &kp N9       &kp N0          &bspc_del
 &kp ESC   &kp Q        &kp W        &kp E         &kp R         &kp T                               &kp Y     &kp U         &kp I         &kp O        &kp P           &kp MINUS
 &kp TAB   &hml LGUI A  &hml LALT S  &hml LCTRL D  &hml LSHFT F  &kp G                               &kp H     &hmr RSHFT J  &hmr RCTRL K  &hmr RALT L  &hmr RGUI SEMI  &kp SQT
-&kp LCTRL &kp Z        &kp X        &kp C         &kp V         &kp B      &kp C_MUTE   &kp C_PP    &kp N     &kp M         &kp COMMA     &kp DOT      &kp FSLH        &kp RCTRL
-                       &kp LSHFT    &kp LGUI      &kp LALT      &nav_rgb   &kp SPACE    &kp RET     &media_rgb &bspc_del     &kp RGUI      &kp RSHFT
+&kp RCTRL &kp Z        &kp X        &kp C         &kp V         &kp B      &kp C_MUTE   &kp C_PP    &kp N     &kp M         &kp COMMA     &kp DOT      &kp FSLH        &kp LCTRL
+                       &kp LGUI     &kp RSHFT     &kp LALT      &kp SPACE  &nav_rgb     &kp RET     &kp SPACE  &bspc_del     &kp LSHFT     &media_rgb
             >;
             /* left knob: volume     right knob: page scroll */
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_DN PG_UP>;
@@ -374,10 +440,10 @@
 
         nav_layer {
             display-name = "nav";
-// The TKL nav island, kept as an island. PrtSc/ScrLk/Pause over Ins/Home/PgUp
-// over Del/End/PgDn, three wide, in the three rightmost columns — same shape
-// and same relative positions as the block to the right of a TKL's main
-// block, so PgUp sits directly above PgDn in the outermost column.
+// The TKL nav island, kept as an island. Ins/Home/PgUp over Del/End/PgDn,
+// three wide, in the three rightmost columns — same shape and same relative
+// positions as on a TKL, so PgUp sits directly above PgDn in the outermost
+// column. PrtSc/ScrLk/Pause, the row above it on a TKL, are left out.
 //
 // TKL's right-side overflow lives on the number row here, under the digits it
 // neighbours on a TKL. Shift composes normally: NAV+Shift+9 is `{`. `\` and
@@ -389,20 +455,30 @@
 // browsers, dialogs, spreadsheets — which is exactly where the TKL shape is
 // the one in your fingers.
 //
-// Left hand mirrors the home-row mods as plain mods, so Ctrl+Shift+Left and
-// friends work without leaving the layer.
+// The left half is empty -- every key transparent, the encoder button too --
+// so NAV is a right-hand layer held by the left thumb. The base home-row mods
+// show through, so Ctrl+Shift+Left is still hold D+F, tap LEFT.
+//
+// The Y-P row is tmux, prefix + one key: Y copy mode, U previous window,
+// I next window, O zoom, P paste.
+//
+// NAV+RET is ADJ. It is `&mo MEDIA`, NOT `&mo ADJ`: ADJ is a conditional layer,
+// and ZMK's conditional-layer listener switches the then-layer OFF whenever its
+// if-layers are not all active -- even when something else turned it on -- so
+// `&mo ADJ` with NAV alone held would be cancelled the instant it fired.
+// Holding MEDIA satisfies NAV+MEDIA, and the conditional layer does the rest.
 // ---------------------------------------------------------------------------------------------------------------
 // |      |      |      |      |      |      |             |      |      |  \ |  |  [ { |  ] } | = + |
-// |      | tmux | MENU | CAPS |      |      |             |      |      |      | PSCR | SLCK |PAUSE|
-// |      | GUI  | ALT  | CTRL | SHFT |      |             |      |  UP  |      | INS  | HOME |PG UP|
-// |      | UNDO | CUT  | COPY | PASTE|      |WIN+L|  |    | LEFT | DOWN | RIGHT| DEL  | END  |PG DN|
+// |      |      |      |      |      |      |             |TMUX [|WINPRV|WINNXT| ZOOM |TMUX ]|     |
+// |      |      |      |      |      |      |             |      |  UP  |      | INS  | HOME |PG UP|
+// |      |      |      |      |      |      |     |  |    | LEFT | DOWN | RIGHT| DEL  | END  |PG DN|
 //               |      |      |      |      |    |  |     |      |      |      |      |
             bindings = <
 &trans  &trans        &trans       &trans     &trans      &trans                        &trans     &trans     &kp BSLH    &kp LBKT  &kp RBKT   &kp EQUAL
-&trans  &kp LC(SPACE) &kp K_CMENU  &kp CAPS   &trans      &trans                        &trans     &trans     &trans      &kp PSCRN &kp SLCK   &kp PAUSE_BREAK
-&trans  &kp LGUI      &kp LALT     &kp LCTRL  &kp LSHFT   &trans                        &trans     &kp UP     &trans      &kp INS   &kp HOME   &kp PG_UP
-&trans  &kp K_UNDO    &kp K_CUT    &kp K_COPY &kp K_PASTE &trans   &kp LG(L) &trans     &kp LEFT   &kp DOWN   &kp RIGHT   &kp DEL   &kp END    &kp PG_DN
-                      &trans       &trans     &trans      &trans   &trans    &trans     &trans     &trans     &trans      &trans
+&trans  &trans        &trans       &trans     &trans      &trans                        &tmux_copy &tmux_prev &tmux_next  &tmux_zoom &tmux_paste &trans
+&trans  &trans        &trans       &trans     &trans      &trans                        &trans     &kp UP     &trans      &kp INS   &kp HOME   &kp PG_UP
+&trans  &trans        &trans       &trans     &trans      &trans   &trans    &trans     &kp LEFT   &kp DOWN   &kp RIGHT   &kp DEL   &kp END    &kp PG_DN
+                      &trans       &trans     &trans      &trans   &trans    &mo MEDIA     &trans     &trans     &trans      &trans
             >;
             /* left knob: word-wise cursor    right knob: cycle tabs */
             sensor-bindings = <&inc_dec_kp LC(RIGHT) LC(LEFT) &inc_dec_kp LC(TAB) LC(LS(TAB))>;
@@ -414,20 +490,21 @@
 // as a TKL's function row sits above its number row — so F5 and F12 are where
 // your hand already goes.
 //
-// Transport and volume sit on the right home row, one-handed: the fingers that
-// rest on HJKL get prev/play/next, and mute/vol-down/vol-up follow on the same
-// row. Brightness is the row above.
+// MEDIA is held by the right thumb on the OUTERMOST key, so the media keys sit
+// in the two rightmost columns, under F11 and F12, where the right fingers
+// already are: brightness up/down, volume up/down, prev/next, top to bottom.
+// Mute is on L and play/pause on `.`, beside them.
 // ---------------------------------------------------------------------------------------------------------------
 // |  F1  |  F2  |  F3  |  F4  |  F5  |  F6  |             |  F7  |  F8  |  F9  | F10  | F11  | F12  |
-// |      |RGBtog|RGBdim|RGBbrt|EFF - |EFF + |             |      |      |      | BRI- | BRI+ |      |
-// |      | GUI  | ALT  | CTRL | SHFT |      |             | PREV | PLAY | NEXT | MUTE | VOL- | VOL+ |
-// |SPD - |HUE - |HUE + |SAT - |SAT + |SPD + |    |  |     |      |      |      |      |      |      |
+// |      |RGBtog|RGBdim|RGBbrt|EFF - |EFF + |             |      |      |      |      | BRI+ | BRI- |
+// |      | GUI  | ALT  | CTRL | SHFT |      |             |      |      |      | MUTE | VOL+ | VOL- |
+// |SPD - |HUE - |HUE + |SAT - |SAT + |SPD + |    |  |     |      |      |      | PLAY | PREV | NEXT |
 //               |      |      |      |      |    |  |     |      |      |      |      |
             bindings = <
 &kp F1  &kp F2    &kp F3    &kp F4     &kp F5     &kp F6                          &kp F7      &kp F8    &kp F9      &kp F10     &kp F11       &kp F12
-&trans           &rgb_ug RGB_TOG &rgb_ug RGB_BRD &rgb_ug RGB_BRI &rgb_ug RGB_EFR &rgb_ug RGB_EFF          &trans      &trans    &trans      &kp C_BRI_DN &kp C_BRI_UP &trans
-&trans           &kp LGUI        &kp LALT        &kp LCTRL       &kp LSHFT       &trans                   &kp C_PREV  &kp C_PP  &kp C_NEXT  &kp C_MUTE  &kp C_VOL_DN  &kp C_VOL_UP
-&rgb_ug RGB_SPD  &rgb_ug RGB_HUD &rgb_ug RGB_HUI &rgb_ug RGB_SAD &rgb_ug RGB_SAI &rgb_ug RGB_SPI  &trans    &trans   &trans      &trans    &trans      &trans      &trans        &trans
+&trans           &rgb_ug RGB_TOG &rgb_ug RGB_BRD &rgb_ug RGB_BRI &rgb_ug RGB_EFR &rgb_ug RGB_EFF          &trans      &trans    &trans      &trans       &kp C_BRI_UP &kp C_BRI_DN
+&trans           &kp LGUI        &kp LALT        &kp LCTRL       &kp LSHFT       &trans                   &trans      &trans    &trans      &kp C_MUTE  &kp C_VOL_UP  &kp C_VOL_DN
+&rgb_ug RGB_SPD  &rgb_ug RGB_HUD &rgb_ug RGB_HUI &rgb_ug RGB_SAD &rgb_ug RGB_SAI &rgb_ug RGB_SPI  &trans    &trans   &trans      &trans    &trans      &kp C_PP    &kp C_PREV    &kp C_NEXT
                   &trans    &trans     &trans     &trans   &trans    &trans       &trans      &trans    &trans      &trans
             >;
             /* left knob: volume    right knob: screen brightness */
@@ -458,7 +535,7 @@
 &none       &none         &none         &none         &none         &none                            &none  &studio_unlock  &none  &out OUT_TOG &ext_power EP_TOG  &none
 &none       &none         &none         &none         &none         &none                            &none  &none           &none  &none        &none  &none
 &sys_reset  &none         &none         &none         &none         &bootloader  &none     &none     &bootloader &none      &none  &none        &none  &sys_reset
-                          &none         &none         &none         &trans       &none     &none     &trans      &none      &none  &none
+                          &none         &none         &none         &none        &trans    &none     &none       &none      &none  &trans
             >;
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_DN PG_UP>;
         };

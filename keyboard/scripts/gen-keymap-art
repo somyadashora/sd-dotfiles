@@ -23,6 +23,8 @@ the PNG -- the SVG and the ASCII sheet still regenerate.
     ./scripts/gen-keymap-art
 """
 
+import copy
+import html
 import re
 import subprocess
 import sys
@@ -50,6 +52,30 @@ INDENT = "  "
 WIDTH = len(INDENT) + HALF + len(GAP) + HALF
 
 TRANS = "..."               # keymap-drawer says U+25BD; ASCII says this
+
+# Vertical placement of the SVG legends, in em, relative to the alphabetic
+# baseline. keymap-drawer positions them with `dominant-baseline` instead,
+# which librsvg -- the PNG renderer -- ignores outright: measured on 2.48,
+# `middle`, `hanging`, `central` and `auto` all land on the plain alphabetic
+# baseline. So its centred tap legends drew ~5px high and its `hanging` top
+# legends drew ENTIRELY ABOVE the key, which is the text-outside-the-box in
+# the PNG. keymap-drawer.yaml pins every legend to the alphabetic baseline
+# and the offsets below reproduce the intended placement with `dy`, which
+# librsvg does honour. em, not px, so a shrunk wide legend shifts by its own
+# font size rather than the class default.
+#
+#   0.35em  what `dominant-baseline: middle` did: half a cap height down
+#   0.72em  what `hanging` did: one cap height down, so the cap top sits
+#           exactly on the anchor point
+#   0       already on the alphabetic baseline; nothing to do
+#
+# Keyed on the legend-type class, which every text element carries exactly one
+# of ("key tap", "combo shifted", "key trans tap", "label", ...).
+LEGEND_DY = {
+    "tap": 0.35, "left": 0.35, "right": 0.35, "label": 0.35,
+    "shifted": 0.72, "tl": 0.72, "tr": 0.72,
+    "hold": 0.0, "bl": 0.0, "br": 0.0, "footer": 0.0,
+}
 
 # Only applied to legends that would otherwise overflow a cell. A shortened
 # legend beats a truncated one.
@@ -150,8 +176,11 @@ def draw_layer(name, entries, encoders):
     return out
 
 
-def parse_encoders():
-    """display-name -> (left, right) encoder description, from the .keymap."""
+def parse_encoder_pairs():
+    """display-name -> [(cw, ccw) left knob, (cw, ccw) right knob], from the .keymap.
+
+    ZMK's `&inc_dec_kp A B` sends A on a clockwise detent and B on a
+    counter-clockwise one."""
     src = KEYMAP.read_text()
     found = {}
     for body in re.findall(r"\w+_layer \{(.*?)\n        \};", src, re.S):
@@ -159,13 +188,67 @@ def parse_encoders():
         sb = re.search(r"sensor-bindings = <(.*?)>;", body, re.S)
         if not (nm and sb):
             continue  # conditional_layers' adjust_layer has neither
-        parts = [p.strip() for p in sb.group(1).split("&inc_dec_kp") if p.strip()]
-        desc = []
-        for p in parts:
-            kc = p.split()
-            desc.append(f"{kc[0]} / {kc[1]}" if len(kc) >= 2 else p)
-        found[nm.group(1)] = desc[:2] if len(desc) >= 2 else None
+        parts = [p.split() for p in sb.group(1).split("&inc_dec_kp") if p.strip()]
+        pairs = [(kc[0], kc[1]) for kc in parts if len(kc) >= 2]
+        found[nm.group(1)] = pairs[:2] if len(pairs) >= 2 else None
     return found
+
+
+def parse_encoders():
+    """display-name -> (left, right) encoder description, for keymap.txt."""
+    return {name: [f"{cw} / {ccw}" for cw, ccw in pairs] if pairs else None
+            for name, pairs in parse_encoder_pairs().items()}
+
+
+# What a knob keycode means, in words short enough to sit above an encoder
+# button (the gap between the halves is ~90px per knob at 12px monospace, so
+# keep these to ~11 characters). Anything missing prints as the raw keycode,
+# which is ugly but never wrong.
+KNOB_WORDS = {
+    "C_VOL_UP": "VOL UP", "C_VOL_DN": "VOL DOWN",
+    "C_BRI_UP": "BRIGHT UP", "C_BRI_DN": "BRIGHT DN",
+    "PG_DN": "PAGE DOWN", "PG_UP": "PAGE UP",
+    "LC(RIGHT)": "NEXT WORD", "LC(LEFT)": "PREV WORD",
+    "LC(TAB)": "NEXT TAB", "LC(LS(TAB))": "PREV TAB",
+}
+
+
+def draw_knobs(svg):
+    """Draw each layer's knob rotation above its encoder push-button.
+
+    keymap-drawer has no concept of encoders, so without this the PNG and SVG
+    say nothing about what turning a knob does. The push-buttons (positions 42
+    and 43) ARE the knobs physically, and the gap between the halves above them
+    is empty on every layer, so each knob's clockwise / counter-clockwise pair
+    is stacked right on top of its own button.
+
+    Runs after fix_baselines, which refuses text it has no legend class for.
+    These set their own baseline with plain `y`, which every renderer honours.
+    """
+    pairs = parse_encoder_pairs()
+    LINE, HEAD_GAP = 18, 20
+    for name, knobs in pairs.items():
+        if not knobs:
+            continue
+        opener = re.search(rf'<g transform="translate\([^)]*\)" class="layer-{name}">', svg)
+        if not opener:
+            sys.exit(f"draw_knobs: no layer group for {name!r} in the svg")
+        out = []
+        for pos, (cw, ccw) in zip(ENCODER_BTNS, knobs):
+            btn = re.compile(rf'<g transform="translate\(([\d.]+), ([\d.]+)\)" class="[^"]*keypos-{pos}"')
+            m = btn.search(svg, opener.end())
+            if not m:
+                sys.exit(f"draw_knobs: no key {pos} in layer {name!r}")
+            x, y = float(m.group(1)), float(m.group(2))
+            top = y - 33                     # key_h 70 -> a 66px key, centred on y
+            base = top - 10                  # baseline of the last line
+            lines = [("knob-head", "KNOB", base - 2 * LINE - (HEAD_GAP - LINE)),
+                     ("knob", f"\u21bb {KNOB_WORDS.get(cw, cw)}", base - LINE),
+                     ("knob", f"\u21ba {KNOB_WORDS.get(ccw, ccw)}", base)]
+            for cls, text, ty in lines:
+                out.append(f'<text x="{x:g}" y="{ty:g}" class="{cls}">{html.escape(text)}</text>')
+        svg = svg[:opener.end()] + "\n" + "\n".join(out) + svg[opener.end():]
+    return svg
 
 
 def render(km):
@@ -217,15 +300,15 @@ def render(km):
         "",
         "  The Ctrl+b prefix (tmux and herdr) is the exception: b is a LEFT-half",
         "  key, so the cross-hand guard refuses a left home-row Ctrl and you get",
-        "  \"db\". Use the right half's RCTRL, or the real LCTRL on the bottom row.",
+        "  \"db\". Use either bottom-row corner Ctrl.",
         "",
-        "  Hold NAV + MEDIA together for the ADJ layer.",
+        "  Hold NAV + MEDIA (or NAV + RET) for the ADJ layer.",
         "",
         "  The bottom-row corners are Ctrl, not Shift. Home-row Ctrl is on D",
         "  behind the cross-hand guard, so it can only fire with a right-hand",
         "  key - every left-hand Ctrl chord (<C-d> <C-u> <C-w> <C-r> <C-v>,",
-        "  and Ctrl+b) needs the guard-free LCTRL down here. Shift moved one",
-        "  row down to the outer thumb keys.",
+        "  and Ctrl+b) needs a guard-free corner Ctrl. Shift moved one",
+        "  row down to the thumb keys.",
         "",
         "  Both Shift keys together = caps word: UVM_INFO and SCREAMING_PARAMS",
         "  type in one gesture and end themselves at the space.",
@@ -257,6 +340,114 @@ def render(km):
     return "\n".join(lines) + "\n"
 
 
+def stamp_base_reference(km):
+    """Put the base-layer legend in each key's bottom-left corner, per layer.
+
+    A layer sheet is a picture of the same keys as the base one, but a
+    held-layer legend tells you what a key DOES there, not which key it is --
+    and on NAV most of the board is a transparent glyph, which tells you
+    neither.
+    So every key on every layer but base carries what base has in that slot, in
+    the bottom-left corner and muted (see keymap-drawer.yaml): read the middle
+    for the layer, read the corner to find the key under your finger.
+
+    Bottom-left is the one free corner: shifted goes top-centre, hold
+    bottom-centre, and no layer but base has holds anyway.
+    """
+    base = km["layers"]["base"]
+    for name, entries in km["layers"].items():
+        if name == "base":
+            continue
+        for i, entry in enumerate(entries):
+            ref = legend(base[i])[0]
+            if not ref:
+                continue  # nothing bound on base either
+            if not isinstance(entry, dict):
+                entry = entries[i] = {"t": str(entry)}
+            entry["bl"] = ref
+
+
+def lay_out_combos(km):
+    """Size every combo box to the legend it actually holds.
+
+    A combo box is drawn ON the board, between the keys that trigger it, so it
+    competes for space with their legends -- and keymap-drawer gives every box
+    one size, which has to be wide enough for the longest legend (CAPSWRD) and
+    is then far too wide for `[`. Both of the things that looked wrong came out
+    of that single size: an oversized box covered the neighbouring key's legend
+    (`/` + the bottom-right corner sat on that corner's RCTRL), and a box short
+    enough not to collide vertically had its own two legends collide instead
+    (`=` over `+` rendered as a `±` blob).
+
+    So each box gets its own: wide enough for its own text plus PAD, and tall
+    enough for a stacked shifted face only when it has one. The widest box that
+    sits between two keys then reaches 18px into them, and the closest a key
+    legend gets to that boundary is 14px on the worst key on the board (a
+    5-character 14px legend, centred, one key-pitch away) -- so nothing
+    overlaps anything, and the legends stack the way they do on a key.
+    """
+    PAD, MIN_W, CHAR_W = 10, 24, 0.6 * 11   # 11px is keymap-drawer's combo font
+    TAP_ONLY_H = 26                         # keymap-drawer's own default
+    for combo in km.get("combos") or []:
+        key = combo.get("k")
+        key = key if isinstance(key, dict) else {"t": str(key)}
+        combo["w"] = max(MIN_W, round(CHAR_W * len(key.get("t", ""))) + PAD)
+        # Height is left to `combo_h` when there are two legends, because
+        # keymap-drawer positions them from that value whatever this box's
+        # height is -- the two have to agree (see keymap-drawer.yaml). A
+        # tap-only box is drawn centred, so it can lose the top row.
+        if not key.get("s"):
+            combo["h"] = TAP_ONLY_H
+
+
+def fix_baselines(svg):
+    """Re-do the SVG's vertical text placement with `dy`. See LEGEND_DY."""
+    style = svg[svg.index("<style>"):svg.index("</style>")]
+    for expect in ("dominant-baseline: middle", "dominant-baseline: hanging"):
+        if expect not in style:
+            sys.exit(f"keymap-drawer no longer emits `{expect}` -- it may have "
+                     "fixed this itself; re-check LEGEND_DY before regenerating")
+
+    def patch(match):
+        block = match.group(0)
+        classes = re.search(r'class="([^"]*)"', block)
+        found = [c for c in (classes.group(1).split() if classes else [])
+                 if c in LEGEND_DY]
+        if len(found) != 1:
+            sys.exit(f"cannot place text, {len(found)} known legend classes: {block!r}")
+        dy = LEGEND_DY[found[0]]
+        if not dy:
+            return block
+        # Always hang the offset on the first <tspan> when there is one: its
+        # em is the (possibly shrunk) size the glyphs actually render at, and
+        # librsvg applies a dy on the parent <text> once PER tspan while
+        # browsers apply it once -- so parent dy on a multi-line legend would
+        # reintroduce exactly the kind of renderer split this is undoing.
+        if (tspan := re.search(r"<tspan\b[^>]*>", block)) is None:
+            return block.replace("<text ", f'<text dy="{dy}em" ', 1)
+        tag = tspan.group(0)
+        if (own := re.search(r'dy="(-?[\d.]+)em"', tag)):
+            new = tag.replace(own.group(0), f'dy="{float(own.group(1)) + dy:.3g}em"')
+        else:
+            new = tag.replace("<tspan ", f'<tspan dy="{dy}em" ', 1)
+        return block.replace(tag, new, 1)
+
+    return re.sub(r"<text\b.*?</text>", patch, svg, flags=re.S)
+
+
+def check_footer(svg):
+    """The footer is one right-aligned line that nothing wraps or measures."""
+    foot = re.search(r'<text x="([\d.]+)"[^>]*class="footer">([^<]*)</text>', svg)
+    if not foot:
+        return
+    x, text = float(foot.group(1)), foot.group(2)
+    # The sheet is set in a monospace stack at 14px; 0.6em per character is the
+    # advance width of every one of them.
+    if (left := x - 0.6 * 14 * len(text)) < 0:
+        sys.exit(f"footer_text runs {-left:.0f}px off the left edge of the "
+                 f"sheet ({len(text)} chars); shorten it in {DRAWER_CFG.name}")
+
+
 def main():
     try:
         import yaml
@@ -271,11 +462,17 @@ def main():
     km = yaml.safe_load(parsed)
 
     print("drawing svg ...")
+    drawn = copy.deepcopy(km)
+    stamp_base_reference(drawn)
+    lay_out_combos(drawn)
     svg = HERE / "keymap.svg"
-    subprocess.run(
-        ["keymap", "-c", str(DRAWER_CFG), "draw", "-", "-o", str(svg)],
-        input=parsed, text=True, check=True,
-    )
+    drawn_svg = fix_baselines(run(
+        "keymap", "-c", str(DRAWER_CFG), "draw", "-",
+        input=yaml.safe_dump(drawn, sort_keys=False, allow_unicode=True),
+    ))
+    drawn_svg = draw_knobs(drawn_svg)
+    check_footer(drawn_svg)
+    svg.write_text(drawn_svg)
 
     png = HERE / "keymap.png"
     try:

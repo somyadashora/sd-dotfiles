@@ -28,11 +28,11 @@ The two keys between the halves are the ENCODER PUSH-BUTTONS.
   |       |       |       |       |       |       |           |       |       |       |       |   :   |   "   |
   |       |  LGUI |  LALT | LCTRL | LSHFT |       |           |       | RSHFT | RCTRL |  RALT |  RGUI |       |
   +-------+-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+-------+
-  | LCTRL |   Z   |   X   |   C   |   V   |   B   |  MUTE  PP |   N   |   M   |   ,   |   .   |   /   | RCTRL |
+  | RCTRL |   Z   |   X   |   C   |   V   |   B   |  MUTE  PP |   N   |   M   |   ,   |   .   |   /   | LCTRL |
   |       |       |       |       |       |       |           |       |       |   <   |   >   |   ?   |       |
   +-------+-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+-------+
           +-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+
-          | LSHFT |  LGUI |  LALT |  NAV  | SPACE |           |  RET  | MEDIA |  BSPC |  RGUI | RSHFT |
+          |  LGUI | RSHFT |  LALT | SPACE |  NAV  |           |  RET  | SPACE |  BSPC | LSHFT | MEDIA |
           |       |       |       |       |       |           |       |       |  DEL  |       |       |
           +-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+
 
@@ -44,14 +44,14 @@ The two keys between the halves are the ENCODER PUSH-BUTTONS.
   |  ...  |  ...  |  ...  |  ...  |  ...  |  ...  |           |  ...  |  ...  |   \   |   [   |   ]   |   =   |
   |       |       |       |       |       |       |           |       |       |   |   |   {   |   }   |   +   |
   +-------+-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+-------+
-  |  ...  |Ctl+SPC| CMENU |  CAPS |  ...  |  ...  |           |  ...  |  ...  |  ...  | PSCRN |  SLCK | PAUSE |
+  |  ...  |  ...  |  ...  |  ...  |  ...  |  ...  |           | TMUX [|WIN PRV|WIN NXT|  ZOOM | TMUX ]|  ...  |
   +-------+-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+-------+
-  |  ...  |  LGUI |  LALT | LCTRL | LSHFT |  ...  |           |  ...  |   UP  |  ...  |  INS  |  HOME | PG UP |
+  |  ...  |  ...  |  ...  |  ...  |  ...  |  ...  |           |  ...  |   UP  |  ...  |  INS  |  HOME | PG UP |
   +-------+-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+-------+
-  |  ...  |  UNDO |  CUT  |  COPY | PASTE |  ...  | Gui+L ... |  LEFT |  DOWN | RIGHT |  DEL  |  END  | PG DN |
+  |  ...  |  ...  |  ...  |  ...  |  ...  |  ...  |  ...  ... |  LEFT |  DOWN | RIGHT |  DEL  |  END  | PG DN |
   +-------+-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+-------+
           +-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+
-          |  ...  |  ...  |  ...  |  ...  |  ...  |           |  ...  |  ...  |  ...  |  ...  |  ...  |
+          |  ...  |  ...  |  ...  |  ...  |  ...  |           |  ADJ  |  ...  |  ...  |  ...  |  ...  |
           +-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+
 
   encoders   left LC(RIGHT) / LC(LEFT)     right LC(TAB) / LC(LS(TAB))
@@ -61,11 +61,11 @@ The two keys between the halves are the ENCODER PUSH-BUTTONS.
   +-------+-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+-------+
   |   F1  |   F2  |   F3  |   F4  |   F5  |   F6  |           |   F7  |   F8  |   F9  |  F10  |  F11  |  F12  |
   +-------+-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+-------+
-  |  ...  |RGB TOG|RGB BRD|RGB BRI|RGB EFR|RGB EFF|           |  ...  |  ...  |  ...  | BRI DN| BRI UP|  ...  |
+  |  ...  |RGB TOG|RGB BRD|RGB BRI|RGB EFR|RGB EFF|           |  ...  |  ...  |  ...  |  ...  | BRI UP| BRI DN|
   +-------+-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+-------+
-  |  ...  |  LGUI |  LALT | LCTRL | LSHFT |  ...  |           |  PREV |   PP  |  NEXT |  MUTE | VOL DN| VOL UP|
+  |  ...  |  LGUI |  LALT | LCTRL | LSHFT |  ...  |           |  ...  |  ...  |  ...  |  MUTE | VOL UP| VOL DN|
   +-------+-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+-------+
-  |RGB SPD|RGB HUD|RGB HUI|RGB SAD|RGB SAI|RGB SPI|  ...  ... |  ...  |  ...  |  ...  |  ...  |  ...  |  ...  |
+  |RGB SPD|RGB HUD|RGB HUI|RGB SAD|RGB SAI|RGB SPI|  ...  ... |  ...  |  ...  |  ...  |   PP  |  PREV |  NEXT |
   +-------+-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+-------+
           +-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+
           |  ...  |  ...  |  ...  |  ...  |  ...  |           |  ...  |  ...  |  ...  |  ...  |  ...  |
@@ -85,7 +85,7 @@ The two keys between the halves are the ENCODER PUSH-BUTTONS.
   | RESET |       |       |       |       |  BOOT |           |  BOOT |       |       |       |       | RESET |
   +-------+-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+-------+
           +-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+
-          |       |       |       |  ...  |       |           |       |  ...  |       |       |       |
+          |       |       |       |       |  ...  |           |       |       |       |       |  ...  |
           +-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+
 
   encoders   left C_VOL_UP / C_VOL_DN     right PG_DN / PG_UP
@@ -94,9 +94,11 @@ The two keys between the halves are the ENCODER PUSH-BUTTONS.
 
   positions [0, 5]       -> BOOT     (nav)
   positions [6, 11]      -> BOOT     (nav)
-  positions [50, 59]     -> CAPSWRD  (base)
+  positions [51, 58]     -> CAPSWRD  (base)
+  positions [53, 56]     -> C+SPC    (base)
   positions [46, 47]     -> \        (base)
   positions [31, 32]     -> ESC      (base)
+  positions [30, 31]     -> RET      (base)
   positions [34, 35]     -> [        (base)
   positions [48, 49]     -> ]        (base)
   positions [33, 34]     -> =        (base)
@@ -112,15 +114,15 @@ The two keys between the halves are the ENCODER PUSH-BUTTONS.
 
   The Ctrl+b prefix (tmux and herdr) is the exception: b is a LEFT-half
   key, so the cross-hand guard refuses a left home-row Ctrl and you get
-  "db". Use the right half's RCTRL, or the real LCTRL on the bottom row.
+  "db". Use either bottom-row corner Ctrl.
 
-  Hold NAV + MEDIA together for the ADJ layer.
+  Hold NAV + MEDIA (or NAV + RET) for the ADJ layer.
 
   The bottom-row corners are Ctrl, not Shift. Home-row Ctrl is on D
   behind the cross-hand guard, so it can only fire with a right-hand
   key - every left-hand Ctrl chord (<C-d> <C-u> <C-w> <C-r> <C-v>,
-  and Ctrl+b) needs the guard-free LCTRL down here. Shift moved one
-  row down to the outer thumb keys.
+  and Ctrl+b) needs a guard-free corner Ctrl. Shift moved one
+  row down to the thumb keys.
 
   Both Shift keys together = caps word: UVM_INFO and SCREAMING_PARAMS
   type in one gesture and end themselves at the space.

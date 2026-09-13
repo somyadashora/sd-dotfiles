@@ -904,12 +904,13 @@ reflash.
 Layout: `base` / `nav` (left thumb) / `media` (right thumb) / `adj` (both, via
 conditional-layers). The design target is **"the TKL you already know"** — the
 user came from a TKL — so base is unshifted QWERTY in TKL positions with TKL's
-bottom-row order, NAV keeps the TKL nav island as a 3-wide island (PrtSc/ScrLk/
-Pause over Ins/Home/PgUp over Del/End/PgDn, in the three rightmost columns, so
-PgUp sits directly above PgDn), NAV's arrows are the TKL **inverted-T** rather
+bottom-row order, NAV keeps the TKL nav island as a 3-wide island (Ins/Home/PgUp
+over Del/End/PgDn, in the three rightmost columns, so PgUp sits directly above
+PgDn; PrtSc/ScrLk/Pause dropped), NAV's arrows are the TKL **inverted-T** rather
 than hjkl (base-layer hjkl are already hjkl for vim; these arrows are for
 browsers and dialogs, where the TKL shape is the muscle memory), and MEDIA is
-F1-F12 straight across the number row. **Six columns per half cannot hold a
+F1-F12 straight across the number row, with brightness/volume/prev-next
+up/down pairs in the two columns under F11/F12 (MUTE on `L`, play/pause on `.`). **Six columns per half cannot hold a
 TKL's right-side overflow** (`[ ] \` after P, `=` after `-`), so they are
 **combos on base** rather than exiles to a held layer. That buys back the two
 TKL keys worth most in muscle memory: **BSPC in the top-right corner** (where a
@@ -923,18 +924,21 @@ makes a combo refuse mid-burst, which would break `]d]d]d` through this repo's
 It is safe to drop only because `;'`, `/]` and `l;` are pairs you never
 actually type — unlike `,.`/`jk`/`qw`, which keep theirs. The residual risk is
 a single-letter variable `l` before a semicolon; that is the pair to change
-first. NAV keeps `[ ] \ =` on 9/0/8/- as a fallback. Don't "fix" any of this by shuffling QWERTY. The two keys between the halves are
+first. NAV keeps `[ ] \ =` on 9/0/8/- as a fallback; NAV's left half is empty (transparent). NAV+Y / NAV+P are tmux copy mode / paste
+macros (`Ctrl+Space` then `[` / `]`), and U / I / O are prefix `k` / `j` /
+`z` (previous window / next window / zoom). **NAV+RET is ADJ** via `&mo MEDIA`,
+not `&mo ADJ` — ZMK's conditional-layer listener deactivates the then-layer
+whenever its if-layers aren't all on, even if a `&mo` turned it on. Don't "fix" any of this by shuffling QWERTY. The two keys between the halves are
 the **encoder push-buttons**, not normal keys: easy to hit while turning the
 knob, so they only ever get things harmless to fire by accident (mute,
-play/pause, Win+L) — never a typing key.
+play/pause) — never a typing key.
 
 **GACS home-row mods** (`A`=GUI `S`=Alt `D`=Ctrl `F`=Shift, mirrored) keep the
 daily chords layer-free — `Alt+hjkl` (nvim splits and tmux panes as one
 seamless space) is a left-hand hold plus a right-hand tap. The `Ctrl+b` prefix
 (tmux and herdr) is the **exception**: `b` is a left-half key, so a left
 home-row Ctrl and `b` are the same hand and the cross-hand guard refuses the
-hold — it types `db`. Press it with the right half's `RCTRL` or the real
-bottom-row `LCTRL`. The old `Ctrl+Space` prefix was home-row-reachable only
+hold — it types `db`. Press it with either bottom-row corner Ctrl. The old `Ctrl+Space` prefix was home-row-reachable only
 because Space is a right thumb; that property did not survive the move.
 Two settings carry that and are the first thing to touch if mods misfire: a
 **cross-hand guard** (`hold-trigger-key-positions`, so a same-hand roll like
@@ -947,25 +951,26 @@ behind the cross-hand guard, so it can only ever fire with a right-hand key —
 which makes every **left-hand** Ctrl chord physically impossible: `<C-d>`/`<C-u>`
 scroll, `<C-w>` windows, `<C-r>` redo, `<C-v>` blockwise, `<C-a>`/`<C-x>`
 increment, `<C-e>`/`<C-y>`, this config's `<C-g>`/`<C-q>`, and the `Ctrl+b`
-prefix above. A guard-free `&kp LCTRL` in the corner is the fix; right-hand
+prefix above. A guard-free Ctrl in the corner is the fix (swapped: `RCTRL` bottom-left,
+`LCTRL` bottom-right); right-hand
 Ctrl chords were always fine via the left home-row one. Shift moves down a row
-onto the **outer thumb keys**, which is also where a plain Shift is still
+onto the **thumb keys** (second from the outside), which is also where a plain Shift is still
 wanted — `require-prior-idle-ms` means the home-row one refuses to fire
 mid-burst, so capitals typed at speed need a real key. The right corner is a
-plain `&kp RCTRL` — it carried `]` as a mod-tap's tap half until `]` became the
+plain `&kp LCTRL` — it carried `]` as a mod-tap's tap half until `]` became the
 `/`+corner combo, and with no tap half there is nothing to arbitrate and no
 tapping-term latency on a modifier. (If a symbol ever returns there, do **not**
 use stock `&mt`: its `hold-preferred` default turns a lingered tap into the
 modifier. The keymap records the working shape.) Backspace is `&bspc_del`, a
 mod-morph giving Delete under Shift, on the right thumb **and** in the TKL
-top-right corner. **Space and Enter are swapped** from TKL order — Space is
-the nvim leader and the most-pressed key, so it takes the stronger left inner
-thumb. Both Shift keys pressed together are a **`&caps_word` combo**: the
+top-right corner. **Thumbs, outside in:** left GUI/Shift/Alt/Space/NAV, right
+MEDIA/Shift/BSPC/Space/Enter — Space on both thumbs (nvim leader), NAV
+innermost-left and MEDIA outermost-right, still opposite halves for ADJ. Both Shift keys pressed together are a **`&caps_word` combo**: the
 SystemVerilog key, since `UVM_INFO`/`SCREAMING_PARAMS` are most of what gets
-typed here and caps-word's continue-list already carries `UNDERSCORE`.
+typed here and caps-word's continue-list already carries `UNDERSCORE`. Both Space thumbs together send `Ctrl+Space`.
 
-**`j`+`k` → Esc is a
-hardware combo**, not an nvim mapping, so it also escapes in nvim-bash vi mode
+**`j`+`k` → Esc and `h`+`j` → Enter are
+hardware combos**, not an nvim mapping, so it also escapes in nvim-bash vi mode
 and in a bare `vi` on a box you don't control. Encoders are per-layer.
 `&studio_unlock` is on ADJ+`U`. **Bootloader has a single-half escape hatch**: on NAV, the two ends of the
 left half's number row together (`` ` ``+`5`) bootloader the LEFT half, and
@@ -1052,18 +1057,56 @@ the grid shears; the generator asserts ASCII-ness and per-group column width
 before writing. Regenerate
 after every keymap change; the outputs are committed so reading them needs
 nothing installed (generating needs `keymap-drawer`, plus `librsvg2-bin` for the
-PNG only). `keymap-drawer.yaml` carries two necessary workarounds: it drops the
-layer-header text stroke (keymap-drawer relies on `paint-order`, which Chrome
-honours but librsvg/cairosvg do not — they paint the white stroke over the
-glyphs, rendering every header invisible or as a black blob), and its
+PNG only). Every key on every layer **but base** carries the base-layer legend
+in its bottom-left corner, small and muted (stamped by the generator, styled by
+the config): a layer sheet is a picture of the same keys, and on NAV most of the
+board is `▽`, so the corner is what tells you which physical key you are
+looking at. Bottom-left is the free corner — shifted is top-centre, hold
+bottom-centre, and no layer but base has holds. **Combo boxes are sized per
+combo**, legends stacked as on a key (shifted above, tap below): keymap-drawer
+gives every box one size, wide enough for the longest legend (`CAPSWRD`) and so
+far too wide for `[`, and both visible faults came out of that — an oversized
+box covered a neighbouring key's legend (`/` + the bottom-right corner sat on
+that corner's `RCTRL`) while a box short enough to avoid that had its own two
+legends collide (`=` over `+` as a `±` blob). Each box now takes its own width
+and drops the top row when it has no shifted face, so the widest one between
+two keys reaches 18px in where the nearest key legend stops 14px short. The
+trap: keymap-drawer draws the box RECT from the per-combo size but places the
+legends inside it from the CONFIG `combo_h`, so those two must agree —
+`combo_h` is the two-legend height and the generator only shrinks below it.
+`keymap-drawer.yaml` works around **two CSS properties Chrome implements and
+librsvg (the PNG renderer) does not**, which is every rendering bug this sheet
+has ever had. `paint-order` puts a fat white halo behind layer headers and the
+footer; librsvg paints that stroke straight OVER the glyphs, so the text comes
+out invisible or as a blob — the config drops the stroke for both (the footer
+was invisible in every PNG until `text.footer` was added to the rule that
+already named `text.label`). `dominant-baseline` is how keymap-drawer centres a
+tap legend and hangs a shifted one off the key's top edge; librsvg ignores the
+property outright (measured: `middle`/`hanging`/`central`/`auto` all land on the
+alphabetic baseline), so top legends drew ENTIRELY ABOVE the key — the
+text-outside-the-box. There is no renderer-neutral CSS for it, so the config
+pins every legend to the alphabetic baseline and `gen-keymap-art` redoes the
+vertical placement with `dy`, **hung on the first `<tspan>`** when there is one:
+librsvg applies a parent `<text>`'s `dy` once per tspan where browsers apply it
+once, so a parent `dy` would re-split a two-line legend. It bails if
+keymap-drawer stops emitting those baselines (that would mean it fixed this
+itself and the offsets now double up). Also `key_h` is the whole scale for a
+`zmk_keyboard:` layout — keys come out square and `key_w` is ignored — and the
+stock 56 left a key narrower than a 7-char legend, which is what made `CAPSWRD`
+spill over the edge; and the footer is one unwrapped, unmeasured right-aligned
+line, so the generator checks it fits. Its
 `raw_binding_map` renames behaviors that would otherwise print as devicetree
 node names (`&studio_unlock` → `UNLOCK`) or overflow `keymap.txt`'s 7-char cell
 (`&nav_rgb` → `NAV`, else it truncates to `&nav_r>`), and gives a mod-morph the
 shifted face it has no way to infer (`&bspc_del` → `{t: BSPC, s: DEL}`), while `zmk_keycode_map`
 spells out the **shifted faces** so every key prints its second legend keycap
 style (keymap-drawer knows `&kp LBRC` is `{`, but not that `&kp COMMA` also
-shows `<`) — **keep both in sync when adding a macro or punctuation key**. Encoders are
-listed in `keymap.txt` only; keymap-drawer does not draw them.
+shows `<`) — **keep both in sync when adding a macro or punctuation key**. Encoders:
+keymap-drawer has no concept of them, so `gen-keymap-art` reads each layer's
+`sensor-bindings` and draws the clockwise (↻) / counter-clockwise (↺) action
+above each encoder push-button in the SVG/PNG (`draw_knobs`, words from
+`KNOB_WORDS` — add an entry when a knob gets a new keycode, or it prints raw);
+`keymap.txt` lists them per layer.
 
 Flashing is a USB mass-storage copy, so it **cannot happen from a Codespace**:
 download the `sofle-firmware` artifact locally, double-tap reset, drag the

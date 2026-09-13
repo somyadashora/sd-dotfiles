@@ -4,17 +4,73 @@
 draw_config:
   n_columns: 1
 
-  # keymap-drawer draws layer headers as text with a fat white stroke UNDER
-  # the fill, via `paint-order: stroke fill`. Chrome honours that; librsvg and
-  # cairosvg do not, and paint the white stroke straight over the glyphs — so
-  # every layer header renders either invisible or as a black blob depending
-  # on which one you use. The halo only exists to lift the header off the keys
-  # and the header sits in clear space anyway, so dropping the stroke costs
-  # nothing and makes the PNG match the SVG on any renderer.
-  svg_extra_style: |
-    text.label { stroke: none; }
+  # 1u = key_h for a `zmk_keyboard:` layout -- the keys come out square and
+  # the whole grid scales with it, while key_w is ignored entirely. The stock
+  # 56 leaves a 52px key, which is narrower than a 7-character legend at the
+  # 14px tap font (~59px), so CAPSWRD / PSCRN / LSHFT spilled over the edges.
+  # 70 gives a 66px key, which fits the longest legend this keymap has.
+  key_h: 70.0
 
-  footer_text: 'Small legend at bottom-right of a key = what Shift gives. Encoders are per-layer, see keymap.txt. Hold NAV+MEDIA for ADJ.'
+  # `combo_h` is the height of a combo box carrying BOTH legends -- shifted
+  # hanging off the top edge, tap centred, the way a key is set. A tap-only box
+  # does not need that top row, so gen-keymap-art shrinks those to 26 and sizes
+  # every box's width to its own legend.
+  #
+  # Keep this in step with the generator, because keymap-drawer draws the box
+  # RECT from the per-combo size but places the legends inside it from THIS
+  # value. Set 26 here and hand out a taller box, and the shifted face keeps
+  # 26's offset and lands on top of the tap -- which is what turned `=`/`+`
+  # into a `±` blob. `combo_w` is dead for the same reason it is harmless: no
+  # combo here carries a left/right legend, the only things it positions.
+  combo_w: 48.0
+  combo_h: 30.0
+
+  # Gap between an edge legend and the key or box border. The stock 2 is enough
+  # now that the legends sit on a real baseline (see the dy note below) -- it
+  # leaves 4px above a shifted legend and 2.5px under a hold one -- and a combo
+  # box is small enough that a larger pad has to come out of the gap between
+  # its two legends.
+  small_pad: 2.0
+
+  # keymap-drawer draws layer headers AND the footer as text with a fat white
+  # stroke UNDER the fill, via `paint-order: stroke fill`. Chrome honours that;
+  # librsvg and cairosvg do not, and paint the white stroke straight over the
+  # glyphs — so the text renders either invisible or as a black blob depending
+  # on which one you use. (The footer was invisible in every PNG this script
+  # ever produced, because the original workaround named only `text.label`.)
+  # The halo only exists to lift the text off the keys and both sit in clear
+  # space anyway, so dropping the stroke costs nothing and makes the PNG match
+  # the SVG on any renderer.
+  #
+  # `dominant-baseline` is the same story, one layer deeper: librsvg ignores
+  # the property outright (measured — middle, hanging, central and auto all
+  # land on the alphabetic baseline), so keymap-drawer's `middle` tap legends
+  # drew ~5px high and its `hanging` top legends drew ENTIRELY ABOVE the key.
+  # That is the text-outside-the-box in the PNG. There is no renderer-neutral
+  # CSS for it, so every legend is pinned to the plain alphabetic baseline
+  # here and gen-keymap-art re-does the vertical placement with `dy`, which
+  # librsvg does honour. Anything that overrides these rules must keep
+  # matching specificity or lower, or the dy offsets will be wrong.
+  svg_extra_style: |
+    text.label, text.footer { stroke: none; }
+    text { dominant-baseline: auto; }
+    text.hold, text.bl, text.br { dominant-baseline: auto; }
+    text.shifted, text.tl, text.tr { dominant-baseline: auto; }
+    /* The base-layer reference legend gen-keymap-art stamps into the
+       bottom-left corner of every key on every OTHER layer: small and muted,
+       so it reads as "this is that physical key" and never competes with the
+       legend the layer actually produces. */
+    text.bl { font-size: 8px; fill: #6e7781; }
+    /* Knob rotation, drawn by gen-keymap-art above each encoder push-button
+       (keymap-drawer has no encoders). Plain `y` placement, so pinned to the
+       alphabetic baseline like everything else. */
+    text.knob { font-size: 11px; text-anchor: middle; dominant-baseline: auto; }
+    text.knob-head { font-size: 8px; fill: #6e7781; text-anchor: middle; dominant-baseline: auto; letter-spacing: 1px; }
+
+  # One line, right-aligned, and keymap-drawer neither wraps nor measures it --
+  # a long footer just runs off the left edge of the sheet. gen-keymap-art
+  # checks it fits; keep it terse.
+  footer_text: 'Top legend = Shift. Bottom = hold. Faint bottom-left = the same key on base. NAV+MEDIA = ADJ. Knobs: ↻ clockwise ↺ counter'
 
 parse_config:
   # Without these, ZMK's own bare behaviors print as raw devicetree node names
@@ -29,6 +85,16 @@ parse_config:
     '&nav_rgb': 'NAV'
     '&media_rgb': 'MEDIA'
     '&caps_word': 'CAPSWRD'
+    '&tmux_copy': 'TMUX ['
+    '&tmux_paste': 'TMUX ]'
+    '&tmux_prev': 'WIN PRV'
+    '&tmux_next': 'WIN NXT'
+    '&tmux_zoom': 'ZOOM'
+    # NAV's RET position: holds MEDIA, which with NAV held is ADJ.
+    '&mo MEDIA': 'ADJ'
+    # The both-Spaces combo. Raw text renders as `Ctl+SPACE`, two columns past
+    # keymap.txt's combo-list alignment.
+    '&kp LC(SPACE)': 'C+SPC'
     # Same 7-char cell problem: the raw text is '&ext_power EP_TOG'.
     '&ext_power EP_TOG': 'EPTOG'
     # A mod-morph has no shifted face keymap-drawer can infer, so spell the
