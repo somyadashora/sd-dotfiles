@@ -3,7 +3,7 @@
 
 Three outputs, all committed so nobody needs this script just to READ them:
 
-  keymap.svg  vector, for printing from a browser
+  keymap.svg  vector, a real A4 page -- print it at 100%
   keymap.png  raster, for a phone or a quick look
   keymap.txt  ASCII, for `sofle-cs` in a terminal over ssh
 
@@ -43,6 +43,24 @@ ROWS = [
     (range(36, 42), range(44, 50)),
 ]
 ENCODER_BTNS = (42, 43)
+
+# A layer whose ONLY content is knob bindings gets folded into the base sheet
+# rather than drawn as its own. Its keys are transparent by construction, so a
+# sheet of its own is a full page of the transparent glyph carrying two lines
+# of knob text -- and it costs a fifth of the page budget, which is the whole
+# A4 legibility argument below. The knob lines land under base's instead,
+# labelled with the key you hold to reach them.
+FOLDED = {"alt-tab": "ALT"}
+
+# The sheet is a page, not an image: A4 portrait with a real margin, so
+# printing it is WYSIWYG at 100% instead of a strip down the middle of the
+# paper. MIN_LEGEND_PT is the assertion that keeps it that way -- a fifth
+# layer drawn full-size would push the 14px legends under 5pt, which is the
+# point at which this stops being a reference you can read at arm's length.
+A4_MM = (210.0, 297.0)
+MARGIN_MM = 10.0
+MIN_LEGEND_PT = 5.8
+PNG_DPI = 200
 THUMBS = (range(50, 55), range(55, 60))
 
 W = 7                       # cell content width
@@ -135,7 +153,11 @@ def row_lines(entries, idxs):
     return out
 
 
-def draw_layer(name, entries, encoders):
+def encoder_line(field, pair):
+    return f"{INDENT}{field:<11}left {pair[0]}     right {pair[1]}"
+
+
+def draw_layer(name, entries, encoders, extra=()):
     head = f"-- {name.upper()} "
     out = [head + "-" * (WIDTH - len(head)), ""]
     out.append(INDENT + rule() + GAP + rule())
@@ -171,7 +193,8 @@ def draw_layer(name, entries, encoders):
 
     if encoders:
         out.append("")
-        out.append(f"{INDENT}encoders   left {encoders[0]}     right {encoders[1]}")
+        out.append(encoder_line("encoders", encoders))
+        out.extend(extra)
     out.append("")
     return out
 
@@ -184,7 +207,7 @@ def parse_encoder_pairs():
     src = KEYMAP.read_text()
     found = {}
     for body in re.findall(r"\w+_layer \{(.*?)\n        \};", src, re.S):
-        nm = re.search(r'display-name = "(\w+)"', body)
+        nm = re.search(r'display-name = "([\w-]+)"', body)
         sb = re.search(r"sensor-bindings = <(.*?)>;", body, re.S)
         if not (nm and sb):
             continue  # conditional_layers' adjust_layer has neither
@@ -201,16 +224,40 @@ def parse_encoders():
 
 
 # What a knob keycode means, in words short enough to sit above an encoder
-# button (the gap between the halves is ~90px per knob at 12px monospace, so
-# keep these to ~11 characters). Anything missing prints as the raw keycode,
-# which is ugly but never wrong.
+# button -- check_knob_width measures each line against the real gap between
+# the halves and fails the run rather than let one print over a key legend.
+# Anything missing prints as the raw keycode, which is ugly but never wrong.
+# Half-width of a drawn key, from keymap-drawer.yaml's key_h: a square key of
+# key_h - 2 * inner_pad_h. The knob text hangs off the top edge of a button.
+KEY_R = 33.0
+
+# Line advance and font size per knob-text class, matching svg_extra_style.
+KNOB_LINE = {"knob-head": 20, "knob": 18, "knob-alt": 14}
+KNOB_EM = {"knob-head": 8, "knob": 11, "knob-alt": 9}
+
 KNOB_WORDS = {
     "C_VOL_UP": "VOL UP", "C_VOL_DN": "VOL DOWN",
     "C_BRI_UP": "BRIGHT UP", "C_BRI_DN": "BRIGHT DN",
     "PG_DN": "PAGE DOWN", "PG_UP": "PAGE UP",
     "LC(RIGHT)": "NEXT WORD", "LC(LEFT)": "PREV WORD",
     "LC(TAB)": "NEXT TAB", "LC(LS(TAB))": "PREV TAB",
+    # alt-tab layer: Alt is held by the thumb that reached the layer, so a
+    # bare TAB here is the window switcher, not a tab character.
+    "TAB": "NEXT WIN", "LS(TAB)": "PREV WIN",
 }
+
+
+def knob_lines(knobs, label=None):
+    """The stack of text that sits above one encoder button, bottom line last.
+
+    `label` is the key you hold to get these knob bindings -- set for a folded
+    layer's knobs, which ride under the base layer's own.
+    """
+    cw, ccw = knobs
+    pre = f"{label} " if label else ""
+    cls = "knob-alt" if label else "knob"
+    return [(cls, f"{pre}\u21bb {KNOB_WORDS.get(cw, cw)}"),
+            (cls, f"{pre}\u21ba {KNOB_WORDS.get(ccw, ccw)}")]
 
 
 def draw_knobs(svg):
@@ -222,11 +269,16 @@ def draw_knobs(svg):
     is empty on every layer, so each knob's clockwise / counter-clockwise pair
     is stacked right on top of its own button.
 
+    A FOLDED layer has no sheet of its own, so its knobs are appended here to
+    the base layer's stack, in the muted `knob-alt` style and prefixed with the
+    key you hold to reach them. That is the whole of what such a layer does.
+
     Runs after fix_baselines, which refuses text it has no legend class for.
     These set their own baseline with plain `y`, which every renderer honours.
     """
     pairs = parse_encoder_pairs()
-    LINE, HEAD_GAP = 18, 20
+    folded = [(lbl, pairs.pop(nm)) for nm, lbl in FOLDED.items() if pairs.get(nm)]
+    room = knob_room(svg)
     for name, knobs in pairs.items():
         if not knobs:
             continue
@@ -234,21 +286,90 @@ def draw_knobs(svg):
         if not opener:
             sys.exit(f"draw_knobs: no layer group for {name!r} in the svg")
         out = []
-        for pos, (cw, ccw) in zip(ENCODER_BTNS, knobs):
+        for i, pos in enumerate(ENCODER_BTNS):
             btn = re.compile(rf'<g transform="translate\(([\d.]+), ([\d.]+)\)" class="[^"]*keypos-{pos}"')
             m = btn.search(svg, opener.end())
             if not m:
                 sys.exit(f"draw_knobs: no key {pos} in layer {name!r}")
             x, y = float(m.group(1)), float(m.group(2))
-            top = y - 33                     # key_h 70 -> a 66px key, centred on y
-            base = top - 10                  # baseline of the last line
-            lines = [("knob-head", "KNOB", base - 2 * LINE - (HEAD_GAP - LINE)),
-                     ("knob", f"\u21bb {KNOB_WORDS.get(cw, cw)}", base - LINE),
-                     ("knob", f"\u21ba {KNOB_WORDS.get(ccw, ccw)}", base)]
-            for cls, text, ty in lines:
+
+            lines = [("knob-head", "KNOB")] + knob_lines(knobs[i])
+            if name == "base":
+                for lbl, fk in folded:
+                    lines += knob_lines(fk[i], lbl)
+            check_knob_width(lines, room, name)
+
+            # stack upward from a baseline just above the key, so the block
+            # always hangs off the button no matter how many lines it has
+            ty = y - KEY_R - 10
+            for cls, text in reversed(lines):
                 out.append(f'<text x="{x:g}" y="{ty:g}" class="{cls}">{html.escape(text)}</text>')
+                ty -= KNOB_LINE[cls]
         svg = svg[:opener.end()] + "\n" + "\n".join(out) + svg[opener.end():]
     return svg
+
+
+def knob_room(svg):
+    """How wide a knob line may be: centred text, up to the neighbouring key.
+
+    Measured rather than assumed, because the encoder button does NOT sit a
+    key pitch from the half beside it -- the split gap widens that column.
+    Positions 41 and 42 are the last left-half key and the left button.
+    """
+    xs = {}
+    for pos in (41, 42):
+        m = re.search(rf'<g transform="translate\(([\d.]+), [\d.]+\)" class="[^"]*keypos-{pos}"', svg)
+        if not m:
+            sys.exit(f"knob_room: no key {pos} in the svg")
+        xs[pos] = float(m.group(1))
+    return 2 * (xs[42] - xs[41] - KEY_R)
+
+
+def check_knob_width(lines, room, layer):
+    """Knob text sits in the empty column between the halves. Keep it there.
+
+    The key columns either side are occupied on the rows this text crosses, so
+    a line that outgrows the gap does not wrap or clip -- it prints over a
+    legend, which is how it will be discovered if this check is not here.
+    """
+    for cls, text in lines:
+        # monospace: 0.6em advance per character, plus knob-head's letter-spacing
+        w = 0.6 * KNOB_EM[cls] * len(text) + (1.0 * len(text) if cls == "knob-head" else 0)
+        if w > room:
+            sys.exit(f"knob text {text!r} on layer {layer} is {w:.0f}px wide, "
+                     f"{w - room:.0f}px more than the {room:.0f}px gap between "
+                     f"the halves; shorten it in KNOB_WORDS")
+
+
+def fit_a4(svg):
+    """Give the sheet a real A4 page, so printing it needs no scaling dialog.
+
+    keymap-drawer emits a viewBox in bare user units and width/height to match,
+    which a browser prints as an image scaled to the paper -- a 1:2 strip down
+    the middle of an A4 page, which is how this sheet used to come out. Setting
+    width/height in MILLIMETRES instead makes the user unit a physical length:
+    the page is A4, the content is centred inside a real margin, and `print at
+    100%` is the whole procedure.
+    """
+    m = re.search(r'<svg width="([\d.]+)" height="([\d.]+)" viewBox="0 0 ([\d.]+) ([\d.]+)"', svg)
+    if not m:
+        sys.exit("fit_a4: no viewBox on the svg")
+    w, h = float(m.group(3)), float(m.group(4))
+    page_w, page_h = A4_MM
+    # mm per user unit, whichever of the two margins binds first
+    scale = min((page_w - 2 * MARGIN_MM) / w, (page_h - 2 * MARGIN_MM) / h)
+    pt = 14 * scale * 72 / 25.4
+    if pt < MIN_LEGEND_PT:
+        sys.exit(f"the sheet prints its 14px legends at {pt:.1f}pt on A4, under "
+                 f"the {MIN_LEGEND_PT}pt floor -- it has grown too tall to stay "
+                 f"a one-page reference. Fold a knobs-only layer into base "
+                 f"(FOLDED), tighten outer_pad_h, or split the sheet.")
+    # the page, in the same user units, with the content centred in it
+    ox, oy = (page_w / scale - w) / 2, (page_h / scale - h) / 2
+    return (svg.replace(m.group(0),
+                        f'<svg width="{page_w:g}mm" height="{page_h:g}mm" '
+                        f'viewBox="{-ox:.1f} {-oy:.1f} {page_w / scale:.1f} '
+                        f'{page_h / scale:.1f}"', 1), pt)
 
 
 def render(km):
@@ -272,10 +393,18 @@ def render(km):
         "The two keys between the halves are the ENCODER PUSH-BUTTONS.",
         "",
     ]
+    # A knobs-only layer has no sheet of its own here either -- 60 transparent
+    # cells say nothing. Its knobs print under base's, same shape, labelled
+    # with the key you hold. See FOLDED.
+    folded = [encoder_line(f"hold {lbl}", encoders[nm])
+              for nm, lbl in FOLDED.items() if encoders.get(nm)]
     for name, entries in km["layers"].items():
         if len(entries) != 60:
             sys.exit(f"layer {name}: expected 60 bindings, got {len(entries)}")
-        lines += draw_layer(name, entries, encoders.get(name))
+        if name in FOLDED:
+            continue
+        lines += draw_layer(name, entries, encoders.get(name),
+                            folded if name == "base" else ())
 
     combos = km.get("combos") or []
     if combos:
@@ -463,6 +592,8 @@ def main():
 
     print("drawing svg ...")
     drawn = copy.deepcopy(km)
+    for nm in FOLDED:
+        drawn["layers"].pop(nm, None)
     stamp_base_reference(drawn)
     lay_out_combos(drawn)
     svg = HERE / "keymap.svg"
@@ -472,11 +603,16 @@ def main():
     ))
     drawn_svg = draw_knobs(drawn_svg)
     check_footer(drawn_svg)
+    drawn_svg, pt = fit_a4(drawn_svg)
     svg.write_text(drawn_svg)
+    print(f"  A4 portrait, {MARGIN_MM:g}mm margins, legends at {pt:.1f}pt")
 
     png = HERE / "keymap.png"
     try:
-        run("rsvg-convert", "-b", "white", "-z", "1.5", str(svg), "-o", str(png))
+        # the svg is sized in mm now, so a dpi is all the PNG needs to come
+        # out as the same page at a printable resolution
+        run("rsvg-convert", "-b", "white", "-d", str(PNG_DPI), "-p", str(PNG_DPI),
+            str(svg), "-o", str(png))
         print("drawing png ...")
     except (FileNotFoundError, subprocess.CalledProcessError):
         print("rsvg-convert not found - skipping PNG (install librsvg2-bin)")

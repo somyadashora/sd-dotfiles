@@ -32,11 +32,12 @@ The two keys between the halves are the ENCODER PUSH-BUTTONS.
   |       |       |       |       |       |       |           |       |       |   <   |   >   |   ?   |       |
   +-------+-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+-------+
           +-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+
-          |  LGUI | RSHFT |  LALT | SPACE |  NAV  |           |  RET  | SPACE |  BSPC | LSHFT | MEDIA |
+          |  LGUI | RSHFT |  ALT  | SPACE |  NAV  |           |  RET  | SPACE |  BSPC | LSHFT | MEDIA |
           |       |       |       |       |       |           |       |       |  DEL  |       |       |
           +-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+
 
   encoders   left C_VOL_UP / C_VOL_DN     right PG_DN / PG_UP
+  hold ALT   left TAB / LS(TAB)     right TAB / LS(TAB)
 
 -- NAV --------------------------------------------------------------------------------------------------------
 

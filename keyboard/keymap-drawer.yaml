@@ -4,6 +4,15 @@
 draw_config:
   n_columns: 1
 
+  # Vertical padding around each layer, and the single biggest lever on
+  # whether this sheet is readable on A4. The stock 56 (= one key) puts four
+  # layers at 1988px tall against 1180 wide, which is TALLER than A4's 1:1.41
+  # -- so the print scales to the page HEIGHT, wastes 26mm of width, and lands
+  # the 14px legends at 5.5pt. 22 trades padding nobody reads for ~10% on
+  # every glyph. gen-keymap-art's fit_a4 asserts the result stays above 5.8pt,
+  # so this cannot quietly regress.
+  outer_pad_h: 22.0
+
   # 1u = key_h for a `zmk_keyboard:` layout -- the keys come out square and
   # the whole grid scales with it, while key_w is ignored entirely. The stock
   # 56 leaves a 52px key, which is narrower than a 7-character legend at the
@@ -65,6 +74,10 @@ draw_config:
        (keymap-drawer has no encoders). Plain `y` placement, so pinned to the
        alphabetic baseline like everything else. */
     text.knob { font-size: 11px; text-anchor: middle; dominant-baseline: auto; }
+    /* A folded layer's knobs, drawn under base's own: smaller and muted, so
+       the pair you get for free reads as secondary to the pair you get by
+       just turning the knob. Prefixed with the key you hold for them. */
+    text.knob-alt { font-size: 9px; fill: #6e7781; text-anchor: middle; dominant-baseline: auto; }
     text.knob-head { font-size: 8px; fill: #6e7781; text-anchor: middle; dominant-baseline: auto; letter-spacing: 1px; }
 
   # One line, right-aligned, and keymap-drawer neither wraps nor measures it --
@@ -84,6 +97,8 @@ parse_config:
     # cell in keymap.txt and gets truncated to `&nav_r>`.
     '&nav_rgb': 'NAV'
     '&media_rgb': 'MEDIA'
+    # The left thumb Alt. Holds Alt and the alt-tab layer; it is still Alt.
+    '&alt_tab': 'ALT'
     '&caps_word': 'CAPSWRD'
     '&tmux_copy': 'TMUX ['
     '&tmux_paste': 'TMUX ]'

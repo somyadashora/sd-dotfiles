@@ -1,4 +1,4 @@
-<svg width="1180" height="1988" viewBox="0 0 1180 1988" class="keymap" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="210mm" height="297mm" viewBox="-99.1 -65.6 1378.3 1949.3" class="keymap" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <style>/* inherit to force styles through use tags */
 svg path {
     fill: inherit;
@@ -137,17 +137,25 @@ text.bl { font-size: 8px; fill: #6e7781; }
    (keymap-drawer has no encoders). Plain `y` placement, so pinned to the
    alphabetic baseline like everything else. */
 text.knob { font-size: 11px; text-anchor: middle; dominant-baseline: auto; }
+/* A folded layer's knobs, drawn under base's own: smaller and muted, so
+   the pair you get for free reads as secondary to the pair you get by
+   just turning the knob. Prefixed with the key you hold for them. */
+text.knob-alt { font-size: 9px; fill: #6e7781; text-anchor: middle; dominant-baseline: auto; }
 text.knob-head { font-size: 8px; fill: #6e7781; text-anchor: middle; dominant-baseline: auto; letter-spacing: 1px; }
 </style>
 <g transform="translate(30, 0)" class="layer-base">
-<text x="464" y="181" class="knob-head">KNOB</text>
-<text x="464" y="201" class="knob">↻ VOL UP</text>
-<text x="464" y="219" class="knob">↺ VOL DOWN</text>
-<text x="656" y="181" class="knob-head">KNOB</text>
-<text x="656" y="201" class="knob">↻ PAGE DOWN</text>
-<text x="656" y="219" class="knob">↺ PAGE UP</text>
-<text dy="0.35em" x="0" y="28" class="label" id="base">base:</text>
-<g transform="translate(0, 56)">
+<text x="464" y="219" class="knob-alt">ALT ↺ PREV WIN</text>
+<text x="464" y="205" class="knob-alt">ALT ↻ NEXT WIN</text>
+<text x="464" y="191" class="knob">↺ VOL DOWN</text>
+<text x="464" y="173" class="knob">↻ VOL UP</text>
+<text x="464" y="155" class="knob-head">KNOB</text>
+<text x="656" y="219" class="knob-alt">ALT ↺ PREV WIN</text>
+<text x="656" y="205" class="knob-alt">ALT ↻ NEXT WIN</text>
+<text x="656" y="191" class="knob">↺ PAGE UP</text>
+<text x="656" y="173" class="knob">↻ PAGE DOWN</text>
+<text x="656" y="155" class="knob-head">KNOB</text>
+<text dy="0.35em" x="0" y="11" class="label" id="base">base:</text>
+<g transform="translate(0, 22)">
 <g transform="translate(35, 79)" class="key keypos-0">
 <rect rx="6" ry="6" x="-33" y="-33" width="66" height="66" class="key"/>
 <text dy="0.35em" x="0" y="0" class="key tap">`</text>
@@ -384,7 +392,7 @@ text.knob-head { font-size: 8px; fill: #6e7781; text-anchor: middle; dominant-ba
 </g>
 <g transform="translate(315, 324)" class="key keypos-52">
 <rect rx="6" ry="6" x="-33" y="-33" width="66" height="66" class="key"/>
-<text dy="0.35em" x="0" y="0" class="key tap">LALT</text>
+<text dy="0.35em" x="0" y="0" class="key tap">ALT</text>
 </g>
 <g transform="translate(396, 343) rotate(22.5)" class="key keypos-53">
 <rect rx="6" ry="6" x="-33" y="-33" width="66" height="66" class="key"/>
@@ -457,15 +465,15 @@ text.knob-head { font-size: 8px; fill: #6e7781; text-anchor: middle; dominant-ba
 </g>
 </g>
 </g>
-<g transform="translate(30, 483)" class="layer-nav">
-<text x="464" y="181" class="knob-head">KNOB</text>
-<text x="464" y="201" class="knob">↻ NEXT WORD</text>
+<g transform="translate(30, 449)" class="layer-nav">
 <text x="464" y="219" class="knob">↺ PREV WORD</text>
-<text x="656" y="181" class="knob-head">KNOB</text>
-<text x="656" y="201" class="knob">↻ NEXT TAB</text>
+<text x="464" y="201" class="knob">↻ NEXT WORD</text>
+<text x="464" y="183" class="knob-head">KNOB</text>
 <text x="656" y="219" class="knob">↺ PREV TAB</text>
-<text dy="0.35em" x="0" y="28" class="label" id="nav">nav:</text>
-<g transform="translate(0, 56)">
+<text x="656" y="201" class="knob">↻ NEXT TAB</text>
+<text x="656" y="183" class="knob-head">KNOB</text>
+<text dy="0.35em" x="0" y="11" class="label" id="nav">nav:</text>
+<g transform="translate(0, 22)">
 <g transform="translate(35, 79)" class="key trans keypos-0">
 <rect rx="6" ry="6" x="-33" y="-33" width="66" height="66" class="key trans"/>
 <text dy="0.35em" x="0" y="0" class="key trans tap">▽</text>
@@ -745,7 +753,7 @@ text.knob-head { font-size: 8px; fill: #6e7781; text-anchor: middle; dominant-ba
 <g transform="translate(315, 324)" class="key trans keypos-52">
 <rect rx="6" ry="6" x="-33" y="-33" width="66" height="66" class="key trans"/>
 <text dy="0.35em" x="0" y="0" class="key trans tap">▽</text>
-<text x="-31" y="31" class="key trans bl">LALT</text>
+<text x="-31" y="31" class="key trans bl">ALT</text>
 </g>
 <g transform="translate(396, 343) rotate(22.5)" class="key trans keypos-53">
 <rect rx="6" ry="6" x="-33" y="-33" width="66" height="66" class="key trans"/>
@@ -796,15 +804,15 @@ text.knob-head { font-size: 8px; fill: #6e7781; text-anchor: middle; dominant-ba
 </g>
 </g>
 </g>
-<g transform="translate(30, 966)" class="layer-media">
-<text x="464" y="181" class="knob-head">KNOB</text>
-<text x="464" y="201" class="knob">↻ VOL UP</text>
+<g transform="translate(30, 898)" class="layer-media">
 <text x="464" y="219" class="knob">↺ VOL DOWN</text>
-<text x="656" y="181" class="knob-head">KNOB</text>
-<text x="656" y="201" class="knob">↻ BRIGHT UP</text>
+<text x="464" y="201" class="knob">↻ VOL UP</text>
+<text x="464" y="183" class="knob-head">KNOB</text>
 <text x="656" y="219" class="knob">↺ BRIGHT DN</text>
-<text dy="0.35em" x="0" y="28" class="label" id="media">media:</text>
-<g transform="translate(0, 56)">
+<text x="656" y="201" class="knob">↻ BRIGHT UP</text>
+<text x="656" y="183" class="knob-head">KNOB</text>
+<text dy="0.35em" x="0" y="11" class="label" id="media">media:</text>
+<g transform="translate(0, 22)">
 <g transform="translate(35, 79)" class="key keypos-0">
 <rect rx="6" ry="6" x="-33" y="-33" width="66" height="66" class="key"/>
 <text dy="0.35em" x="0" y="0" class="key tap">F1</text>
@@ -1098,7 +1106,7 @@ text.knob-head { font-size: 8px; fill: #6e7781; text-anchor: middle; dominant-ba
 <g transform="translate(315, 324)" class="key trans keypos-52">
 <rect rx="6" ry="6" x="-33" y="-33" width="66" height="66" class="key trans"/>
 <text dy="0.35em" x="0" y="0" class="key trans tap">▽</text>
-<text x="-31" y="31" class="key trans bl">LALT</text>
+<text x="-31" y="31" class="key trans bl">ALT</text>
 </g>
 <g transform="translate(396, 343) rotate(22.5)" class="key trans keypos-53">
 <rect rx="6" ry="6" x="-33" y="-33" width="66" height="66" class="key trans"/>
@@ -1137,15 +1145,15 @@ text.knob-head { font-size: 8px; fill: #6e7781; text-anchor: middle; dominant-ba
 </g>
 </g>
 </g>
-<g transform="translate(30, 1449)" class="layer-adj">
-<text x="464" y="181" class="knob-head">KNOB</text>
-<text x="464" y="201" class="knob">↻ VOL UP</text>
+<g transform="translate(30, 1347)" class="layer-adj">
 <text x="464" y="219" class="knob">↺ VOL DOWN</text>
-<text x="656" y="181" class="knob-head">KNOB</text>
-<text x="656" y="201" class="knob">↻ PAGE DOWN</text>
+<text x="464" y="201" class="knob">↻ VOL UP</text>
+<text x="464" y="183" class="knob-head">KNOB</text>
 <text x="656" y="219" class="knob">↺ PAGE UP</text>
-<text dy="0.35em" x="0" y="28" class="label" id="adj">adj:</text>
-<g transform="translate(0, 56)">
+<text x="656" y="201" class="knob">↻ PAGE DOWN</text>
+<text x="656" y="183" class="knob-head">KNOB</text>
+<text dy="0.35em" x="0" y="11" class="label" id="adj">adj:</text>
+<g transform="translate(0, 22)">
 <g transform="translate(35, 79)" class="key keypos-0">
 <rect rx="6" ry="6" x="-33" y="-33" width="66" height="66" class="key"/>
 <text x="0" y="0" class="key tap">
@@ -1381,7 +1389,7 @@ text.knob-head { font-size: 8px; fill: #6e7781; text-anchor: middle; dominant-ba
 </g>
 <g transform="translate(315, 324)" class="key keypos-52">
 <rect rx="6" ry="6" x="-33" y="-33" width="66" height="66" class="key"/>
-<text x="-31" y="31" class="key bl">LALT</text>
+<text x="-31" y="31" class="key bl">ALT</text>
 </g>
 <g transform="translate(396, 343) rotate(22.5)" class="key keypos-53">
 <rect rx="6" ry="6" x="-33" y="-33" width="66" height="66" class="key"/>
@@ -1415,4 +1423,4 @@ text.knob-head { font-size: 8px; fill: #6e7781; text-anchor: middle; dominant-ba
 </g>
 </g>
 </g>
-<text x="1150.0" y="1960.0" class="footer">Top legend = Shift. Bottom = hold. Faint bottom-left = the same key on base. NAV+MEDIA = ADJ. Knobs: ↻ clockwise ↺ counter</text></svg>
+<text x="1150.0" y="1807.0" class="footer">Top legend = Shift. Bottom = hold. Faint bottom-left = the same key on base. NAV+MEDIA = ADJ. Knobs: ↻ clockwise ↺ counter</text></svg>

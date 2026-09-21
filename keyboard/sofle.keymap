@@ -51,10 +51,11 @@
  */
 &led_strip { chain-length = <29>; };
 
-#define BASE  0
-#define NAV   1
-#define MEDIA 2
-#define ADJ   3
+#define BASE   0
+#define NAV    1
+#define MEDIA  2
+#define ADJ    3
+#define SWITCH 4
 
 /* Cross-hand guards. A home-row mod may only resolve as a hold if the next
  * key comes from the OTHER hand (thumbs count as either). Without this,
@@ -164,6 +165,42 @@
                 , <&macro_pause_for_release>
                 , <&macro_release &mo MEDIA>
                 , <&macro_tap &rgb_ug RGB_COLOR_HSB(217,70,40)>;
+        };
+
+        /* The left thumb Alt, with a layer riding along.
+         *
+         * "Alt + turn the knob = Alt+Tab" cannot be written directly: ZMK's
+         * sensor-bindings are per-layer only and there is no mod-aware
+         * variant anywhere in the tree, so a knob can never see what is
+         * already held. The way round it is for the Alt key to turn a layer
+         * on as well, and for SWITCH to be nothing but a pair of knob
+         * bindings.
+         *
+         * Every key on SWITCH is &trans, so this key is still exactly Alt —
+         * Alt+hjkl still moves tmux panes and nvim splits, a tap is still a
+         * tap, Alt+anything is still Alt+anything. The only thing that
+         * changes in the whole firmware is what the knobs send while this
+         * thumb is down: TAB, and Shift+TAB the other way.
+         *
+         * Alt being HELD by your thumb across every detent is the whole
+         * point — that is what keeps the OS switcher open between clicks, so
+         * the knob walks the window list. &kp LA(TAB) on the knob instead
+         * would press and release Alt once per detent, closing the switcher
+         * each time, and just ping-pong between the two most recent windows.
+         *
+         * Two things this does not cover. The home-row Alts (S, and RALT on
+         * L) are hold-taps, not this macro, so the knob stays PgUp/PgDn under
+         * them. And the left OLED names the highest active layer, so holding
+         * Alt now reads "alt-tab" rather than "base" — there is no way to
+         * hide a layer from that widget.
+         */
+        alt_tab: alt_with_switcher {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings
+                = <&macro_press &kp LALT &mo SWITCH>
+                , <&macro_pause_for_release>
+                , <&macro_release &mo SWITCH &kp LALT>;
         };
 
         /* tmux, one key each: the Ctrl+Space prefix (the same chord the
@@ -419,6 +456,10 @@
 // hand can take it. Shift sits second from the outside on each half, which is
 // what the both-Shift caps-word combo keys on. NAV and MEDIA are still on
 // opposite halves, so holding both still reaches ADJ. h+j is also Enter.
+//
+// The left thumb ALT is &alt_tab, not &kp LALT: it holds Alt exactly as
+// before AND turns on SWITCH, whose only content is knob bindings. So Alt
+// alone is unchanged and Alt + turning a knob is Alt+Tab / Alt+Shift+Tab.
 // ---------------------------------------------------------------------------------------------------------------
 // |  ` ~ | 1 ! | 2 @ | 3 # | 4 $ | 5 % |               | 6 ^ | 7 & | 8 * | 9 ( | 0 ) | BSPC  |
 // |  ESC |  Q  |  W  |  E  |  R  |  T  |               |  Y  |  U  |  I  |  O  |  P  |  - _  |
@@ -432,7 +473,7 @@
 &kp ESC   &kp Q        &kp W        &kp E         &kp R         &kp T                               &kp Y     &kp U         &kp I         &kp O        &kp P           &kp MINUS
 &kp TAB   &hml LGUI A  &hml LALT S  &hml LCTRL D  &hml LSHFT F  &kp G                               &kp H     &hmr RSHFT J  &hmr RCTRL K  &hmr RALT L  &hmr RGUI SEMI  &kp SQT
 &kp RCTRL &kp Z        &kp X        &kp C         &kp V         &kp B      &kp C_MUTE   &kp C_PP    &kp N     &kp M         &kp COMMA     &kp DOT      &kp FSLH        &kp LCTRL
-                       &kp LGUI     &kp RSHFT     &kp LALT      &kp SPACE  &nav_rgb     &kp RET     &kp SPACE  &bspc_del     &kp LSHFT     &media_rgb
+                       &kp LGUI     &kp RSHFT     &alt_tab      &kp SPACE  &nav_rgb     &kp RET     &kp SPACE  &bspc_del     &kp LSHFT     &media_rgb
             >;
             /* left knob: volume     right knob: page scroll */
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_DN PG_UP>;
@@ -540,11 +581,43 @@
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_DN PG_UP>;
         };
 
-        /* Empty slots that exist only so ZMK Studio has somewhere to put a
+        switch_layer {
+            display-name = "alt-tab";
+// Knobs only. Reached by holding the left thumb Alt, which is &alt_tab and so
+// holds Alt at the same time — the knob's TAB therefore lands as Alt+Tab, and
+// because your thumb keeps Alt down across detents the OS switcher stays open
+// and the knob walks the window list. Turn back the other way for Shift+Tab.
+// Release the thumb and the switcher commits to whatever is highlighted.
+//
+// EVERY KEY HERE IS &trans, on purpose. That is what keeps the Alt thumb an
+// ordinary Alt: base shows through untouched, so Alt+hjkl, Alt+letter and a
+// bare Alt tap all behave exactly as they did before this layer existed. Put
+// a real binding here and you have changed what Alt does, which is not the
+// deal. See the &alt_tab macro for the rest of the reasoning.
+//
+// Both knobs do it. The right one is the comfortable one — the left thumb is
+// busy holding Alt, so the right hand is the free one — and the left is here
+// only so a hand already resting on it does not have to move.
+//
+// This layer took the FIRST of the two reserved Studio slots rather than
+// being appended, which is what keeps BASE/NAV/MEDIA/ADJ at 0-3 and leaves
+// the conditional layer's if-layers alone. One spare slot is left.
+            bindings = <
+&trans  &trans  &trans  &trans  &trans  &trans                  &trans  &trans  &trans  &trans  &trans  &trans
+&trans  &trans  &trans  &trans  &trans  &trans                  &trans  &trans  &trans  &trans  &trans  &trans
+&trans  &trans  &trans  &trans  &trans  &trans                  &trans  &trans  &trans  &trans  &trans  &trans
+&trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans
+                &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans
+            >;
+            /* both knobs: walk the window switcher */
+            sensor-bindings = <&inc_dec_kp TAB LS(TAB) &inc_dec_kp TAB LS(TAB)>;
+        };
+
+        /* Empty slot that exists only so ZMK Studio has somewhere to put a
          * new layer. Studio cannot create layers that devicetree did not
          * declare, and adding one later means a reflash — which is exactly
-         * the thing Studio is supposed to save you. Cost is a few bytes. */
-        extra1 { status = "reserved"; };
+         * the thing Studio is supposed to save you. Cost is a few bytes.
+         * There were two; switch_layer above took the other one. */
         extra2 { status = "reserved"; };
     };
 };

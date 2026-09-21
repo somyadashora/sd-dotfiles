@@ -972,6 +972,31 @@ typed here and caps-word's continue-list already carries `UNDERSCORE`. Both Spac
 **`j`+`k` → Esc and `h`+`j` → Enter are
 hardware combos**, not an nvim mapping, so it also escapes in nvim-bash vi mode
 and in a bare `vi` on a box you don't control. Encoders are per-layer.
+
+**Alt + knob = Alt+Tab** (`alt_tab` macro + the `alt-tab` layer). A held
+modifier composes with a knob for free — the encoder's `&kp` never clears what
+is already down, so Ctrl+knob has always been Ctrl+PgUp/PgDn. Changing *what*
+the knob sends based on a held mod is the part ZMK cannot express:
+`sensor-bindings` are per-layer only and there is no mod-aware variant. So the
+**left thumb Alt is a macro**, not `&kp LALT` — it presses Alt *and* `&mo
+SWITCH`, the same `macro_press`/`macro_pause_for_release` shape as `nav_rgb`.
+The layer is `&trans` on all 60 keys, so the key is still exactly Alt
+(Alt+hjkl, Alt+letter, a bare tap); its only content is
+`&inc_dec_kp TAB LS(TAB)` on both knobs. Alt staying **held by the thumb across
+detents** is the whole point — that is what keeps the OS switcher open so the
+knob walks the window list; `&kp LA(TAB)` on the knob would press and release
+Alt per detent and merely ping-pong between two windows. Three consequences:
+the home-row Alts (`S`, and RALT on `L`) are hold-taps, not this macro, so the
+knob stays PgUp/PgDn under them; the layer sits at index 4, above NAV/MEDIA, so
+Alt+NAV+knob is the switcher rather than NAV's own knobs; and the left OLED
+names the highest active layer, so holding Alt now reads `alt-tab` instead of
+`base` (no way to hide a layer from that widget). It took the first of the two
+reserved Studio slots so BASE/NAV/MEDIA/ADJ stay at 0-3 and
+`conditional_layers` is untouched — one spare slot left. A home-row mod's
+`hold-trigger-key-positions` guard, incidentally, can never be satisfied by a
+knob (a detent is a sensor event, not a key position), so a home-row mod only
+reaches the knob via the 200 ms `tapping-term-ms` timeout — the corner Ctrls
+are the reliable ones for Ctrl+knob.
 `&studio_unlock` is on ADJ+`U`. **Bootloader has a single-half escape hatch**: on NAV, the two ends of the
 left half's number row together (`` ` ``+`5`) bootloader the LEFT half, and
 the right half's number row (`6`+BSPC, the two ends) does the right. The left one is
@@ -1106,7 +1131,33 @@ keymap-drawer has no concept of them, so `gen-keymap-art` reads each layer's
 `sensor-bindings` and draws the clockwise (↻) / counter-clockwise (↺) action
 above each encoder push-button in the SVG/PNG (`draw_knobs`, words from
 `KNOB_WORDS` — add an entry when a knob gets a new keycode, or it prints raw);
-`keymap.txt` lists them per layer.
+`keymap.txt` lists them per layer. That text sits in the empty column between
+the halves with nothing to clip against, so `check_knob_width` measures every
+line against the real gap (taken from the drawn key positions, not assumed —
+the encoder button is more than a key pitch from the half beside it) and fails
+the run rather than let one print across a neighbouring legend.
+
+A layer that is all `&trans` with its content in the knobs gets **no sheet of
+its own**: `FOLDED` in the generator names it, and its knob pair is drawn
+under base's in a muted style prefixed with the key you hold (`ALT ↻ NEXT
+WIN`), in `keymap.txt` as a second `hold ALT  left … right …` line. `alt-tab`
+is the case it exists for — a page of transparent glyphs carrying two lines of
+text is clutter, and it costs a fifth of the page budget.
+
+**The sheet is an A4 page, not an image.** `fit_a4` sets the SVG's size in
+**millimetres**, which is what makes a user unit a physical length: A4
+portrait, 10mm margin, content centred, so printing is Print-at-100% instead
+of a scaling dialog — bare user units are why it used to print as a narrow
+strip down the middle of the paper. Legend size on paper is
+`page ÷ content`, so the ONLY real lever is layers per page: four at
+1180×1828 is slightly taller than A4's proportions, height-limited, and puts
+the 14px legends at **6.0pt**. `outer_pad_h` (22, down from the stock 56)
+bought the last 10% of that and is the first thing to trade; `fit_a4` asserts
+the result stays above `MIN_LEGEND_PT` (5.8) so a new full-size layer fails
+the build instead of silently shrinking the sheet past readable. If it fires,
+the fix is a second sheet — two layers on A4 landscape reach ~7.4pt — not a
+smaller floor. The PNG is the same page rendered at `PNG_DPI` (200), so it is
+A4 too.
 
 Flashing is a USB mass-storage copy, so it **cannot happen from a Codespace**:
 download the `sofle-firmware` artifact locally, double-tap reset, drag the

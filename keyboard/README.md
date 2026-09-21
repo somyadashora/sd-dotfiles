@@ -456,7 +456,7 @@ survives a reboot -- the boot hook wins, by design.
 ## Printable diagrams
 
 ```
-keymap.svg   vector — print this (browser -> Print, fits A4/Letter portrait)
+keymap.svg   vector — print this (a real A4 page: Print at 100%, no scaling)
 keymap.png   raster — for a phone, or a quick look
 keymap.txt   ASCII  — `sofle-cs` in a terminal, works over ssh
 scripts/gen-keymap-art   regenerates all three
@@ -550,8 +550,32 @@ told otherwise. **Add to both maps when you add a macro or a punctuation key.**
 **Knobs.** keymap-drawer does not draw encoders, so `gen-keymap-art` does:
 each layer's `sensor-bindings` becomes a small ↻ clockwise / ↺ counter-clockwise
 pair above that knob's push-button, in words from `KNOB_WORDS` in the script
-(a keycode missing from that table prints raw — add it). `keymap.txt` lists
-them per layer too.
+(a keycode missing from that table prints raw — add it). The text sits in the
+empty column between the halves, and `check_knob_width` refuses a line too
+wide for it — there is nothing to clip against, so an overlong one silently
+prints across the neighbouring key's legend. `keymap.txt` lists them per layer
+too.
+
+**Folded layers.** A layer whose keys are all transparent and whose only real
+content is its knobs gets no sheet of its own: `FOLDED` in the script names
+it, and its knob pair is drawn under the base layer's in a muted style,
+prefixed with the key you hold for it (`ALT ↻ NEXT WIN`). The `alt-tab` layer
+is the case this exists for. A page of transparent glyphs carrying two lines
+of knob text is both clutter and — see below — a fifth of the page budget.
+
+**A4.** The sheet is a page, not an image. `fit_a4` sets the SVG's size in
+**millimetres**, which is what makes the user unit a physical length: the
+result is an A4 portrait page with a 10mm margin and the content centred in
+it, so printing is Print-at-100% rather than a scaling dialog. (Bare user
+units are why it used to come out as a narrow strip down the middle of the
+paper.) Four layers at 1180×1828 is slightly taller than A4's proportions, so
+the print is height-limited and the 14px legends land at **6.0pt** — small,
+but a reference you read at arm's length rather than body text.
+`outer_pad_h` in `keymap-drawer.yaml` is the lever that bought the last 10% of
+that, and `fit_a4` asserts the result stays above `MIN_LEGEND_PT` (5.8), so a
+new full-size layer fails the build instead of quietly making the sheet
+unreadable. If that ever fires, the honest fix is a second sheet: two layers
+on an A4 landscape page get to ~7.4pt.
 
 ## Bumping ZMK
 
