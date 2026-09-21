@@ -55,7 +55,7 @@ The two keys between the halves are the ENCODER PUSH-BUTTONS.
           |  ...  |  ...  |  ...  |  ...  |  ...  |           |  ADJ  |  ...  |  ...  |  ...  |  ...  |
           +-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+
 
-  encoders   left LC(RIGHT) / LC(LEFT)     right LC(TAB) / LC(LS(TAB))
+  encoders   left LA(L) / LA(H)     right &tmux_next / &tmux_prev
 
 -- MEDIA ------------------------------------------------------------------------------------------------------
 
@@ -72,7 +72,7 @@ The two keys between the halves are the ENCODER PUSH-BUTTONS.
           |  ...  |  ...  |  ...  |  ...  |  ...  |           |  ...  |  ...  |  ...  |  ...  |  ...  |
           +-------+-------+-------+-------+-------+           +-------+-------+-------+-------+-------+
 
-  encoders   left C_VOL_UP / C_VOL_DN     right C_BRI_UP / C_BRI_DN
+  encoders   left C_BRI_UP / C_BRI_DN     right C_NEXT / C_PREV
 
 -- ADJ --------------------------------------------------------------------------------------------------------
 

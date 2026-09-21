@@ -466,11 +466,11 @@ text.knob-head { font-size: 8px; fill: #6e7781; text-anchor: middle; dominant-ba
 </g>
 </g>
 <g transform="translate(30, 449)" class="layer-nav">
-<text x="464" y="219" class="knob">↺ PREV WORD</text>
-<text x="464" y="201" class="knob">↻ NEXT WORD</text>
+<text x="464" y="219" class="knob">↺ PANE LEFT</text>
+<text x="464" y="201" class="knob">↻ PANE RIGHT</text>
 <text x="464" y="183" class="knob-head">KNOB</text>
-<text x="656" y="219" class="knob">↺ PREV TAB</text>
-<text x="656" y="201" class="knob">↻ NEXT TAB</text>
+<text x="656" y="219" class="knob">↺ TMUX PREV</text>
+<text x="656" y="201" class="knob">↻ TMUX NEXT</text>
 <text x="656" y="183" class="knob-head">KNOB</text>
 <text dy="0.35em" x="0" y="11" class="label" id="nav">nav:</text>
 <g transform="translate(0, 22)">
@@ -805,11 +805,11 @@ text.knob-head { font-size: 8px; fill: #6e7781; text-anchor: middle; dominant-ba
 </g>
 </g>
 <g transform="translate(30, 898)" class="layer-media">
-<text x="464" y="219" class="knob">↺ VOL DOWN</text>
-<text x="464" y="201" class="knob">↻ VOL UP</text>
+<text x="464" y="219" class="knob">↺ BRIGHT DN</text>
+<text x="464" y="201" class="knob">↻ BRIGHT UP</text>
 <text x="464" y="183" class="knob-head">KNOB</text>
-<text x="656" y="219" class="knob">↺ BRIGHT DN</text>
-<text x="656" y="201" class="knob">↻ BRIGHT UP</text>
+<text x="656" y="219" class="knob">↺ TRACK PREV</text>
+<text x="656" y="201" class="knob">↻ TRACK NEXT</text>
 <text x="656" y="183" class="knob-head">KNOB</text>
 <text dy="0.35em" x="0" y="11" class="label" id="media">media:</text>
 <g transform="translate(0, 22)">

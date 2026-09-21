@@ -9,11 +9,18 @@
  *
  * Reference points from the rest of this repo:
  *   nvim leader   = <Space>          -> Space is a thumb, unmodified
- *   tmux prefix   = Ctrl+b           -> herdr uses the same prefix. NOT a
- *                                      home-row-Ctrl chord: b is a LEFT-half
- *                                      key, so the cross-hand guard refuses
- *                                      the left Ctrl and it types "db". Use
- *                                      either bottom-row corner Ctrl.
+ *   tmux prefix   = Ctrl+Space       -> .tmux.conf sets TWO: Ctrl+Space is
+ *                 or Ctrl+b             prefix, Ctrl+b is prefix2. Ctrl+Space
+ *                                       exists for this board: both Spaces
+ *                                       together is a combo, and the macros
+ *                                       below send it. Ctrl+b is what herdr
+ *                                       uses and what the cheatsheet says,
+ *                                       but it is NOT a home-row-Ctrl chord:
+ *                                       b is a LEFT-half key, so the
+ *                                       cross-hand guard refuses the left
+ *                                       Ctrl and it types "db". Type that
+ *                                       one with either bottom-row corner
+ *                                       Ctrl.
  *   Ctrl+hjkl     = nvim window nav  -> home-row Ctrl + base-layer hjkl
  *   Alt+hjkl      = pane/split nav   -> home-row Alt  + base-layer hjkl.
  *                                      One chord for nvim splits AND tmux
@@ -128,6 +135,29 @@
             bindings = <&kp BSPC>, <&kp DEL>;
             mods = <(MOD_LSFT|MOD_RSFT)>;
             keep-mods = <(MOD_LSFT|MOD_RSFT)>;
+        };
+
+        /* tmux window next/prev on a knob.
+         *
+         * &inc_dec_kp cannot do this: it is zmk,behavior-sensor-rotate-VAR,
+         * which only parameterises &kp with two keycodes. The plain zero-cell
+         * sensor-rotate takes two arbitrary bindings instead, so a detent can
+         * fire a macro. (The macros are declared below -- a phandle reference
+         * resolves across the whole tree, order does not matter.)
+         *
+         * A window change is a SEQUENCE, not a chord: tmux's prefix is not
+         * held, so each detent is prefix-tap then `j`. That is ~4 HID events
+         * plus the macro's own waits, against one event for a knob that only
+         * sends a keycode -- so this knob wants deliberate clicks. Spin it
+         * hard and the behaviour queue (CONFIG_ZMK_BEHAVIOR_QUEUE_SIZE, 64)
+         * runs behind your hand, and past that it drops events. The way out,
+         * if it ever annoys: a root-table `bind -n M-n next-window` in
+         * .tmux.conf makes it one keycode like the left knob.
+         */
+        tmux_win: tmux_window_rotate {
+            compatible = "zmk,behavior-sensor-rotate";
+            #sensor-binding-cells = <0>;
+            bindings = <&tmux_next>, <&tmux_prev>;
         };
     };
 
@@ -521,8 +551,22 @@
 &trans  &trans        &trans       &trans     &trans      &trans   &trans    &trans     &kp LEFT   &kp DOWN   &kp RIGHT   &kp DEL   &kp END    &kp PG_DN
                       &trans       &trans     &trans      &trans   &trans    &mo MEDIA     &trans     &trans     &trans      &trans
             >;
-            /* left knob: word-wise cursor    right knob: cycle tabs */
-            sensor-bindings = <&inc_dec_kp LC(RIGHT) LC(LEFT) &inc_dec_kp LC(TAB) LC(LS(TAB))>;
+            /* Both knobs are the multiplexer: left walks panes, right walks
+             * windows. NAV is a LEFT thumb, so the right hand is the free
+             * one and the right knob is the comfortable one -- windows are
+             * the thing you reach for more.
+             *
+             * Left is Alt+l / Alt+h, the SAME chord as the seamless pane
+             * navigator, so one knob walks tmux panes, nvim splits and
+             * toggleterm buffers as a single space (.tmux.conf's is_vim
+             * check forwards it into nvim and hands back at the edge). One
+             * keycode per detent, so unlike the right knob it spins freely.
+             *
+             * Neither of these displaces anything. Ctrl+Tab was browser tabs,
+             * which Ctrl + the BASE knob already does (Ctrl+PgDn/PgUp), and
+             * word-wise cursor is Ctrl + NAV's own arrows -- the left half is
+             * transparent here, so the base home-row mods show through. */
+            sensor-bindings = <&inc_dec_kp LA(L) LA(H) &tmux_win>;
         };
 
         media_layer {
@@ -548,8 +592,16 @@
 &rgb_ug RGB_SPD  &rgb_ug RGB_HUD &rgb_ug RGB_HUI &rgb_ug RGB_SAD &rgb_ug RGB_SAI &rgb_ug RGB_SPI  &trans    &trans   &trans      &trans    &trans      &kp C_PP    &kp C_PREV    &kp C_NEXT
                   &trans    &trans     &trans     &trans   &trans    &trans       &trans      &trans    &trans      &trans
             >;
-            /* left knob: volume    right knob: screen brightness */
-            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp C_BRI_UP C_BRI_DN>;
+            /* Brightness moved to the LEFT knob and volume dropped. MEDIA is
+             * a RIGHT thumb, so here it is the LEFT hand that is free and the
+             * left knob that is comfortable -- the mirror of NAV. Volume was
+             * only ever a copy of the base knob, which needs no layer at all,
+             * so the copy cost a good knob for nothing.
+             *
+             * The right knob takes the track, which pairs it with the right
+             * encoder BUTTON: play/pause on the button, seek on the knob, one
+             * transport cluster under one hand. */
+            sensor-bindings = <&inc_dec_kp C_BRI_UP C_BRI_DN &inc_dec_kp C_NEXT C_PREV>;
         };
 
         adj_layer {

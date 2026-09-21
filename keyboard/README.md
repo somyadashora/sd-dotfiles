@@ -172,6 +172,22 @@ keys — awkward to hit deliberately, easy to hit while turning the knob. They
 carry mute (next to the volume knob) and play/pause on base:
 things that are harmless to fire by accident. Never put a typing key there.
 
+**The knobs, per layer.** Which one is comfortable is decided by which thumb
+holds the layer — NAV is a left thumb, so the right hand is free there; MEDIA
+is a right thumb, so the left hand is free there, the mirror:
+
+| layer | left knob | right knob |
+|---|---|---|
+| base | volume | page scroll — **+Ctrl** browser tabs, **+Alt** window switcher |
+| nav | pane / split walk (`Alt+l`/`Alt+h`) | tmux window next/prev |
+| media | screen brightness | track next/prev (play/pause is the button beside it) |
+| adj | volume, page scroll — still base's, deliberately |
+
+Clockwise is always "next", at four widening scopes: page, browser tab, OS
+window, tmux window. NAV's right knob is the one that will not spin fast: a
+tmux window change is a prefix *sequence*, not a chord, so each detent is a
+two-key macro — see `tmux_win` in the keymap.
+
 **Home-row mods, GACS** — `A`=GUI `S`=Alt `D`=Ctrl `F`=Shift, mirrored right.
 This is what makes the daily chords layer-free: `Alt+hjkl` (nvim splits *and*
 tmux panes, as one seamless space) is a left-hand hold plus a right-hand tap.
@@ -180,9 +196,11 @@ The `Ctrl+b` prefix — shared by tmux and herdr — is the exception, and it is
 worth knowing why. `b` is a **left-half** key, so a left home-row Ctrl and `b`
 are the same hand: the cross-hand guard refuses the hold and you get `db`.
 Press it with either bottom-row corner Ctrl (`RCTRL` bottom-left, `LCTRL`
-bottom-right — swapped on purpose), neither of which is a hold-tap. (The old `Ctrl+Space` prefix was reachable
-from the home row precisely because Space is a right thumb; that property did
-not survive the move to `Ctrl+b`.)
+bottom-right — swapped on purpose), neither of which is a hold-tap. That
+awkwardness is exactly why `.tmux.conf` keeps **two** prefixes: `Ctrl+Space`
+is `prefix` and reachable from the home row precisely because Space is a right
+thumb (and is the both-Spaces combo outright), while `Ctrl+b` is `prefix2`,
+for muscle memory and because herdr uses it.
 
 Two settings carry that: a **cross-hand guard** (`hold-trigger-key-positions`),
 so a same-hand roll like `sd` types letters instead of firing Alt; and
@@ -550,7 +568,12 @@ told otherwise. **Add to both maps when you add a macro or a punctuation key.**
 **Knobs.** keymap-drawer does not draw encoders, so `gen-keymap-art` does:
 each layer's `sensor-bindings` becomes a small ↻ clockwise / ↺ counter-clockwise
 pair above that knob's push-button, in words from `KNOB_WORDS` in the script
-(a keycode missing from that table prints raw — add it). The text sits in the
+(a keycode missing from that table prints raw — add it). A knob that fires
+something other than `&kp` uses the zero-cell `zmk,behavior-sensor-rotate`
+rather than `&inc_dec_kp`, and its pair lives in its own node: `sensor_behaviors`
+resolves those, so `KNOB_WORDS` keys them by binding name (`&tmux_next`).
+An unknown `&behavior` in a `sensor-bindings` line fails the run rather than
+drawing a knob with nothing above it. The text sits in the
 empty column between the halves, and `check_knob_width` refuses a line too
 wide for it — there is nothing to clip against, so an overlong one silently
 prints across the neighbouring key's legend. `keymap.txt` lists them per layer

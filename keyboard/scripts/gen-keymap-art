@@ -199,20 +199,51 @@ def draw_layer(name, entries, encoders, extra=()):
     return out
 
 
+def sensor_behaviors(src):
+    """label -> (cw, ccw) for every zero-cell zmk,behavior-sensor-rotate.
+
+    &inc_dec_kp is the -VAR flavour and carries its two keycodes inline; a
+    knob that fires anything else (a macro, an &rgb_ug) needs the plain
+    sensor-rotate, which holds its pair in its own node. Both end up as a
+    (clockwise, counter-clockwise) pair here.
+    """
+    out = {}
+    for m in re.finditer(r"(\w+): \w+ \{(.*?)\n        \};", src, re.S):
+        if 'compatible = "zmk,behavior-sensor-rotate"' not in m.group(2):
+            continue
+        b = re.findall(r"<(&[\w()]+(?:\s+[\w()]+)*)>", m.group(2))
+        if len(b) >= 2:
+            out["&" + m.group(1)] = (b[0], b[1])
+    return out
+
+
 def parse_encoder_pairs():
     """display-name -> [(cw, ccw) left knob, (cw, ccw) right knob], from the .keymap.
 
     ZMK's `&inc_dec_kp A B` sends A on a clockwise detent and B on a
     counter-clockwise one."""
     src = KEYMAP.read_text()
+    custom = sensor_behaviors(src)
     found = {}
     for body in re.findall(r"\w+_layer \{(.*?)\n        \};", src, re.S):
         nm = re.search(r'display-name = "([\w-]+)"', body)
         sb = re.search(r"sensor-bindings = <(.*?)>;", body, re.S)
         if not (nm and sb):
             continue  # conditional_layers' adjust_layer has neither
-        parts = [p.split() for p in sb.group(1).split("&inc_dec_kp") if p.strip()]
-        pairs = [(kc[0], kc[1]) for kc in parts if len(kc) >= 2]
+        toks, pairs, i = sb.group(1).split(), [], 0
+        while i < len(toks):
+            if toks[i] == "&inc_dec_kp" and i + 2 < len(toks):
+                pairs.append((toks[i + 1], toks[i + 2]))
+                i += 3
+            elif toks[i] in custom:
+                pairs.append(custom[toks[i]])
+                i += 1
+            elif toks[i].startswith("&"):
+                sys.exit(f"{nm.group(1)}: knob behavior {toks[i]} is neither "
+                         f"&inc_dec_kp nor a zmk,behavior-sensor-rotate node -- "
+                         f"gen-keymap-art cannot say what it does")
+            else:
+                i += 1
         found[nm.group(1)] = pairs[:2] if len(pairs) >= 2 else None
     return found
 
@@ -241,6 +272,11 @@ KNOB_WORDS = {
     "PG_DN": "PAGE DOWN", "PG_UP": "PAGE UP",
     "LC(RIGHT)": "NEXT WORD", "LC(LEFT)": "PREV WORD",
     "LC(TAB)": "NEXT TAB", "LC(LS(TAB))": "PREV TAB",
+    # nav: the seamless pane/split navigator, and tmux windows via macros
+    "LA(L)": "PANE RIGHT", "LA(H)": "PANE LEFT",
+    "&tmux_next": "TMUX NEXT", "&tmux_prev": "TMUX PREV",
+    # media: the right knob seeks, next to the play/pause button
+    "C_NEXT": "TRACK NEXT", "C_PREV": "TRACK PREV",
     # alt-tab layer: Alt is held by the thumb that reached the layer, so a
     # bare TAB here is the window switcher, not a tab character.
     "TAB": "NEXT WIN", "LS(TAB)": "PREV WIN",

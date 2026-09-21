@@ -584,10 +584,18 @@ customized `sd-rtl-style` template. Nothing is installed globally — per-projec
 
 ## tmux architecture
 
-Config: `tmux/.tmux.conf`. Prefix: `Ctrl+b` — shared with herdr (see
-`## herdr` below), so `Ctrl+b Ctrl+b` is how you reach a herdr running
-inside a tmux pane. tmux's default table still binds the prefix key to
-`send-prefix`, so nothing had to be added for that.
+Config: `tmux/.tmux.conf`. **Two prefixes, both real**: `Ctrl+Space`
+(`prefix`) and `Ctrl+b` (`prefix2`). `Ctrl+Space` is primary because it is the
+one the Sofle can produce as a gesture — both Space thumbs together — while
+`Ctrl+b` needs a bottom-row corner Ctrl there (`b` is a left-half key, so the
+home-row Ctrl's cross-hand guard refuses the hold and types `db`); `Ctrl+b`
+stays because it is what the cheatsheet, herdr and the muscle memory are
+written in. tmux swallows **both**, so both `send-prefix` forms are bound
+explicitly: `prefix Ctrl+b` sends a literal `Ctrl+b` (`send-prefix -2`) — that
+is how you reach a herdr nested in a tmux pane, herdr using `Ctrl+b` as its
+own prefix — and `prefix Ctrl+Space` sends a literal `Ctrl+Space`
+(`send-prefix`), which is the price of the second prefix: nvim-cmp binds
+`<C-Space>` for manual completion, and this is how it still gets its key.
 
 **Seamless pane/split navigation**: `Alt+hjkl` is the one navigator — it moves
 between tmux panes, except when the focused pane runs nvim, where tmux's
@@ -658,7 +666,9 @@ Panes survive detach on their own (no resurrect/continuum equivalent needed).
 multiplexer and keeps everything herdr has no concept of: `synchronize-panes`,
 `tmux-pad`, `tmux-watch`, `tmux-sysmon`, the paste-buffer pickers, and the
 `g` / `g d` key tables (herdr has **no multi-key tables** at all). herdr is what
-you launch to run agents in. Both use prefix `Ctrl+b`, so `Ctrl+b Ctrl+b`
+you launch to run agents in. herdr's prefix is `Ctrl+b`, which is also one of
+tmux's two (see `## tmux architecture`), so `Ctrl+b Ctrl+b` — or
+`Ctrl+Space Ctrl+b`, tmux's other prefix then the `send-prefix -2` binding —
 drives a herdr nested inside a tmux pane.
 
 **Config** is `herdr/config.toml`, symlinked **file-level** to
@@ -938,8 +948,10 @@ daily chords layer-free — `Alt+hjkl` (nvim splits and tmux panes as one
 seamless space) is a left-hand hold plus a right-hand tap. The `Ctrl+b` prefix
 (tmux and herdr) is the **exception**: `b` is a left-half key, so a left
 home-row Ctrl and `b` are the same hand and the cross-hand guard refuses the
-hold — it types `db`. Press it with either bottom-row corner Ctrl. The old `Ctrl+Space` prefix was home-row-reachable only
-because Space is a right thumb; that property did not survive the move.
+hold — it types `db`. Press it with either bottom-row corner Ctrl. That is
+precisely why `.tmux.conf` keeps **two** prefixes: `Ctrl+Space` is home-row
+reachable because Space is a right thumb (and is the both-Spaces combo
+outright), so it is `prefix`, with `Ctrl+b` kept as `prefix2`.
 Two settings carry that and are the first thing to touch if mods misfire: a
 **cross-hand guard** (`hold-trigger-key-positions`, so a same-hand roll like
 `sd` types letters) and `require-prior-idle-ms = 150` (no mod mid-burst) —
@@ -971,7 +983,42 @@ typed here and caps-word's continue-list already carries `UNDERSCORE`. Both Spac
 
 **`j`+`k` → Esc and `h`+`j` → Enter are
 hardware combos**, not an nvim mapping, so it also escapes in nvim-bash vi mode
-and in a bare `vi` on a box you don't control. Encoders are per-layer.
+and in a bare `vi` on a box you don't control.
+
+**Encoders are per-layer**, and which knob is the good one on a layer is
+decided by **which thumb holds that layer**: NAV is a left thumb, so the right
+hand is free and the right knob is the comfortable one; MEDIA is a right
+thumb, so it is the mirror — the left knob is the comfortable one there.
+Getting that backwards is what had brightness on media's busy-hand knob and a
+pointless copy of base's volume on its free one.
+
+| layer | left knob | right knob |
+|---|---|---|
+| base | volume (MUTE on the button beside it) | page scroll — **+Ctrl** = browser tabs, **+Alt** = window switcher |
+| nav | pane / split walk (`Alt+l`/`Alt+h`) | tmux window next/prev |
+| media | screen brightness | track next/prev (play/pause on the button beside it) |
+| adj | volume, page scroll — deliberately still base's, so a knob does the same thing while you fumble for both thumbs |
+
+One rule holds across all of it: **clockwise is "next"**, at four widening
+scopes — page, browser tab, OS window, tmux window. NAV's pair displaced
+nothing: `Ctrl+Tab` was browser tabs, which `Ctrl` + the base knob already
+does, and word-wise cursor is `Ctrl` + NAV's own arrows (its left half is
+transparent, so the base home-row mods show through). NAV's left knob sends
+the SAME `Alt+l`/`Alt+h` as the seamless navigator, so one knob walks tmux
+panes, nvim splits and toggleterm buffers as a single space.
+
+The right knob there is the one thing that does not spin freely. `&inc_dec_kp`
+is `zmk,behavior-sensor-rotate-`**`var`**, which only parameterises `&kp`; a
+knob that fires anything else needs the plain zero-cell
+`zmk,behavior-sensor-rotate`, which takes two arbitrary bindings — here
+`tmux_win`, wrapping the existing `tmux_next`/`tmux_prev` macros. And a tmux
+window change is a **sequence**, not a chord: the prefix is not held, so every
+detent is prefix-tap then `j` — ~4 HID events plus macro waits against one
+event for a keycode knob. Deliberate clicks are fine; a hard spin runs the
+behaviour queue (`CONFIG_ZMK_BEHAVIOR_QUEUE_SIZE`, 64) behind your hand and
+past that drops events. The escape hatch, if it ever annoys, is a root-table
+`bind -n M-n next-window` in `.tmux.conf`, which makes it one keycode like the
+left knob.
 
 **Alt + knob = Alt+Tab** (`alt_tab` macro + the `alt-tab` layer). A held
 modifier composes with a knob for free — the encoder's `&kp` never clears what
